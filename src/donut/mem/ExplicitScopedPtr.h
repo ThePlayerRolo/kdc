@@ -24,6 +24,6 @@ private:
     /* 0x4 */ T* mPtr;
 };
 
-}
+} // mem
 
 #endif
