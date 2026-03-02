@@ -15,3 +15,4 @@ Sections:
 
 donut/scn/step/hero/IndiviUtil.cpp:
 	.text       start:0x803418A4 end:0x80341C74
+	.sdata2     start:0x80562C10 end:0x80562C20

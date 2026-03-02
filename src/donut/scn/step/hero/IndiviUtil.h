@@ -7,10 +7,14 @@
 namespace scn { namespace step { namespace hero {
 
 enum Kind {
-    KIND_KIRBY = 0,
-    KIND_META = 4,
-    KIND_DEDEDE = 5,
-    KIND_DEE = 6,
+    KIND_KIRBY      = 0,
+    KIND_KIRBY_1    = 0,
+    KIND_KIRBY_2    = 1,
+    KIND_KIRBY_3    = 2,
+    KIND_KIRBY_4    = 3,
+    KIND_META       = 4,
+    KIND_DEDEDE     = 5,
+    KIND_DEE        = 6,
 };
 
 struct NodeAttach { };
