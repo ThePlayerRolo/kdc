@@ -1,7 +1,8 @@
 #pragma peephole off
 
+#include <hel/math/Vector3.hpp>
+
 #include "scn/step/hero/IndiviUtil.hpp"
-#include "hel/math/Vector3.hpp"
 #include "param/JITParam.hpp"
 
 using namespace scn::step::hero;
