@@ -4,37 +4,57 @@
 #include <types.h>
 namespace xdata {
 
-struct XDataHeader {
-    /* 0x0 */ s32 mMagic;
-    /* 0x4 */ u16 mBOM;
-    /* 0x6 */ u8 mVersion[2];
-    /* 0x8 */ u32 mFilesize;
-    /* 0xC */ u32 unk;
-};
+class XData {
+private:
+    struct XDataHeader {
+        /* 0x0 */ s32 mMagic;
+        /* 0x4 */ u16 mBOM;
+        /* 0x6 */ u8 mVersion[2];
+        /* 0x8 */ u32 mFilesize;
+        /* 0xC */ u32 unk;
+    };
+public:
+    inline void* dataHeadAddress() {
+        XDataHeader* header = &mHeader;
 
-namespace XData {
-    inline static void* dataHeadAddress(XDataHeader* pHeader) {
         bool magic = false, bom = false, size = false;
 
-        if (pHeader != nullptr && pHeader->mMagic == 'XBIN') {
+        if (header != nullptr && header->mMagic == 'XBIN') {
             magic = true;
         }
 
-        if (magic && pHeader->mBOM == 0x1234) {
+        if (magic && header->mBOM == 0x1234) {
             bom = true;
         }
 
-        if (bom && pHeader->mFilesize >= sizeof(XDataHeader)) {
+        if (bom && header->mFilesize >= sizeof(XData)) {
             size = true;
         }
 
         if (size) {
-            return reinterpret_cast<char*>(pHeader) + sizeof(XDataHeader);
+            return reinterpret_cast<char*>(header) + sizeof(XData);
         }
 
         return nullptr;
     }
+private:
+    /* 0x0 */ XDataHeader mHeader;
 };
-}
+
+
+
+    // bool XData::isValidData() {
+    //     return header != nullptr && header->magic == 0x5842494e && header->bom == 0x1234 && header->filesize > sizeof(XDataHeader) - 1;
+    // }
+
+    // void* XData::labelAddressWithReference(u32 address) {
+    //     if (isValidData() && address >= sizeof(XDataHeader) && address < header->filesize) {
+    //         return header + (address - 6);
+    //     }
+
+    //     return nullptr;
+    // }
+
+};
 
 #endif

@@ -67,8 +67,8 @@ void IndiviUtil::InitNodeAttach(NodeAttach& rNodeAttach, Kind kind) {
 template <>
 const NodeAttachParam& param::JITParam::data<NodeAttachParam>() const {
     loadCheck();
-    xdata::XDataHeader* header = mAccessor->mXData;
-    return (NodeAttachParam&)(*(NodeAttachParam*)xdata::XData::dataHeadAddress(header));
+    xdata::XData* xdata = mAccessor->mXData;
+    return (NodeAttachParam&)(*(NodeAttachParam*)xdata->dataHeadAddress());
 }
 
 float IndiviUtil::CenterOffset(Kind kind) {

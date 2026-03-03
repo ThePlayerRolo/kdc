@@ -11,7 +11,7 @@ public:
 private:
 friend class JITParam;
     int m_0;
-    xdata::XDataHeader* mXData;
+    xdata::XData* mXData;
 };
 
 class JITParam {
