@@ -1,7 +1,7 @@
-#ifndef HEL_ARRAY_H
-#define HEL_ARRAY_H
+#ifndef HEL_ARRAY_HPP
+#define HEL_ARRAY_HPP
 
-#include "types.h"
+#include <types.h>
 
 namespace hel {
 namespace common {
