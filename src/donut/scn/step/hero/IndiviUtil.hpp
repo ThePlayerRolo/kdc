@@ -1,10 +1,11 @@
 #ifndef DONUT_SCN_STEP_HERO_INDIVIUTIL_HPP
 #define DONUT_SCN_STEP_HERO_INDIVIUTIL_HPP
 
+#include <hel/math/Vector3.hpp>
+
 #include "scn/step/common/Param.hpp"
 #include "scn/step/hero/Hero.hpp"
 
-#include <hel/math/Vector3.hpp>
 
 namespace scn { namespace step { namespace hero {
 
