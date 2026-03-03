@@ -2,12 +2,13 @@
 #define DONUT_PARAM_JITPARAM_HPP
 
 #include "xdata/XData.hpp"
+#include "util/PlacementNew.hpp"
 
 namespace param {
 
 class ParamAccessor {
 public:
-
+    ~ParamAccessor();
 private:
 friend class JITParam;
     int m_0;
@@ -17,7 +18,7 @@ friend class JITParam;
 class JITParam {
 public:
     JITParam(const char* pParamName);
-    ~JITParam();
+    ~JITParam() { }
 
     void loadCheck() const;
 
@@ -25,7 +26,7 @@ public:
     const T& data() const;
 private:
     /* 0x0 */ const char* mParamName;
-    /* 0x4 */ ParamAccessor* mAccessor;
+    /* 0x4 */ util::PlacementNew<ParamAccessor> mAccessor;
     /* 0x8 */ STRUCT_FILL(0x8);
 };
 

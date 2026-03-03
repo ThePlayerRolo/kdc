@@ -4,11 +4,12 @@
 #include <hel/common/ScopedPtr.hpp>
 #include "scn/step/Context.hpp"
 #include "scn/step/core/SphereAccessor.hpp"
-#include "scn/step/map/DataFile.hpp"
 #include "scn/step/debug/ShowGrid.hpp"
 #include "scn/step/debug/ShowPegFrame.hpp"
 #include "scn/step/debug/GeneralDrawer.hpp"
 #include "scn/step/debug/ObjInfoRepos.hpp"
+#include "scn/step/map/DataFile.hpp"
+#include "scn/step/hero/Manager.hpp"
 
 // todo: move these to their own headers
 
@@ -129,10 +130,6 @@ namespace scn { namespace step {
         class RumbleManager { };
     }
 
-    namespace hero {
-        class Manager { };
-    }
-
     namespace item {
         class Manager { };
     }
@@ -146,6 +143,9 @@ class Component {
 public:
     ~Component();
 
+    core::SphereAccessor* sphereAccessor();
+    core::SceneChanger* sceneChanger();
+    spstop::Manager* superStopManager();
     debug::GeneralDrawer* debugGeneralDrawer();
     debug::ObjInfoRepos* debugObjInfoRepos();
 private:

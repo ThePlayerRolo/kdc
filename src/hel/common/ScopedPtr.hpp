@@ -16,10 +16,6 @@ public:
     void reset(T* ptr);
 
     T* operator->();
-
-    operator T*() {
-        return ptr;
-    }
 private:
     T* ptr;
 };
