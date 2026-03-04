@@ -358,6 +358,15 @@ config.libs = [
         ]
     },
     {
+        "lib": "nw4r/lyt",
+        "mw_version": config.linker_version,
+        "cflags": cflags_nw4r,
+        "progress_category": "sdk",
+        "objects": [
+            Object(NonMatching, "nw4r/lyt/lyt_pane.cpp"),
+        ]
+    },
+    {
         "lib": "hel/geo",
         "mw_version": config.linker_version,
         "cflags": cflags_hel,

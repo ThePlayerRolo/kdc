@@ -112,7 +112,8 @@ public:
                                          bool recursive); // at 0x40
 
     virtual void BindAnimation(AnimTransform* pAnimTrans,
-                               bool recursive); // at 0x44
+                               bool recursive, bool disable); // at 0x44
+
     virtual void UnbindAnimation(AnimTransform* pAnimTrans,
                                  bool recursive); // at 0x48
 
@@ -120,13 +121,13 @@ public:
     virtual void UnbindAnimationSelf(AnimTransform* pAnimTrans); // at 0x50
 
     virtual AnimationLink*
-    FindAnimationLink(AnimTransform* pAnimTrans); // at 0x54
-
+    FindAnimationLinkSelf(AnimTransform* pAnimTrans); // at 0x54
+    virtual AnimationLink* FindAnimationLinkSelf(const struct AnimResource& animRes); // at 0x58
     virtual void SetAnimationEnable(AnimTransform* pAnimTrans, bool enable,
-                                    bool recursive); // at 0x58
+                                    bool recursive); // at 0x5C
 
-    virtual Material* GetMaterial() const;       // at 0x5C
-    virtual void LoadMtx(const DrawInfo& rInfo); // at 0x60
+    virtual Material* GetMaterial() const;       // at 0x60
+    virtual void LoadMtx(const DrawInfo& rInfo); // at 0x64
 
     void AppendChild(Pane* pChild);
     void RemoveChild(Pane* pChild);

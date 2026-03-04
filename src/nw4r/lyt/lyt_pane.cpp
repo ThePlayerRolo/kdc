@@ -320,15 +320,15 @@ void Pane::AnimateSelf(u32 option) {
     }
 }
 
-void Pane::BindAnimation(AnimTransform* pAnimTrans, bool recursive) {
-    pAnimTrans->Bind(this, recursive);
+void Pane::BindAnimation(AnimTransform* pAnimTrans, bool recursive, bool disable) {
+    pAnimTrans->Bind(this, recursive, disable);
 }
 
 void Pane::UnbindAnimation(AnimTransform* pAnimTrans, bool recursive) {
     UnbindAnimationSelf(pAnimTrans);
 
     if (recursive) {
-        NW4R_UT_LINKLIST_FOREACH (it, mChildList, 
+        NW4R_UT_LINKLIST_FOREACH (it, mChildList,
             { it->UnbindAnimation(pAnimTrans, recursive); })
     }
 }
@@ -354,7 +354,7 @@ void Pane::AddAnimationLink(AnimationLink* pAnimLink) {
     mAnimList.PushBack(pAnimLink);
 }
 
-AnimationLink* Pane::FindAnimationLink(AnimTransform* pAnimTrans) {
+AnimationLink* Pane::FindAnimationLinkSelf(AnimTransform* pAnimTrans) {
     AnimationLink* pAnimLink =
         detail::FindAnimationLink(&mAnimList, pAnimTrans);
 
@@ -388,7 +388,7 @@ void Pane::SetAnimationEnable(AnimTransform* pAnimTrans, bool enable,
     }
 
     if (recursive) {
-        NW4R_UT_LINKLIST_FOREACH (it, mChildList, 
+        NW4R_UT_LINKLIST_FOREACH (it, mChildList,
             { it->SetAnimationEnable(pAnimTrans, enable, recursive); })
     }
 }
