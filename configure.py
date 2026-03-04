@@ -374,7 +374,7 @@ config.libs = [
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
-            Object(NonMatching, "donut/ocoll/Gimmick.cpp"),
+            Object(NonMatching, "donut/ocoll/Gimmick.cpp", extra_cflags=["-O3,s"]),
         ],
     },
     {

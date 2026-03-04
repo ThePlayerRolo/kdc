@@ -30,9 +30,8 @@ bool Gimmick::mfIsBreakFireWeak(const AttackData& rAttackData) const {
     return rAttackData.mType.mElement == 11;
 }
 
-// https://decomp.me/scratch/B7IS0
 bool Gimmick::mfIsBreakHard(const AttackData& rAttackData) const {
-    return rAttackData.mOption.mBlockBreakLv1;
+    return rAttackData.mOption.mBlockBreakLv1 ? 1 : 0;
 }
 
 bool Gimmick::mfIsBreakIce(const AttackData& rAttackData) const {
@@ -43,7 +42,6 @@ bool Gimmick::mfIsBreakIce(const AttackData& rAttackData) const {
     return rAttackData.mType.mElement == 19;
 }
 
-// https://decomp.me/scratch/IGXfs
 bool Gimmick::mfIsBreakGold(const AttackData& rAttackData) const {
-    return rAttackData.mOption.mBlockBreakLv2;
+    return rAttackData.mOption.mBlockBreakLv2 ? 1 : 0;
 }
