@@ -186,12 +186,14 @@ Pane *Pane::FindPaneByName(const char *findName, bool bRecursive) {
     if (detail::EqualsResName(this->mName, findName)) {
         return this;
     }
+
     if (bRecursive) {
-        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
-             it++) {
-            Pane *pPane = it->FindPaneByName(findName, bRecursive);
-            if (pPane != nullptr) {
-                return pPane;
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter(); it++) {
+            if (!detail::EqualsResName(it->mName, "RootPane")) {
+                Pane *pPane = it->FindPaneByName(findName, bRecursive);
+                if (pPane != nullptr) {
+                    return pPane;
+                }
             }
         }
     }
@@ -203,12 +205,14 @@ Material *Pane::FindMaterialByName(const char *findName, bool bRecursive) {
     if (this->mpMaterial && detail::EqualsMaterialName(this->mpMaterial->GetName(), findName)) {
         return this->mpMaterial;
     }
+
     if (bRecursive) {
-        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
-             it++) {
-            Material *pPane = it->FindMaterialByName(findName, bRecursive);
-            if (pPane != nullptr) {
-                return pPane;
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter(); it++) {
+            if (!detail::EqualsResName(it->mName, "RootPane")) {
+                Material *pPane = it->FindMaterialByName(findName, bRecursive);
+                if (pPane != nullptr) {
+                    return pPane;
+                }
             }
         }
     }
@@ -216,96 +220,63 @@ Material *Pane::FindMaterialByName(const char *findName, bool bRecursive) {
 }
 
 // CalculateMtx__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt8DrawInfo
-// Matches for SS, applying the rotation and scale seems to be different accross versions.
-// Also look out for the Bottom CalculateMtxChild section. In other version this is actually seperated differently
-void Pane::CalculateMtx(const DrawInfo &drawInfo) {
-    if (!IsVisible() && !drawInfo.IsInvisiblePaneCalculateMtx()) {
+void Pane::CalculateMtx(const DrawInfo& rInfo) {
+    if (!IsVisible() && !rInfo.IsInvisiblePaneCalculateMtx()) {
         return;
     }
 
-    math::VEC2 scale = this->mScale;
+    math::MTX34 mtx1, mtx2;
+    math::MTX34 rotateMtx;
 
-    if (drawInfo.IsLocationAdjust() && IsLocationAdjust()) {
-        scale.x *= drawInfo.GetLocationAdjustScale().x;
-        scale.y *= drawInfo.GetLocationAdjustScale().y;
-    }
-    if (mRotate.x != 0.0f || mRotate.y != 0.0f) {
-        f32 sinx, siny, sinz;
-        f32 cosx, cosy, cosz;
-
-        math::SinCosDeg(&sinx, &cosx, mRotate.x);
-        math::SinCosDeg(&siny, &cosy, mRotate.y);
-        math::SinCosDeg(&sinz, &cosz, mRotate.z);
-        const f32 cosz_cosx = cosz * cosx;
-        const f32 siny_sinx = siny * sinx;
-        const f32 sinz_cosx = sinz * cosx;
-        this->mMtx._00 = cosz * cosy * scale.x;
-        this->mMtx._10 = (sinz * cosy) * scale.x;
-        this->mMtx._20 = (-siny) * scale.x;
-        this->mMtx._01 = (-sinz_cosx + cosz * siny_sinx) * scale.y;
-        this->mMtx._11 = (cosz_cosx + sinz * siny_sinx) * scale.y;
-        this->mMtx._21 = (cosy * sinx) * scale.y;
-        this->mMtx._02 = (sinz * sinx) + (cosz_cosx * siny);
-        this->mMtx._12 = (-cosz * sinx) + (sinz_cosx * siny);
-        this->mMtx._22 = (cosy * cosx);
-
-    } else if (mRotate.z != 0.0f) {
-        f32 sinz;
-        f32 cosz;
-        math::SinCosDeg(&sinz, &cosz, mRotate.z);
-        this->mMtx._00 = cosz * scale.x;
-        this->mMtx._01 = -sinz * scale.y;
-        this->mMtx._02 = 0.0f;
-        this->mMtx._10 = sinz * scale.x;
-        this->mMtx._11 = cosz * scale.y;
-        this->mMtx._12 = 0.0f;
-        this->mMtx._20 = 0.0f;
-        this->mMtx._21 = 0.0f;
-        this->mMtx._22 = 1.0f;
-    } else {
-        this->mMtx._00 = scale.x;
-        this->mMtx._01 = 0.0f;
-        this->mMtx._02 = 0.0f;
-        this->mMtx._10 = 0.0f;
-        this->mMtx._11 = scale.y;
-        this->mMtx._12 = 0.0f;
-        this->mMtx._20 = 0.0f;
-        this->mMtx._21 = 0.0f;
-        this->mMtx._22 = 1.0f;
-    }
-    this->mMtx._03 = this->mTranslate.x;
-    this->mMtx._13 = this->mTranslate.y;
-    this->mMtx._23 = this->mTranslate.z;
-    if (this->mpParent) {
-        PSMTXConcat(this->mpParent->mGlbMtx, this->mMtx, this->mGlbMtx);
-    } else {
-        if (drawInfo.IsMultipleViewMtxOnDraw()) {
-            this->mGlbMtx = this->mMtx;
-        } else {
-            PSMTXConcat(drawInfo.GetViewMtx(), this->mMtx, this->mGlbMtx);
-        }
+    math::VEC2 scale = mScale;
+    if (rInfo.IsLocationAdjust() && IsLocationAdjust()) {
+        scale.x *= rInfo.GetLocationAdjustScale().x;
+        scale.y *= rInfo.GetLocationAdjustScale().y;
     }
 
-    u8 alpha;
-    bool b = drawInfo.IsInfluencedAlpha() && this->mpParent;
-    if (b) {
-        alpha = this->mAlpha * drawInfo.GetGlobalAlpha();
-    } else {
-        alpha = this->mAlpha;
-    }
-    this->mGlbAlpha = alpha;
+    PSMTXScale(mtx2, scale.x, scale.y, 1.0f);
 
-    if (IsInfluencedAlpha() && this->mAlpha != 0xFF) {
-        DrawInfo &mtDrawInfo = const_cast<DrawInfo &>(drawInfo);
-        const f32 crGlobalAlpha = drawInfo.GetGlobalAlpha();
-        const bool bCdInfluenced = drawInfo.IsInfluencedAlpha();
-        mtDrawInfo.SetGlobalAlpha(crGlobalAlpha * mAlpha * (1.0f / 0xFF));
-        mtDrawInfo.SetInfluencedAlpha(true);
-        CalculateMtxChild(drawInfo);
-        mtDrawInfo.SetGlobalAlpha(crGlobalAlpha);
-        mtDrawInfo.SetInfluencedAlpha(bCdInfluenced);
+    PSMTXRotRad(rotateMtx, 'x', NW4R_MATH_DEG_TO_RAD(mRotate.x));
+    PSMTXConcat(rotateMtx, mtx2, mtx1);
+
+    PSMTXRotRad(rotateMtx, 'y', NW4R_MATH_DEG_TO_RAD(mRotate.y));
+    PSMTXConcat(rotateMtx, mtx1, mtx2);
+
+    PSMTXRotRad(rotateMtx, 'z', NW4R_MATH_DEG_TO_RAD(mRotate.z));
+    PSMTXConcat(rotateMtx, mtx2, mtx1);
+
+    PSMTXTransApply(mtx1, mMtx, mTranslate.x, mTranslate.y, mTranslate.z);
+
+    if (mpParent != nullptr) {
+        math::MTX34Mult(&mGlbMtx, &mpParent->mGlbMtx, &mMtx);
+    } else if (rInfo.IsMultipleViewMtxOnDraw()) {
+        mGlbMtx = mMtx;
     } else {
-        CalculateMtxChild(drawInfo);
+        math::MTX34Mult(&mGlbMtx, &rInfo.GetViewMtx(), &mMtx);
+    }
+
+    if (rInfo.IsInfluencedAlpha() && mpParent != nullptr) {
+        mGlbAlpha = static_cast<u8>(mAlpha * rInfo.GetGlobalAlpha());
+    } else {
+        mGlbAlpha = mAlpha;
+    }
+
+    f32 glbAlpha = rInfo.GetGlobalAlpha();
+    bool influenced = rInfo.IsInfluencedAlpha();
+    bool modifyInfo = IsInfluencedAlpha() && mAlpha != 255;
+
+    if (modifyInfo) {
+        DrawInfo& rMtInfo = const_cast<DrawInfo&>(rInfo);
+        rMtInfo.SetGlobalAlpha(glbAlpha * mAlpha * (1.0f / 255.0f));
+        rMtInfo.SetInfluencedAlpha(true);
+    }
+
+    CalculateMtxChild(rInfo);
+
+    if (modifyInfo) {
+        DrawInfo& rMtInfo = const_cast<DrawInfo&>(rInfo);
+        rMtInfo.SetGlobalAlpha(glbAlpha);
+        rMtInfo.SetInfluencedAlpha(influenced);
     }
 }
 
