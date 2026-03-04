@@ -1,6 +1,5 @@
 #include <types.h>
 #include "ocoll/Gimmick.hpp"
-#include "macros.h"
 
 using namespace ocoll;
 
