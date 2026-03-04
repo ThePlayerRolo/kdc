@@ -903,6 +903,11 @@ void OSWakeupThread(OSThreadQueue* queue) {
     OSRestoreInterrupts(enabled);
 }
 
+s32 OSGetThreadPriority(OSThread* thread) {
+    // return thread->priority;
+    return thread->base;
+}
+
 BOOL OSSetThreadPriority(OSThread* thread, s32 prio) {
     BOOL enabled;
 

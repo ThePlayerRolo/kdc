@@ -254,6 +254,25 @@ cflags_rel = [
     "-sdata2 0",
 ]
 
+cflags_rvl = [
+    *cflags_base,
+    "-O4,p",
+    "-func_align 16",
+    "-lang=c99",
+    "-enc SJIS",
+    "-fp_contract off",
+    "-ipa file",
+]
+
+cflags_nw4r = [
+    *cflags_base,
+    "-inline on",
+    "-fp_contract off",
+    "-O4,p",
+    "-func_align 16",
+    "-ipa file"
+]
+
 cflags_hel = [
     *cflags_base,
     "-i src/hel/",
@@ -271,14 +290,6 @@ cflags_donut = [
     "-func_align 4"
 ]
 
-cflags_nw4r = [
-    *cflags_base,
-    "-inline on",
-    "-fp_contract off",
-    "-O4,p",
-    "-func_align 16",
-    "-ipa file"
-]
 
 config.linker_version = "Wii/1.3"
 
@@ -329,21 +340,30 @@ config.libs = [
         ],
     },
     {
-        "lib": "hel/geo",
-        "mw_version": config.linker_version,
-        "cflags": cflags_hel,
-        "progress_category": "hel",
-        "objects": [
-            Object(NonMatching, "hel/geo/Rect.cpp"),
-        ]
-    },
-    {
         "lib": "nw4r/g3d",
         "mw_version": config.linker_version,
         "cflags": cflags_nw4r,
         "progress_category": "sdk",
         "objects": [
             Object(Matching, "nw4r/g3d/g3d_camera.cpp"),
+        ]
+    },
+    {
+        "lib": "revolution/OS",
+        "mw_version": config.linker_version,
+        "cflags": cflags_rvl,
+        "progress_category": "sdk",
+        "objects": [
+            Object(NonMatching, "revolution/OS/OSThread.c"),
+        ]
+    },
+    {
+        "lib": "hel/geo",
+        "mw_version": config.linker_version,
+        "cflags": cflags_hel,
+        "progress_category": "hel",
+        "objects": [
+            Object(NonMatching, "hel/geo/Rect.cpp"),
         ]
     },
     {

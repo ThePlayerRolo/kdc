@@ -13,6 +13,9 @@ Sections:
 	.sdata2     type:rodata align:16
 	.sbss2      type:bss align:32
 
+revolution/OS/OSThread.c:
+	.text       start:0x800244A0 end:0x80025B40
+
 nw4r/g3d/g3d_camera.cpp:
 	.text       start:0x800E5AF0 end:0x800E6A10
 	.sdata2     start:0x8055F040 end:0x8055F070
