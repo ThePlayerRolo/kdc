@@ -1,29 +1,27 @@
-#include "g3d/g3d_camera.h"
-#include <nw4r/g3d.h>
-#include <nw4r/math.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
 
-#include <revolution/GX.h>
-#include <revolution/MTX.h>
+#include "nw4r/math.h" // IWYU pragma: export
+
+#include "revolution/GX.h"  // IWYU pragma: export
+#include "revolution/MTX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
 
-Camera::Camera(CameraData* pData) : ResCommon(pData) {}
+Camera::Camera(CameraData *pData) : ResCommon(pData) {}
 
 void Camera::Init() {
-    const GXRenderModeObj* pObj = G3DState::GetRenderModeObj();
+    const GXRenderModeObj *pObj = G3DState::GetRenderModeObj();
 
-    Init(pObj->fbWidth, pObj->efbHeight, pObj->fbWidth, pObj->xfbHeight,
-         pObj->viWidth, pObj->viHeight);
+    Init(pObj->fbWidth, pObj->efbHeight, pObj->fbWidth, pObj->xfbHeight, pObj->viWidth, pObj->viHeight);
 }
 
-void Camera::Init(u16 efbWidth, u16 efbHeight, u16 xfbWidth, u16 xfbHeight,
-                  u16 viWidth, u16 viHeight) {
+void Camera::Init(u16 efbWidth, u16 efbHeight, u16 xfbWidth, u16 xfbHeight, u16 viWidth, u16 viHeight) {
     if (!IsValid()) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.flags = CameraData::FLAG_CAM_LOOKAT | CameraData::FLAG_PROJ_PERSP;
 
@@ -76,7 +74,7 @@ void Camera::SetPosition(f32 x, f32 y, f32 z) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.cameraPos.x = x;
     r.cameraPos.y = y;
@@ -84,12 +82,12 @@ void Camera::SetPosition(f32 x, f32 y, f32 z) {
     r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
 }
 
-void Camera::SetPosition(const math::VEC3& rPos) {
+void Camera::SetPosition(const math::VEC3 &rPos) {
     if (!IsValid()) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.cameraPos = rPos;
     r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
@@ -120,84 +118,79 @@ void Camera::GetPosture(PostureInfo* pInfo) const {
     }
 }
 
-void Camera::SetPosture(const PostureInfo& rInfo) {
+void Camera::SetPosture(const PostureInfo &rInfo) {
     if (!IsValid()) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     switch (rInfo.tp) {
-    case POSTURE_LOOKAT: {
-        if (r.flags & CameraData::FLAG_CAM_LOOKAT) {
-            if (!(rInfo.cameraUp != r.cameraUp) &&
-                !(rInfo.cameraTarget != r.cameraTarget)) {
-                return;
+        case POSTURE_LOOKAT: {
+            if (r.flags & CameraData::FLAG_CAM_LOOKAT) {
+                if (!(rInfo.cameraUp != r.cameraUp) && !(rInfo.cameraTarget != r.cameraTarget)) {
+                    return;
+                }
             }
+
+            r.flags &= ~(CameraData::FLAG_CAM_LOOKAT | CameraData::FLAG_CAM_ROTATE | CameraData::FLAG_CAM_AIM);
+
+            r.flags |= CameraData::FLAG_CAM_LOOKAT;
+
+            r.cameraUp = rInfo.cameraUp;
+            r.cameraTarget = rInfo.cameraTarget;
+
+            r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
+            break;
         }
 
-        r.flags &= ~(CameraData::FLAG_CAM_LOOKAT | CameraData::FLAG_CAM_ROTATE |
-                     CameraData::FLAG_CAM_AIM);
-
-        r.flags |= CameraData::FLAG_CAM_LOOKAT;
-
-        r.cameraUp = rInfo.cameraUp;
-        r.cameraTarget = rInfo.cameraTarget;
-
-        r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
-        break;
-    }
-
-    case POSTURE_ROTATE: {
-        if (r.flags & CameraData::FLAG_CAM_ROTATE) {
-            if (!(rInfo.cameraRotate != r.cameraRotate)) {
-                return;
+        case POSTURE_ROTATE: {
+            if (r.flags & CameraData::FLAG_CAM_ROTATE) {
+                if (!(rInfo.cameraRotate != r.cameraRotate)) {
+                    return;
+                }
             }
+
+            r.flags &= ~(CameraData::FLAG_CAM_LOOKAT | CameraData::FLAG_CAM_ROTATE | CameraData::FLAG_CAM_AIM);
+
+            r.flags |= CameraData::FLAG_CAM_ROTATE;
+
+            r.cameraRotate = rInfo.cameraRotate;
+
+            r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
+            break;
         }
 
-        r.flags &= ~(CameraData::FLAG_CAM_LOOKAT | CameraData::FLAG_CAM_ROTATE |
-                     CameraData::FLAG_CAM_AIM);
-
-        r.flags |= CameraData::FLAG_CAM_ROTATE;
-
-        r.cameraRotate = rInfo.cameraRotate;
-
-        r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
-        break;
-    }
-
-    case POSTURE_AIM: {
-        if (r.flags & CameraData::FLAG_CAM_AIM) {
-            if (!(rInfo.cameraTarget != r.cameraTarget) &&
-                rInfo.cameraTwist == r.cameraTwist) {
-                return;
+        case POSTURE_AIM: {
+            if (r.flags & CameraData::FLAG_CAM_AIM) {
+                if (!(rInfo.cameraTarget != r.cameraTarget) && rInfo.cameraTwist == r.cameraTwist) {
+                    return;
+                }
             }
+
+            r.flags &= ~(CameraData::FLAG_CAM_LOOKAT | CameraData::FLAG_CAM_ROTATE | CameraData::FLAG_CAM_AIM);
+
+            r.flags |= CameraData::FLAG_CAM_AIM;
+
+            r.cameraTarget = rInfo.cameraTarget;
+            r.cameraTwist = rInfo.cameraTwist;
+
+            r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
+            break;
         }
 
-        r.flags &= ~(CameraData::FLAG_CAM_LOOKAT | CameraData::FLAG_CAM_ROTATE |
-                     CameraData::FLAG_CAM_AIM);
-
-        r.flags |= CameraData::FLAG_CAM_AIM;
-
-        r.cameraTarget = rInfo.cameraTarget;
-        r.cameraTwist = rInfo.cameraTwist;
-
-        r.flags &= ~CameraData::FLAG_CAM_MTX_READY;
-        break;
-    }
-
-    default: {
-        break;
-    }
+        default: {
+            break;
+        }
     }
 }
 
-void Camera::SetCameraMtxDirectly(const math::MTX34& rMtx) {
+void Camera::SetCameraMtxDirectly(const math::MTX34 &rMtx) {
     if (!IsValid()) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     math::MTX34Copy(&r.cameraMtx, &rMtx);
     r.flags |= CameraData::FLAG_CAM_MTX_READY;
@@ -208,7 +201,7 @@ void Camera::SetPerspective(f32 fovy, f32 aspect, f32 near, f32 far) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.projType = GX_PERSPECTIVE;
 
@@ -217,19 +210,19 @@ void Camera::SetPerspective(f32 fovy, f32 aspect, f32 near, f32 far) {
     r.projNear = near;
     r.projFar = far;
 
-    r.flags &= ~(CameraData::FLAG_PROJ_FRUSTUM | CameraData::FLAG_PROJ_PERSP |
-                 CameraData::FLAG_PROJ_ORTHO | CameraData::FLAG_PROJ_MTX_READY);
+    r.flags &=
+        ~(CameraData::FLAG_PROJ_FRUSTUM | CameraData::FLAG_PROJ_PERSP | CameraData::FLAG_PROJ_ORTHO |
+          CameraData::FLAG_PROJ_MTX_READY);
 
     r.flags |= CameraData::FLAG_PROJ_PERSP;
 }
 
-void Camera::SetOrtho(f32 top, f32 bottom, f32 left, f32 right, f32 near,
-                      f32 far) {
+void Camera::SetOrtho(f32 top, f32 bottom, f32 left, f32 right, f32 near, f32 far) {
     if (!IsValid()) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.projType = GX_ORTHOGRAPHIC;
 
@@ -240,18 +233,30 @@ void Camera::SetOrtho(f32 top, f32 bottom, f32 left, f32 right, f32 near,
     r.projNear = near;
     r.projFar = far;
 
-    r.flags &= ~(CameraData::FLAG_PROJ_FRUSTUM | CameraData::FLAG_PROJ_PERSP |
-                 CameraData::FLAG_PROJ_ORTHO | CameraData::FLAG_PROJ_MTX_READY);
+    r.flags &=
+        ~(CameraData::FLAG_PROJ_FRUSTUM | CameraData::FLAG_PROJ_PERSP | CameraData::FLAG_PROJ_ORTHO |
+          CameraData::FLAG_PROJ_MTX_READY);
 
     r.flags |= CameraData::FLAG_PROJ_ORTHO;
 }
 
-void Camera::SetProjectionMtxDirectly(const math::MTX44* pMtx) {
+void Camera::SetProjectionMtxDirectly(const math::MTX44 *pMtx) {
     if (pMtx != NULL && IsValid()) {
-        CameraData& r = ref();
+        CameraData &r = ref();
 
         math::MTX44Copy(&r.projMtx, pMtx);
         r.flags |= CameraData::FLAG_PROJ_MTX_READY;
+    }
+}
+
+void Camera::SetTexMtxParam(f32 lightScaleS, f32 lightScaleT, f32 lightTransS, f32 lightTransT) {
+    if (IsValid()) {
+        CameraData &r = ref();
+
+        r.lightScaleS = lightScaleS;
+        r.lightScaleT = lightScaleT;
+        r.lightTransS = lightTransS;
+        r.lightTransT = lightTransT;
     }
 }
 
@@ -260,7 +265,7 @@ void Camera::SetScissor(u32 x, u32 y, u32 width, u32 height) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.scissorX = x;
     r.scissorY = y;
@@ -273,7 +278,7 @@ void Camera::SetScissorBoxOffset(s32 ox, s32 oy) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.scissorOffsetX = ox;
     r.scissorOffsetY = oy;
@@ -284,15 +289,14 @@ void Camera::SetViewport(f32 x, f32 y, f32 width, f32 height) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.viewportOrigin.x = x;
     r.viewportOrigin.y = y;
     r.viewportSize.x = width;
     r.viewportSize.y = height;
 
-    SetScissor(static_cast<u32>(x), static_cast<u32>(y),
-               static_cast<u32>(width), static_cast<u32>(height));
+    SetScissor(static_cast<u32>(x), static_cast<u32>(y), static_cast<u32>(width), static_cast<u32>(height));
 }
 
 void Camera::SetViewportZRange(f32 near, f32 far) {
@@ -300,19 +304,18 @@ void Camera::SetViewportZRange(f32 near, f32 far) {
         return;
     }
 
-    CameraData& r = ref();
+    CameraData &r = ref();
 
     r.viewportNear = near;
     r.viewportFar = far;
 }
 
-void Camera::GetViewport(f32* pX, f32* pY, f32* pWidth, f32* pHeight,
-                         f32* pNear, f32* pFar) const {
+void Camera::GetViewport(f32 *pX, f32 *pY, f32 *pWidth, f32 *pHeight, f32 *pNear, f32 *pFar) const {
     if (!IsValid()) {
         return;
     }
 
-    const CameraData& r = ref();
+    const CameraData &r = ref();
 
     if (pX != NULL) {
         *pX = r.viewportOrigin.x;
@@ -336,9 +339,41 @@ void Camera::GetViewport(f32* pX, f32* pY, f32* pWidth, f32* pHeight,
     }
 }
 
-void Camera::GetCameraMtx(math::MTX34* pMtx) const {
-    if (pMtx != NULL && IsValid()) {
-        const CameraData& r = ref();
+void Camera::Project(math::VEC3 *pSrcPos, const math::VEC3 &worldPos) const {
+    if (pSrcPos == NULL) {
+        return;
+    }
+
+    math::MTX34 cam;
+    math::MTX44 proj;
+
+    f32 vp[GX_VIEWPORT_SZ];
+    f32 p[GX_PROJECTION_SZ];
+
+    GetCameraMtx(&cam);
+    GetProjectionMtx(&proj);
+
+    p[0] = GetProjectionType();
+    p[1] = proj._00;
+    p[3] = proj._11;
+    p[5] = proj._22;
+    p[6] = proj._23;
+
+    if (p[0] == 1.0f) {
+        p[2] = proj._03;
+        p[4] = proj._13;
+    } else {
+        p[2] = proj._02;
+        p[4] = proj._12;
+    }
+
+    GetViewport(&vp[0], &vp[1], &vp[2], &vp[3], &vp[4], &vp[5]);
+    // ::GXProject(worldPos.x, worldPos.y, worldPos.z, cam, p, vp, &pSrcPos->x, &pSrcPos->y, &pSrcPos->z);
+}
+
+void Camera::GetCameraMtx(math::MTX34 *pMtx) const {
+    if (pMtx && IsValid()) {
+        const CameraData &r = ref();
 
         if (!(r.flags & CameraData::FLAG_CAM_MTX_READY)) {
             UpdateCameraMtx();
@@ -348,9 +383,9 @@ void Camera::GetCameraMtx(math::MTX34* pMtx) const {
     }
 }
 
-void Camera::GetProjectionMtx(math::MTX44* pMtx) const {
-    if (pMtx != NULL && IsValid()) {
-        const CameraData& r = ref();
+void Camera::GetProjectionMtx(math::MTX44 *pMtx) const {
+    if (pMtx && IsValid()) {
+        const CameraData &r = ref();
 
         if (!(r.flags & CameraData::FLAG_PROJ_MTX_READY)) {
             UpdateProjectionMtx();
@@ -360,29 +395,31 @@ void Camera::GetProjectionMtx(math::MTX44* pMtx) const {
     }
 }
 
-void Camera::GetProjectionTexMtx(math::MTX34* pMtx) const {
+void Camera::GetProjectionTexMtx(math::MTX34 *pMtx) const {
     if (pMtx != NULL && IsValid()) {
-        const CameraData& r = ref();
+        const CameraData &r = ref();
 
         if (r.flags & CameraData::FLAG_PROJ_ORTHO) {
-            C_MTXLightOrtho(*pMtx, r.projTop, r.projBottom, r.projLeft,
-                            r.projRight, r.lightScaleS, -r.lightScaleT,
-                            r.lightTransS, r.lightTransT);
+            C_MTXLightOrtho(
+                *pMtx, r.projTop, r.projBottom, r.projLeft, r.projRight, r.lightScaleS, -r.lightScaleT, r.lightTransS,
+                r.lightTransT
+            );
         } else if (r.flags & CameraData::FLAG_PROJ_FRUSTUM) {
-            C_MTXLightFrustum(*pMtx, r.projTop, r.projBottom, r.projLeft,
-                              r.projRight, r.projNear, r.lightScaleS,
-                              -r.lightScaleT, r.lightTransS, r.lightTransT);
+            C_MTXLightFrustum(
+                *pMtx, r.projTop, r.projBottom, r.projLeft, r.projRight, r.projNear, r.lightScaleS, -r.lightScaleT,
+                r.lightTransS, r.lightTransT
+            );
         } else /* FLAG_PROJ_PERSP */ {
-            C_MTXLightPerspective(*pMtx, r.projFovy, r.projAspect,
-                                  r.lightScaleS, -r.lightScaleT, r.lightTransS,
-                                  r.lightTransT);
+            C_MTXLightPerspective(
+                *pMtx, r.projFovy, r.projAspect, r.lightScaleS, -r.lightScaleT, r.lightTransS, r.lightTransT
+            );
         }
     }
 }
 
-void Camera::GetEnvironmentTexMtx(math::MTX34* pMtx) const {
+void Camera::GetEnvironmentTexMtx(math::MTX34 *pMtx) const {
     if (pMtx != NULL && IsValid()) {
-        const CameraData& r = ref();
+        const CameraData &r = ref();
 
         math::MTX34Identity(pMtx);
         pMtx->_00 = r.lightScaleS;
@@ -399,19 +436,18 @@ void Camera::GXSetViewport() const {
         return;
     }
 
-    const CameraData& r = ref();
-    const GXRenderModeObj* pObj = G3DState::GetRenderModeObj();
+    const CameraData &r = ref();
+    const GXRenderModeObj *pObj = G3DState::GetRenderModeObj();
 
     if (pObj->field_rendering) {
         ::GXSetViewportJitter(
-            r.viewportOrigin.x, r.viewportOrigin.y, r.viewportSize.x,
-            r.viewportSize.y, r.viewportNear, r.viewportFar,
-            r.flags & CameraData::FLAG_VI_ODD_FIELD ? GX_FIELD_ODD
-                                                    : GX_FIELD_EVEN);
+            r.viewportOrigin.x, r.viewportOrigin.y, r.viewportSize.x, r.viewportSize.y, r.viewportNear, r.viewportFar,
+            r.flags & CameraData::FLAG_VI_ODD_FIELD ? GX_FIELD_ODD : GX_FIELD_EVEN
+        );
     } else {
-        ::GXSetViewport(r.viewportOrigin.x, r.viewportOrigin.y,
-                        r.viewportSize.x, r.viewportSize.y, r.viewportNear,
-                        r.viewportFar);
+        ::GXSetViewport(
+            r.viewportOrigin.x, r.viewportOrigin.y, r.viewportSize.x, r.viewportSize.y, r.viewportNear, r.viewportFar
+        );
     }
 }
 
@@ -420,7 +456,7 @@ void Camera::GXSetProjection() const {
         return;
     }
 
-    const CameraData& r = ref();
+    const CameraData &r = ref();
 
     if (!(r.flags & CameraData::FLAG_PROJ_MTX_READY)) {
         UpdateProjectionMtx();
@@ -434,7 +470,7 @@ void Camera::GXSetScissor() const {
         return;
     }
 
-    const CameraData& r = ref();
+    const CameraData &r = ref();
     ::GXSetScissor(r.scissorX, r.scissorY, r.scissorWidth, r.scissorHeight);
 }
 
@@ -443,22 +479,21 @@ void Camera::GXSetScissorBoxOffset() const {
         return;
     }
 
-    const CameraData& r = ref();
+    const CameraData &r = ref();
     ::GXSetScissorBoxOffset(r.scissorOffsetX, r.scissorOffsetY);
 }
 
 void Camera::UpdateCameraMtx() const {
-    CameraData& r = const_cast<CameraData&>(ref());
+    CameraData &r = const_cast<CameraData &>(ref());
 
     if (r.flags & CameraData::FLAG_CAM_LOOKAT) {
         C_MTXLookAt(r.cameraMtx, r.cameraPos, r.cameraUp, r.cameraTarget);
     } else if (r.flags & CameraData::FLAG_CAM_AIM) {
-        math::MTX34& rMtx = r.cameraMtx;
-        math::VEC3& rPos = r.cameraPos;
-        math::VEC3& rTarget = r.cameraTarget;
+        math::MTX34 &rMtx = r.cameraMtx;
+        math::VEC3 &rPos = r.cameraPos;
+        math::VEC3 &rTarget = r.cameraTarget;
 
-        math::VEC3 back(rPos.x - rTarget.x, rPos.y - rTarget.y,
-                        rPos.z - rTarget.z);
+        math::VEC3 back(rPos.x - rTarget.x, rPos.y - rTarget.y, rPos.z - rTarget.z);
 
         if (back.x == 0.0f && back.z == 0.0f) {
             rMtx._00 = 1.0f;
@@ -518,8 +553,8 @@ void Camera::UpdateCameraMtx() const {
             rMtx._23 = -math::VEC3Dot(&rPos, &back);
         }
     } else /* FLAG_CAM_ROTATE */ {
-        math::MTX34& rMtx = r.cameraMtx;
-        math::VEC3& rPos = r.cameraPos;
+        math::MTX34 &rMtx = r.cameraMtx;
+        math::VEC3 &rPos = r.cameraPos;
 
         f32 sx, sy, sz, cx, cy, cz;
         math::SinCosDeg(&sx, &cx, r.cameraRotate.x);
@@ -560,17 +595,14 @@ void Camera::UpdateCameraMtx() const {
 }
 
 void Camera::UpdateProjectionMtx() const {
-    CameraData& r = const_cast<CameraData&>(ref());
+    CameraData &r = const_cast<CameraData &>(ref());
 
     if (r.flags & CameraData::FLAG_PROJ_ORTHO) {
-        C_MTXOrtho(r.projMtx, r.projTop, r.projBottom, r.projLeft, r.projRight,
-                   r.projNear, r.projFar);
+        C_MTXOrtho(r.projMtx, r.projTop, r.projBottom, r.projLeft, r.projRight, r.projNear, r.projFar);
     } else if (r.flags & CameraData::FLAG_PROJ_FRUSTUM) {
-        C_MTXFrustum(r.projMtx, r.projTop, r.projBottom, r.projLeft,
-                     r.projRight, r.projNear, r.projFar);
+        C_MTXFrustum(r.projMtx, r.projTop, r.projBottom, r.projLeft, r.projRight, r.projNear, r.projFar);
     } else /* FLAG_PROJ_PERSP */ {
-        C_MTXPerspective(r.projMtx, r.projFovy, r.projAspect, r.projNear,
-                         r.projFar);
+        C_MTXPerspective(r.projMtx, r.projFovy, r.projAspect, r.projNear, r.projFar);
     }
 
     r.flags |= CameraData::FLAG_PROJ_MTX_READY;

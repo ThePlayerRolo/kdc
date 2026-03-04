@@ -1,748 +1,978 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_MmlParser.h"
 
-#include <revolution/OS.h>
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_MmlParser.cpp
+ */
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+/*******************************************************************************
+ * headers
+ */
 
-bool MmlParser::mPrintVarEnabledFlag = false;
+#include "common.h"
 
-ParseResult MmlParser::Parse(MmlSeqTrack* pTrack, bool doNoteOn) const {
-    SeqPlayer* pPlayer = pTrack->GetSeqPlayer();
+#include "nw4r/snd/snd_global.h"
+#include "nw4r/snd/snd_Lfo.h" // LfoParam
+#include "nw4r/snd/snd_MmlSeqTrack.h"
+#include "nw4r/snd/snd_MoveValue.h"
+#include "nw4r/snd/snd_SeqPlayer.h"
+#include "nw4r/snd/snd_SeqTrack.h"
+#include "nw4r/snd/snd_Util.h" // Util::CalcRandom
 
-    SeqTrack::ParserTrackParam& rTrackParam = pTrack->GetParserTrackParam();
-    MmlSeqTrack::MmlParserParam& rMmlParam = pTrack->GetMmlParserParam();
+#include "nw4r/ut/ut_algorithm.h"
 
-    SeqPlayer::ParserPlayerParam& rPlayerParam =
-        pPlayer->GetParserPlayerParam();
+#include <rvl/OS/OSError.h>
 
-    SeqArgType argType;
-    bool useArgType = false;
-    bool doExecCommand = true;
+#include "nw4r/NW4RAssert.hpp"
 
-    u32 cmd = ReadByte(&rTrackParam.currentAddr);
+/*******************************************************************************
+ * macros
+ */
 
-    if (cmd == MML_EXECIF) {
-        cmd = ReadByte(&rTrackParam.currentAddr);
-        doExecCommand = rMmlParam.cmpFlag != false;
-    }
+// player/global/track variable limit stuff
 
-    if (cmd == MML_RNDPARAM) {
-        cmd = ReadByte(&rTrackParam.currentAddr);
-        argType = SEQ_ARG_RANDOM;
-        useArgType = true;
-    }
+// clang-format off
+#define AllVarMin_		0
 
-    if (cmd == MML_INDPARAM) {
-        cmd = ReadByte(&rTrackParam.currentAddr);
-        argType = SEQ_ARG_VARIABLE;
-        useArgType = true;
-    }
+#define PlayerVarMin_	AllVarMin_
+#define PlayerVarMax_	(PlayerVarMin_ + SeqPlayer::PLAYER_VARIABLE_NUM)
 
-    // MML note data, not a command
-    if (!(cmd & MML_CMD_MASK)) {
-        u8 velocity = ReadByte(&rTrackParam.currentAddr);
+#define GlobalVarMin_	PlayerVarMax_
+#define GlobalVarMax_	(GlobalVarMin_ + SeqPlayer::GLOBAL_VARIABLE_NUM)
 
-        s32 length = ReadArg(&rTrackParam.currentAddr, pPlayer, pTrack,
-                             useArgType ? argType : SEQ_ARG_VMIDI);
+#define TrackVarMin_	GlobalVarMax_
+#define TrackVarMax_	(TrackVarMin_ + SeqTrack::TRACK_VARIABLE_NUM)
 
-        int key = cmd + rTrackParam.transpose;
+#define AllVarMax_		TrackVarMax_
+// clang-format on
 
-        if (!doExecCommand) {
-            return PARSE_RESULT_CONTINUE;
-        }
+/*******************************************************************************
+ * types
+ */
 
-        key = ut::Clamp(key, 0, 127);
+// forward declarations
+namespace nw4r { namespace snd { namespace detail { class Channel; }}}
 
-        if (!rTrackParam.muteFlag && doNoteOn) {
-            NoteOnCommandProc(pTrack, key, velocity, length > 0 ? length : -1,
-                              rMmlParam.tieFlag);
-        }
+/*******************************************************************************
+ * variables
+ */
 
-        if (rMmlParam.noteWaitFlag) {
-            rTrackParam.wait = length;
+namespace nw4r { namespace snd { namespace detail
+{
+	// .sbss
+	bool MmlParser::mPrintVarEnabledFlag;
+}}} // namespace nw4r::snd::detail
 
-            if (length == 0) {
-                rTrackParam.noteFinishWait = true;
-            }
-        }
-    }
-    // MML command
-    else {
-        s32 arg1 = 0;
-        s32 arg2 = 0;
+/*******************************************************************************
+ * functions
+ */
 
-        switch (cmd & MML_CMD_SET_MASK) {
-        case 0x80: {
-            switch (cmd) {
-            case MML_WAIT: {
-                s32 time = ReadArg(&rTrackParam.currentAddr, pPlayer, pTrack,
-                                   useArgType ? argType : SEQ_ARG_VMIDI);
+namespace nw4r { namespace snd { namespace detail {
 
-                if (doExecCommand) {
-                    rTrackParam.wait = time;
-                }
-                break;
-            }
+MmlSeqTrack::ParseResult MmlParser::Parse(MmlSeqTrack *track,
+                                          bool doNoteOn) const
+{
+	NW4RAssertPointerNonnull_Line(49, track);
 
-            case MML_SET_PRGNO: {
-                arg1 = ReadArg(&rTrackParam.currentAddr, pPlayer, pTrack,
-                               useArgType ? argType : SEQ_ARG_VMIDI);
+	SeqPlayer *player = track->GetSeqPlayer();
+	NW4RAssertPointerNonnull_Line(51, player);
 
-                if (doExecCommand) {
-                    CommandProc(pTrack, cmd, arg1, arg2);
-                }
-                break;
-            }
+	SeqTrack::ParserTrackParam &trackParam = track->GetParserTrackParam();
+	SeqPlayer::ParserPlayerParam &playerParam ATTR_UNUSED =
+		player->GetParserPlayerParam();
 
-            case MML_OPENTRACK: {
-                u8 trackNo = ReadByte(&rTrackParam.currentAddr);
-                u32 offset = Read24(&rTrackParam.currentAddr);
+	SeqArgType argType;
+	SeqArgType argType2 = SEQ_ARG_NONE;
 
-                if (doExecCommand) {
-                    arg1 = trackNo;
-                    arg2 = offset;
-                    CommandProc(pTrack, cmd, arg1, arg2);
-                }
-                break;
-            }
+	bool useArgType = false;
+	bool doExecCommand = true;
 
-            case MML_JUMP: {
-                u32 offset = Read24(&rTrackParam.currentAddr);
+	u32 cmd = ReadByte(&trackParam.currentAddr);
 
-                if (doExecCommand) {
-                    arg1 = offset;
-                    CommandProc(pTrack, cmd, arg1, arg2);
-                }
-                break;
-            }
+	if (cmd == MML_EXEC_IF)
+	{
+		cmd = ReadByte(&trackParam.currentAddr);
+		doExecCommand = trackParam.cmpFlag != false;
+	}
 
-            case MML_CALL: {
-                u32 offset = Read24(&rTrackParam.currentAddr);
+	if (cmd == MML_ARG_2_S16)
+	{
+		cmd = ReadByte(&trackParam.currentAddr);
+		argType2 = SEQ_ARG_S16;
+	}
+	else if (cmd == MML_ARG_2_RANDOM)
+	{
+		cmd = ReadByte(&trackParam.currentAddr);
+		argType2 = SEQ_ARG_RANDOM;
+	}
+	else if (cmd == MML_ARG_2_VARIABLE)
+	{
+		cmd = ReadByte(&trackParam.currentAddr);
+		argType2 = SEQ_ARG_VARIABLE;
+	}
 
-                if (doExecCommand) {
-                    arg1 = offset;
-                    CommandProc(pTrack, cmd, arg1, arg2);
-                }
-                break;
-            }
-            }
+	if (cmd == MML_ARG_1_RANDOM)
+	{
+		cmd = ReadByte(&trackParam.currentAddr);
+		argType = SEQ_ARG_RANDOM;
+		useArgType = true;
+	}
+	else if (cmd == MML_ARG_1_VARIABLE)
+	{
+		cmd = ReadByte(&trackParam.currentAddr);
+		argType = SEQ_ARG_VARIABLE;
+		useArgType = true;
+	}
 
-            break;
-        }
+	if (!(cmd & MML_CMD_MASK))
+	{
+		// MML note data, not a command
+		u8 velocity = ReadByte(&trackParam.currentAddr);
 
-        case 0xB0:
-        case 0xC0:
-        case 0xD0: {
-            u8 arg = ReadArg(&rTrackParam.currentAddr, pPlayer, pTrack,
-                             useArgType ? argType : SEQ_ARG_U8);
+		s32 length = ReadArg(&trackParam.currentAddr, player, track,
+		                     useArgType ? argType : SEQ_ARG_VMIDI);
 
-            if (!doExecCommand) {
-                break;
-            }
+		int key = cmd + trackParam.transpose;
 
-            switch (cmd) {
-            case MML_SET_TRANSPOSE:
-            case MML_SET_PITCHBEND: {
-                arg1 = *reinterpret_cast<s8*>(&arg);
-                break;
-            }
+		if (!doExecCommand)
+			return MmlSeqTrack::PARSE_RESULT_CONTINUE;
 
-            default: {
-                arg1 = arg;
-                break;
-            }
-            }
+		key = ut::Clamp(key, 0, 127);
 
-            CommandProc(pTrack, cmd, arg1, arg2);
-            break;
-        }
+		if (!trackParam.muteFlag && doNoteOn)
+		{
+			NoteOnCommandProc(track, key, velocity, length > 0 ? length : -1,
+			                  trackParam.tieFlag);
+		}
 
-        case 0x90: {
-            if (doExecCommand) {
-                CommandProc(pTrack, cmd, arg1, arg2);
-            }
-            break;
-        }
+		if (trackParam.noteWaitFlag)
+		{
+			trackParam.wait = length;
 
-        case 0xE0: {
-            arg1 = static_cast<s16>(
-                ReadArg(&rTrackParam.currentAddr, pPlayer, pTrack,
-                        useArgType ? argType : SEQ_ARG_S16));
+			if (length == 0)
+				trackParam.noteFinishWait = true;
+		}
+	}
+	else
+	{
+		// MML command
+		s32 commandArg1 = 0;
+		s32 commandArg2 = 0;
 
-            if (doExecCommand) {
-                CommandProc(pTrack, cmd, arg1, arg2);
-            }
-            break;
-        }
+		switch (cmd & MML_CMD_SET_MASK)
+		{
+		case 0x80:
+		{
+			switch (cmd)
+			{
+			case MML_WAIT:
+			{
+				s32 arg = ReadArg(&trackParam.currentAddr, player, track,
+				                   useArgType ? argType : SEQ_ARG_VMIDI);
 
-        case 0xF0: {
-            switch (cmd) {
-            case MML_ALLOCTRACK: {
-                // Skip command argument ("must use alloctrack in startup code")
-                (void)Read16(&rTrackParam.currentAddr);
-                break;
-            }
+				if (doExecCommand)
+					trackParam.wait = arg;
+			}
+				break;
 
-            case MML_EOF: {
-                return PARSE_RESULT_FINISH;
-            }
+			case MML_SET_PRGNO:
+				commandArg1 = ReadArg(&trackParam.currentAddr, player, track,
+				               useArgType ? argType : SEQ_ARG_VMIDI);
 
-            case MML_EX_COMMAND: {
-                u32 cmdex = ReadByte(&rTrackParam.currentAddr);
+				if (doExecCommand)
+					CommandProc(track, cmd, commandArg1, commandArg2);
 
-                switch (cmdex & MML_CMD_SET_MASK) {
-                case MML_EX_USERPROC: {
-                    arg1 = static_cast<s16>(
-                        ReadArg(&rTrackParam.currentAddr, pPlayer, pTrack,
-                                useArgType ? argType : SEQ_ARG_S16));
+				break;
 
-                    if (doExecCommand) {
-                        CommandProc(pTrack, (cmd << 8) + cmdex, arg1, arg2);
-                    }
-                    break;
-                }
+			case MML_OPEN_TRACK:
+			{
+				u8 trackNo = ReadByte(&trackParam.currentAddr);
+				u32 offset = Read24(&trackParam.currentAddr);
 
-                case MML_EX_ARITHMETIC:
-                case MML_EX_LOGIC: {
-                    arg1 = ReadByte(&rTrackParam.currentAddr);
-                    arg2 = static_cast<s16>(
-                        ReadArg(&rTrackParam.currentAddr, pPlayer, pTrack,
-                                useArgType ? argType : SEQ_ARG_S16));
+				if (doExecCommand)
+				{
+					commandArg1 = trackNo;
+					commandArg2 = offset;
+					CommandProc(track, cmd, commandArg1, commandArg2);
+				}
+			}
+				break;
 
-                    if (doExecCommand) {
-                        CommandProc(pTrack, (cmd << 8) + cmdex, arg1, arg2);
-                    }
-                    break;
-                }
-                }
+			case MML_JUMP:
+			{
+				u32 offset = Read24(&trackParam.currentAddr);
 
-                // FALLTHROUGH (assume no arguments?)
-            }
+				if (doExecCommand)
+				{
+					commandArg1 = offset;
+					CommandProc(track, cmd, commandArg1, commandArg2);
+				}
+			}
+				break;
 
-            default: {
-                if (doExecCommand) {
-                    CommandProc(pTrack, cmd, arg1, arg2);
-                }
-                break;
-            }
-            }
+			case MML_CALL:
+			{
+				u32 offset = Read24(&trackParam.currentAddr);
 
-            break;
-        }
-        }
-    }
+				if (doExecCommand)
+				{
+					commandArg1 = offset;
+					CommandProc(track, cmd, commandArg1, commandArg2);
+				}
+			}
+				break;
+			}
 
-    return PARSE_RESULT_CONTINUE;
+			break;
+		}
+
+		case 0xb0:
+		case 0xc0:
+		case 0xd0:
+		{
+			u8 arg = ReadArg(&trackParam.currentAddr, player, track,
+			                 useArgType ? argType : SEQ_ARG_U8);
+
+			if (argType2 != SEQ_ARG_NONE)
+			{
+				commandArg2 =
+					ReadArg(&trackParam.currentAddr, player, track, argType2);
+			}
+
+			if (!doExecCommand)
+				break;
+
+			switch (cmd)
+			{
+			case MML_SET_TRANSPOSE:
+			case MML_SET_PITCH_BEND:
+				commandArg1 = *reinterpret_cast<s8 *>(&arg);
+				break;
+
+			default:
+				commandArg1 = *reinterpret_cast<u8 *>(&arg);
+				break;
+			}
+
+			CommandProc(track, cmd, commandArg1, commandArg2);
+			break;
+		}
+
+		case 0x90:
+			if (doExecCommand)
+				CommandProc(track, cmd, commandArg1, commandArg2);
+
+			break;
+
+		case 0xe0:
+			commandArg1 =
+				static_cast<s16>(ReadArg(&trackParam.currentAddr, player, track,
+			                             useArgType ? argType : SEQ_ARG_S16));
+
+			if (doExecCommand)
+				CommandProc(track, cmd, commandArg1, commandArg2);
+
+			break;
+
+		case 0xf0:
+		{
+			switch (cmd)
+			{
+			case MML_ALLOC_TRACK:
+				Read16(&trackParam.currentAddr);
+				NW4RPanicMessage_Line(
+					312, "seq: must use alloctrack in startup code");
+
+				break;
+
+			case MML_EOF:
+				if (doExecCommand)
+					return MmlSeqTrack::PARSE_RESULT_FINISH;
+
+				break;
+
+			case MML_EX_COMMAND:
+			{
+				u32 cmdex = ReadByte(&trackParam.currentAddr);
+
+				switch (cmdex & MML_CMD_SET_MASK)
+				{
+				case MML_EX_USERPROC:
+					commandArg1 = static_cast<u16>(
+						ReadArg(&trackParam.currentAddr, player, track,
+						        useArgType ? argType : SEQ_ARG_S16));
+
+					if (doExecCommand)
+					{
+						CommandProc(track, (cmd << 8) + cmdex, commandArg1,
+						            commandArg2);
+					}
+
+					break;
+
+				case MML_EX_ARITHMETIC:
+				case MML_EX_LOGIC:
+					commandArg1 = ReadByte(&trackParam.currentAddr);
+					commandArg2 = static_cast<s16>(
+						ReadArg(&trackParam.currentAddr, player, track,
+						        useArgType ? argType : SEQ_ARG_S16));
+
+					if (doExecCommand)
+					{
+						CommandProc(track, (cmd << 8) + cmdex, commandArg1,
+						            commandArg2);
+					}
+
+					break;
+				}
+			}
+				ATTR_FALLTHROUGH;
+
+			default:
+				if (doExecCommand)
+					CommandProc(track, cmd, commandArg1, commandArg2);
+
+				break;
+			}
+		}
+			break;
+
+		case 0xa0:
+			NW4RPanicMessage_Line(392, "Invalid seqdata command: %d", cmd);
+			break;
+		}
+
+	}
+
+	return MmlSeqTrack::PARSE_RESULT_CONTINUE;
 }
 
-void MmlParser::CommandProc(MmlSeqTrack* pTrack, u32 command, s32 arg1,
-                            s32 arg2) const {
-    SeqPlayer* pPlayer = pTrack->GetSeqPlayer();
-
-    SeqTrack::ParserTrackParam& rTrackParam = pTrack->GetParserTrackParam();
-    MmlSeqTrack::MmlParserParam& rMmlParam = pTrack->GetMmlParserParam();
-
-    SeqPlayer::ParserPlayerParam& rPlayerParam =
-        pPlayer->GetParserPlayerParam();
-
-    if (command <= MML_CMD_MAX) {
-        switch (command) {
-        case MML_SET_TEMPO: {
-            rPlayerParam.tempo = arg1;
-            break;
-        }
-        case MML_SET_TIMEBASE: {
-            rPlayerParam.timebase = arg1;
-            break;
-        }
-
-        case MML_SET_PRGNO: {
-            if (arg1 < SeqTrack::PRGNO_MAX + 1) {
-                rTrackParam.prgNo = arg1 & SeqTrack::PRGNO_MAX;
-            }
-            break;
-        }
-
-        case MML_SET_MUTE: {
-            pTrack->SetMute(static_cast<SeqMute>(arg1));
-            break;
-        }
-
-        case MML_SET_TRACK_VOLUME: {
-            rTrackParam.volume = arg1;
-            break;
-        }
-        case MML_SET_TRACK_VOLUME2: {
-            rTrackParam.volume2 = arg1;
-            break;
-        }
-        case MML_SET_PLAYER_VOLUME: {
-            rPlayerParam.volume = arg1;
-            break;
-        }
-
-        case MML_SET_TRANSPOSE: {
-            rTrackParam.transpose = arg1;
-            break;
-        }
-
-        case MML_SET_PITCHBEND: {
-            rTrackParam.pitchBend = arg1;
-            break;
-        }
-        case MML_SET_BENDRANGE: {
-            rTrackParam.bendRange = arg1;
-            break;
-        }
-        case MML_SET_PAN: {
-            rTrackParam.pan = arg1 - 64;
-            break;
-        }
-        case MML_SET_INITPAN: {
-            rTrackParam.initPan = arg1 - 64;
-            break;
-        }
-        case MML_SET_SURROUNDPAN: {
-            rTrackParam.surroundPan = arg1;
-            break;
-        }
-        case MML_SET_PRIORITY: {
-            rTrackParam.priority = arg1;
-            break;
-        }
-
-        case MML_SET_NOTEWAIT: {
-            rMmlParam.noteWaitFlag = arg1;
-            break;
-        }
-
-        case MML_SET_PORTATIME: {
-            rTrackParam.portaTime = arg1;
-            break;
-        }
-
-        case MML_SET_LFODEPTH: {
-            rTrackParam.lfoParam.depth = static_cast<u8>(arg1) / 128.0f;
-            break;
-        }
-        case MML_SET_LFOSPEED: {
-            rTrackParam.lfoParam.speed =
-                static_cast<u8>(arg1) * (100.0f / 256.0f);
-            break;
-        }
-        case MML_SET_LFOTARGET: {
-            rTrackParam.lfoTarget = arg1;
-            break;
-        }
-        case MML_SET_LFORANGE: {
-            rTrackParam.lfoParam.range = arg1;
-            break;
-        }
-        case MML_SET_LFODELAY: {
-            rTrackParam.lfoParam.delay = arg1 * 5;
-            break;
-        }
-
-        case MML_SET_SWEEPPITCH: {
-            rTrackParam.sweepPitch = arg1 / 32.0f;
-            break;
-        }
-
-        case MML_SET_ATTACK: {
-            rTrackParam.attack = arg1;
-            break;
-        }
-        case MML_SET_DECAY: {
-            rTrackParam.decay = arg1;
-            break;
-        }
-        case MML_SET_SUSTAIN: {
-            rTrackParam.sustain = arg1;
-            break;
-        }
-        case MML_SET_RELEASE: {
-            rTrackParam.release = arg1;
-            break;
-        }
-
-        case MML_SET_DAMPER: {
-            rTrackParam.damperFlag = static_cast<u8>(arg1) >= 64;
-            break;
-        }
-
-        case MML_SET_TIE: {
-            rMmlParam.tieFlag = arg1;
-            pTrack->ReleaseAllChannel(-1);
-            pTrack->FreeAllChannel();
-            break;
-        }
-
-        case MML_SET_PORTAMENTO: {
-            rTrackParam.portaKey = arg1 + rTrackParam.transpose;
-            rTrackParam.portaFlag = true;
-            break;
-        }
-        case MML_SET_PORTASPEED: {
-            rTrackParam.portaFlag = arg1 != 0;
-            break;
-        }
-        case MML_SET_LPFFREQ: {
-            rTrackParam.lpfFreq = arg1;
-            break;
-        }
-
-        case MML_SET_FXSEND_A: {
-            rTrackParam.fxSend[AUX_A] = arg1;
-            break;
-        }
-        case MML_SET_FXSEND_B: {
-            rTrackParam.fxSend[AUX_B] = arg1;
-            break;
-        }
-        case MML_SET_FXSEND_C: {
-            rTrackParam.fxSend[AUX_C] = arg1;
-            break;
-        }
-        case MML_SET_MAINSEND: {
-            rTrackParam.mainSend = arg1;
-            break;
-        }
-
-        case MML_PRINTVAR: {
-            if (!mPrintVarEnabledFlag) {
-                break;
-            }
-
-            const volatile s16* pVar = GetVariablePtr(pPlayer, pTrack, arg1);
-
-            // clang-format off
-
-            // Convert absolute index into variable type-relative index
-            int varNo = arg1 >= SeqPlayer::VARIABLE_NUM       ? arg1 - SeqPlayer::VARIABLE_NUM
-                     : (arg1 >= SeqPlayer::LOCAL_VARIABLE_NUM ? arg1 - SeqPlayer::LOCAL_VARIABLE_NUM : arg1);
-
-            // Determine variable type prefix from absolute index
-            // 'T' = Track variable, 'G' = Global (player) variable
-            const char* pVarType = arg1 >= SeqPlayer::VARIABLE_NUM       ? "T"
-                                : (arg1 >= SeqPlayer::LOCAL_VARIABLE_NUM ? "G" : "");
-
-            // clang-format on
-
-            OSReport("#%08x[%d]: printvar %sVAR_%d(%d) = %d\n", pPlayer,
-                     pTrack->GetPlayerTrackNo(), pVarType, varNo, arg1, *pVar);
-            break;
-        }
-
-        case MML_OPENTRACK: {
-            SeqTrack* pNewTrack = pPlayer->GetPlayerTrack(arg1);
-
-            if (pNewTrack != NULL && pNewTrack != pTrack) {
-                pNewTrack->Close();
-                pNewTrack->SetSeqData(rTrackParam.baseAddr, arg2);
-                pNewTrack->Open();
-            }
-            break;
-        }
-
-        case MML_JUMP: {
-            rTrackParam.currentAddr = rTrackParam.baseAddr + arg1;
-            break;
-        }
-
-        case MML_CALL: {
-            if (rMmlParam.callStackDepth >= CALL_STACK_MAX_DEPTH) {
-                break;
-            }
-
-            rMmlParam.callStack[rMmlParam.callStackDepth] =
-                rTrackParam.currentAddr;
-
-            rMmlParam.callStackDepth++;
-            rTrackParam.currentAddr = rTrackParam.baseAddr + arg1;
-            break;
-        }
-
-        case MML_RET: {
-            if (rMmlParam.callStackDepth == 0) {
-                break;
-            }
-
-            rMmlParam.callStackDepth--;
-
-            rTrackParam.currentAddr =
-                rMmlParam.callStack[rMmlParam.callStackDepth];
-            break;
-        }
-
-        case MML_LOOP_START: {
-            if (rMmlParam.callStackDepth >= CALL_STACK_MAX_DEPTH) {
-                break;
-            }
-
-            rMmlParam.callStack[rMmlParam.callStackDepth] =
-                rTrackParam.currentAddr;
-
-            rMmlParam.loopCount[rMmlParam.callStackDepth] = arg1;
-            rMmlParam.callStackDepth++;
-            break;
-        }
-
-        case MML_LOOP_END: {
-            if (rMmlParam.callStackDepth == 0) {
-                break;
-            }
-
-            u8 count = rMmlParam.loopCount[rMmlParam.callStackDepth - 1];
-
-            if (count != 0 && --count == 0) {
-                rMmlParam.callStackDepth--;
-            } else {
-                rMmlParam.loopCount[rMmlParam.callStackDepth - 1] = count;
-
-                rTrackParam.currentAddr =
-                    rMmlParam.callStack[rMmlParam.callStackDepth - 1];
-            }
-            break;
-        }
-        }
-    } else if (command <= MML_EX_CMD_MAX) {
-        u32 cmdex = command & 0xFF;
-        volatile s16* pVar = NULL;
-
-        if ((cmdex & 0xF0) == MML_EX_ARITHMETIC ||
-            (cmdex & 0xF0) == MML_EX_LOGIC) {
-
-            pVar = GetVariablePtr(pPlayer, pTrack, arg1);
-            if (pVar == NULL) {
-                return;
-            }
-        }
-
-        switch (cmdex) {
-        case MML_EX_SET: {
-            *pVar = arg2;
-            break;
-        }
-
-        case MML_EX_APL: {
-            *pVar += arg2;
-            break;
-        }
-
-        case MML_EX_AMI: {
-            *pVar -= arg2;
-            break;
-        }
-
-        case MML_EX_AMU: {
-            *pVar *= arg2;
-            break;
-        }
-
-        case MML_EX_ADV: {
-            if (arg2 != 0) {
-                *pVar /= arg2;
-            }
-            break;
-        }
-
-        case MML_EX_ALS: {
-            if (arg2 >= 0) {
-                *pVar <<= arg2;
-
-            } else {
-                *pVar >>= -arg2;
-            }
-            break;
-        }
-
-        case MML_EX_RND: {
-            bool minus = false;
-
-            if (arg2 < 0) {
-                minus = true;
-                arg2 = static_cast<s16>(-arg2);
-            }
-
-            s32 rand = Util::CalcRandom();
-            rand *= arg2 + 1;
-            rand >>= 16;
-
-            if (minus) {
-                rand = -rand;
-            }
-
-            *pVar = rand;
-            break;
-        }
-
-        case MML_EX_AAD: {
-            *pVar &= arg2;
-            break;
-        }
-
-        case MML_EX_AOR: {
-            *pVar |= arg2;
-            break;
-        }
-
-        case MML_EX_AER: {
-            *pVar ^= arg2;
-            break;
-        }
-
-        case MML_EX_ACO: {
-            *pVar = ~static_cast<u16>(arg2);
-            break;
-        }
-
-        case MML_EX_AMD: {
-            if (arg2 != 0) {
-                *pVar %= arg2;
-            }
-            break;
-        }
-
-        case MML_EX_EQ: {
-            rMmlParam.cmpFlag = *pVar == arg2;
-            break;
-        }
-
-        case MML_EX_GE: {
-            rMmlParam.cmpFlag = *pVar >= arg2;
-            break;
-        }
-
-        case MML_EX_GT: {
-            rMmlParam.cmpFlag = *pVar > arg2;
-            break;
-        }
-
-        case MML_EX_LE: {
-            rMmlParam.cmpFlag = *pVar <= arg2;
-            break;
-        }
-
-        case MML_EX_LT: {
-            rMmlParam.cmpFlag = *pVar < arg2;
-            break;
-        }
-
-        case MML_EX_NE: {
-            rMmlParam.cmpFlag = *pVar != arg2;
-            break;
-        }
-
-        case MML_EX_USERPROC: {
-            break;
-        }
-        }
-    }
+void MmlParser::CommandProc(MmlSeqTrack *track, u32 command, s32 commandArg1,
+                            s32 commandArg2) const
+{
+	NW4RAssertPointerNonnull_Line(421, track);
+
+	SeqPlayer *player = track->GetSeqPlayer();
+	NW4RAssertPointerNonnull_Line(423, player);
+
+	SeqTrack::ParserTrackParam &trackParam = track->GetParserTrackParam();
+	SeqPlayer::ParserPlayerParam &playerParam = player->GetParserPlayerParam();
+
+	if (command <= MML_CMD_MAX)
+	{
+		switch (command)
+		{
+		case MML_SET_TEMPO:
+			playerParam.tempo =
+				ut::Clamp<int>(commandArg1, TEMPO_MIN, TEMPO_MAX);
+			break;
+
+		case MML_SET_TIMEBASE:
+			playerParam.timebase = commandArg1;
+			break;
+
+		case MML_SET_PRGNO:
+			if (commandArg1 < 0x10000)
+			{
+				trackParam.prgNo = commandArg1 & 0xffff;
+			}
+			else
+			{
+				NW4RWarningMessage_Line(
+					449, "nw4r::snd::MmlParser: too large prg No. %d",
+					commandArg1);
+			}
+
+			break;
+
+		case MML_SET_MUTE:
+			track->SetMute(static_cast<SeqMute>(commandArg1));
+			break;
+
+		case MML_SET_TRACK_VOLUME:
+			trackParam.volume.SetTarget(commandArg1, commandArg2);
+			break;
+
+		case MML_SET_TRACK_VOLUME2:
+			trackParam.volume2 = commandArg1;
+			break;
+
+		case MML_SET_TRACK_VELOCITY_RANGE:
+			trackParam.velocityRange = commandArg1;
+			break;
+
+		case MML_SET_PLAYER_VOLUME:
+			playerParam.volume = commandArg1;
+			break;
+
+		case MML_SET_TRANSPOSE:
+			trackParam.transpose = commandArg1;
+			break;
+
+		case MML_SET_PITCH_BEND:
+			trackParam.pitchBend.SetTarget(commandArg1, commandArg2);
+			break;
+
+		case MML_SET_BEND_RANGE:
+			trackParam.bendRange = commandArg1;
+			break;
+
+		case MML_SET_PAN:
+			trackParam.pan.SetTarget(commandArg1 - PAN_CENTER, commandArg2);
+			break;
+
+		case MML_SET_INIT_PAN:
+			trackParam.initPan = commandArg1 - PAN_CENTER;
+			break;
+
+		case MML_SET_SURROUND_PAN:
+			trackParam.surroundPan.SetTarget(commandArg1, commandArg2);
+			break;
+
+		case MML_SET_PRIORITY:
+			trackParam.priority = commandArg1;
+			break;
+
+		case MML_SET_NOTE_WAIT:
+			trackParam.noteWaitFlag = commandArg1;
+			break;
+
+		case MML_SET_PORTATIME:
+			trackParam.portaTime = commandArg1;
+			break;
+
+		case MML_SET_LFO_DEPTH:
+			trackParam.lfoParam.depth = static_cast<u8>(commandArg1) / 128.0f;
+			break;
+
+		case MML_SET_LFO_SPEED:
+			trackParam.lfoParam.speed =
+				static_cast<u8>(commandArg1) * (100.0f / 256.0f);
+			break;
+
+		case MML_SET_LFO_TARGET:
+			trackParam.lfoTarget = commandArg1;
+			break;
+
+		case MML_SET_LFO_RANGE:
+			trackParam.lfoParam.range = commandArg1;
+			break;
+
+		case MML_SET_LFO_DELAY:
+			trackParam.lfoParam.delay = commandArg1 * 5;
+			break;
+
+		case MML_SET_SWEEP_PITCH:
+			trackParam.sweepPitch = commandArg1 / 64.0f;
+			break;
+
+		case MML_SET_ATTACK:
+			trackParam.attack = commandArg1;
+			break;
+
+		case MML_SET_DECAY:
+			trackParam.decay = commandArg1;
+			break;
+
+		case MML_SET_SUSTAIN:
+			trackParam.sustain = commandArg1;
+			break;
+
+		case MML_SET_RELEASE:
+			trackParam.release = commandArg1;
+			break;
+
+		case MML_SET_ENV_HOLD:
+			trackParam.envHold = commandArg1 & 0xff;
+			break;
+
+		case MML_RESET_ADSR:
+			trackParam.attack = 0xff;
+			trackParam.decay = 0xff;
+			trackParam.sustain = 0xff;
+			trackParam.release = 0xff;
+			trackParam.envHold = 0xff;
+
+			break;
+
+		case MML_SET_DAMPER:
+			trackParam.damperFlag = static_cast<u8>(commandArg1) >= 64;
+			break;
+
+		case MML_SET_TIE:
+			trackParam.tieFlag = commandArg1;
+			track->ReleaseAllChannel(-1);
+			track->FreeAllChannel();
+			break;
+
+		case MML_SET_MONOPHONIC:
+			trackParam.monophonicFlag = commandArg1;
+
+			if (trackParam.monophonicFlag)
+			{
+				track->ReleaseAllChannel(-1);
+				track->FreeAllChannel();
+			}
+
+			break;
+
+		case MML_SET_PORTAMENTO:
+			trackParam.portaKey = commandArg1 + trackParam.transpose;
+			trackParam.portaFlag = true;
+			break;
+
+		case MML_SET_PORTASPEED:
+			trackParam.portaFlag = commandArg1 != 0;
+			break;
+
+		case MML_SET_LPF_FREQ:
+			trackParam.lpfFreq = (commandArg1 - 64) / 64.0f;
+			break;
+
+		case MML_SET_BIQUAD_TYPE:
+			trackParam.biquadType = commandArg1;
+			break;
+
+		case MML_SET_BIQUAD_VALUE:
+			trackParam.biquadValue = commandArg1 / 127.0f;
+			break;
+
+		case MML_SET_FX_SEND_A:
+			trackParam.fxSend[AUX_A] = commandArg1;
+			break;
+
+		case MML_SET_FX_SEND_B:
+			trackParam.fxSend[AUX_B] = commandArg1;
+			break;
+
+		case MML_SET_FX_SEND_C:
+			trackParam.fxSend[AUX_C] = commandArg1;
+			break;
+
+		case MML_SET_MAIN_SEND:
+			trackParam.mainSend = commandArg1;
+			break;
+
+		case MML_PRINT_VAR:
+			if (mPrintVarEnabledFlag)
+			{
+				s16 const volatile * const varPtr =
+					GetVariablePtr(player, track, commandArg1);
+
+#define GetVarType_(varNo_)	\
+	((varNo_) >= TrackVarMin_ ? "T" : (varNo_) >= GlobalVarMin_ ? "G" : "")
+
+#define GetAdjustedVarNo_(varNo_)							\
+	((varNo_) >= TrackVarMin_    ? (varNo_) - TrackVarMin_	\
+	 : (varNo_) >= GlobalVarMin_ ? (varNo_) - GlobalVarMin_	\
+	                             : (varNo_))
+
+				OSReport("#%08x[%d]: printvar %sVAR_%d(%d) = %d\n", player,
+				         track->GetPlayerTrackNo(), GetVarType_(commandArg1),
+				         GetAdjustedVarNo_(commandArg1), commandArg1, *varPtr);
+
+#undef GetVarType_
+#undef GetAdjustedVarNo_
+			}
+
+			break;
+
+		case MML_OPEN_TRACK:
+		{
+			SeqTrack *newTrack = player->GetPlayerTrack(commandArg1);
+
+			if (!newTrack)
+			{
+				NW4RWarningMessage_Line(
+					644,
+					"nw4r::snd::MmlParser: opentrack for not allocated track");
+				break;
+			}
+
+			if (newTrack == track)
+			{
+				NW4RWarningMessage_Line(
+					649, "nw4r::snd::MmlParser: opentrack for self track");
+				break;
+			}
+
+			newTrack->Close();
+			newTrack->SetSeqData(trackParam.baseAddr, commandArg2);
+			newTrack->Open();
+		}
+			break;
+
+		case MML_JUMP:
+			trackParam.currentAddr = trackParam.baseAddr + commandArg1;
+			break;
+
+		case MML_CALL:
+		{
+			if (trackParam.callStackDepth >= CALL_STACK_DEPTH)
+			{
+				NW4RWarningMessage_Line(665,
+				                        "nw4r::snd::MmlParser: cannot \'call\' "
+				                        "because already too deep");
+				break;
+			}
+
+			SeqTrack::CallStack *callStack =
+				&trackParam.callStack[trackParam.callStackDepth];
+
+			callStack->address = trackParam.currentAddr;
+			callStack->loopFlag = false;
+
+			trackParam.callStackDepth++;
+			trackParam.currentAddr = trackParam.baseAddr + commandArg1;
+			break;
+		}
+
+		case MML_RET:
+		{
+			SeqTrack::CallStack *callStack = nullptr;
+
+			while (trackParam.callStackDepth)
+			{
+				trackParam.callStackDepth--;
+
+				if (!trackParam.callStack[trackParam.callStackDepth].loopFlag)
+				{
+					callStack = &trackParam.callStack[trackParam.callStackDepth];
+					break;
+				}
+			}
+
+			if (!callStack)
+			{
+				NW4RWarningMessage_Line(
+					688,
+					"nw4r::snd::MmlParser: unmatched sequence command \'ret\'");
+
+				break;
+			}
+
+			trackParam.currentAddr = callStack->address;
+		}
+			break;
+
+		case MML_LOOP_START:
+		{
+			if (trackParam.callStackDepth >= CALL_STACK_DEPTH)
+			{
+				NW4RWarningMessage_Line(
+					698, "nw4r::snd::MmlParser: cannot \'loop_start\' because "
+				         "already too deep");
+
+				break;
+			}
+
+			SeqTrack::CallStack *callStack =
+				&trackParam.callStack[trackParam.callStackDepth];
+
+			callStack->address = trackParam.currentAddr;
+			callStack->loopCount = commandArg1;
+			callStack->loopFlag = true;
+
+			trackParam.callStackDepth++;
+		}
+			break;
+
+		case MML_LOOP_END:
+		{
+			if (trackParam.callStackDepth == 0)
+			{
+				NW4RWarningMessage_Line(713, "nw4r::snd::MmlParser: unmatched "
+				                             "sequence command \'loop_end\'");
+				break;
+			}
+
+			SeqTrack::CallStack *callStack =
+				&trackParam.callStack[trackParam.callStackDepth - 1];
+
+			if (!callStack->loopFlag)
+			{
+				NW4RWarningMessage_Line(719, "nw4r::snd::MmlParser: unmatched "
+				                             "sequence command \'loop_end\'");
+				break;
+			}
+
+			u8 loop_count = callStack->loopCount;
+
+			if (loop_count && --loop_count == 0)
+			{
+				trackParam.callStackDepth--;
+			}
+			else
+			{
+				callStack->loopCount = loop_count;
+
+				trackParam.currentAddr = callStack->address;
+			}
+		}
+			break;
+		}
+	}
+	else if (command <= MML_EX_CMD_MAX)
+	{
+		u32 cmd = command >> 8;
+		u32 cmdex = command & 0xff;
+
+		NW4RAssert_Line(742, cmd == MML_EX_COMMAND);
+
+		s16 volatile *varPtr = nullptr;
+
+		if ((cmdex & 0xf0) == MML_EX_ARITHMETIC
+		    || (cmdex & 0xf0) == MML_EX_LOGIC)
+		{
+			varPtr = GetVariablePtr(player, track, commandArg1);
+			if (!varPtr)
+				return;
+		}
+
+		switch (cmdex)
+		{
+		case MML_EX_SET:
+			*varPtr = commandArg2;
+			break;
+
+		case MML_EX_APL:
+			*varPtr += commandArg2;
+			break;
+
+		case MML_EX_AMI:
+			*varPtr -= commandArg2;
+			break;
+
+		case MML_EX_AMU:
+			*varPtr *= commandArg2;
+			break;
+
+		case MML_EX_ADV:
+			if (commandArg2 != 0)
+				*varPtr /= commandArg2;
+
+			break;
+
+		case MML_EX_ALS:
+			if (commandArg2 >= 0)
+				*varPtr <<= commandArg2;
+			else
+				*varPtr >>= -commandArg2;
+
+			break;
+
+		case MML_EX_RND:
+		{
+			bool minus_flag = false;
+
+			if (commandArg2 < 0)
+			{
+				minus_flag = true;
+				commandArg2 = static_cast<s16>(-commandArg2);
+			}
+
+			s32 rand = Util::CalcRandom();
+			rand *= commandArg2 + 1;
+			rand >>= 16;
+
+			if (minus_flag)
+				rand = -rand;
+
+			*varPtr = rand;
+			break;
+		}
+
+		case MML_EX_AAD:
+			*varPtr &= commandArg2;
+			break;
+
+		case MML_EX_AOR:
+			*varPtr |= commandArg2;
+			break;
+
+		case MML_EX_AER:
+			*varPtr ^= commandArg2;
+			break;
+
+		case MML_EX_ACO:
+			*varPtr = ~static_cast<u16>(commandArg2);
+			break;
+
+		case MML_EX_AMD:
+			if (commandArg2 != 0)
+				*varPtr %= commandArg2;
+
+			break;
+
+		case MML_EX_EQ:
+			trackParam.cmpFlag = *varPtr == commandArg2;
+			break;
+
+		case MML_EX_GE:
+			trackParam.cmpFlag = *varPtr >= commandArg2;
+			break;
+
+		case MML_EX_GT:
+			trackParam.cmpFlag = *varPtr > commandArg2;
+			break;
+
+		case MML_EX_LE:
+			trackParam.cmpFlag = *varPtr <= commandArg2;
+			break;
+
+		case MML_EX_LT:
+			trackParam.cmpFlag = *varPtr < commandArg2;
+			break;
+
+		case MML_EX_NE:
+			trackParam.cmpFlag = *varPtr != commandArg2;
+			break;
+
+		case MML_EX_USERPROC:
+			player->CallSeqUserprocCallback(commandArg1, track);
+			break;
+		}
+	}
 }
 
-Channel* MmlParser::NoteOnCommandProc(MmlSeqTrack* pTrack, int key,
-                                      int velocity, s32 length,
-                                      bool tie) const {
-    return pTrack->NoteOn(key, velocity, length, tie);
+Channel *MmlParser::NoteOnCommandProc(MmlSeqTrack *track, int key, int velocity,
+                                      s32 length, bool tieFlag) const
+{
+	return track->NoteOn(key, velocity, length, tieFlag);
 }
 
-u16 MmlParser::Read16(const u8** ppData) const {
-    u16 val = ReadByte(ppData);
+u16 MmlParser::Read16(byte_t const **ptr) const
+{
+	u16 ret = ReadByte(ptr);
 
-    val <<= 8;
-    val |= ReadByte(ppData);
+	ret <<= 8;
+	ret |= ReadByte(ptr);
 
-    return val;
+	return ret;
 }
 
-u32 MmlParser::Read24(const u8** ppData) const {
-    u32 val = ReadByte(ppData);
+u32 MmlParser::Read24(byte_t const **ptr) const
+{
+	u32 ret = ReadByte(ptr);
 
-    val <<= 8;
-    val |= ReadByte(ppData);
+	ret <<= 8;
+	ret |= ReadByte(ptr);
 
-    val <<= 8;
-    val |= ReadByte(ppData);
+	ret <<= 8;
+	ret |= ReadByte(ptr);
 
-    return val;
+	return ret;
 }
 
-s32 MmlParser::ReadVar(const u8** ppData) const {
-    u32 val = 0;
-    u8 b;
+s32 MmlParser::ReadVar(byte_t const **ptr) const
+{
+	s32 ret = 0;
+	byte_t b;
 
-    do {
-        b = ReadByte(ppData);
-        val <<= 7;
-        val |= b & 0x7F;
-    } while (b & 0x80);
+	for (int i = 0;; i++)
+	{
+		NW4RAssert_Line(940, i < 4);
 
-    return val;
+		b = ReadByte(ptr);
+		ret <<= 7;
+		ret |= b & 0x7f;
+
+		if (!(b & 0x80))
+			break;
+	}
+
+	return ret;
 }
 
-s32 MmlParser::ReadArg(const u8** ppData, SeqPlayer* pPlayer, SeqTrack* pTrack,
-                       SeqArgType type) const {
-    s32 arg;
+s32 MmlParser::ReadArg(byte_t const **ptr, SeqPlayer *player, SeqTrack *track,
+                       SeqArgType argType) const
+{
+	s32 var;
 
-    switch (type) {
-    case SEQ_ARG_U8: {
-        arg = ReadByte(ppData);
-        break;
-    }
+	switch (argType)
+	{
+	case SEQ_ARG_U8:
+		var = ReadByte(ptr);
+		break;
 
-    case SEQ_ARG_S16: {
-        arg = Read16(ppData);
-        break;
-    }
+	case SEQ_ARG_S16:
+		var = Read16(ptr);
+		break;
 
-    case SEQ_ARG_VMIDI: {
-        arg = ReadVar(ppData);
-        break;
-    }
+	case SEQ_ARG_VMIDI:
+		var = ReadVar(ptr);
+		break;
 
-    case SEQ_ARG_VARIABLE: {
-        u8 i = ReadByte(ppData);
+	case SEQ_ARG_VARIABLE:
+	{
+		u8 varNo = ReadByte(ptr);
 
-        const volatile s16* pVar = GetVariablePtr(pPlayer, pTrack, i);
-        if (pVar != NULL) {
-            arg = *pVar;
-        }
-        break;
-    }
+		s16 const volatile *varPtr = GetVariablePtr(player, track, varNo);
 
-    case SEQ_ARG_RANDOM: {
-        s16 min = Read16(ppData);
-        s16 max = Read16(ppData);
+		// ERRATUM: if varPtr is not valid then ReadArg returns garbage
+		if (varPtr)
+			var = *varPtr;
+	}
+		break;
 
-        s32 rand = Util::CalcRandom();
-        rand *= (max - min) + 1;
-        rand >>= 16;
-        rand += min;
+	case SEQ_ARG_RANDOM:
+	{
+		s32 rand;
 
-        arg = rand;
-        break;
-    }
-    }
+		s16 min = Read16(ptr);
+		s16 max = Read16(ptr);
 
-    return arg;
+		rand = Util::CalcRandom();
+		rand *= max - min + 1;
+		rand >>= 16;
+		rand += min;
+
+		var = rand;
+	}
+		break;
+	}
+
+	return var;
 }
 
-volatile s16* MmlParser::GetVariablePtr(SeqPlayer* pPlayer, SeqTrack* pTrack,
-                                        int idx) const {
-    if (idx < SeqPlayer::VARIABLE_NUM) {
-        return pPlayer->GetVariablePtr(idx);
-    }
+s16 volatile *MmlParser::GetVariablePtr(SeqPlayer *player, SeqTrack *track,
+                                        int varNo) const
+{
+	NW4RAssertHeaderClampedLRValue_Line(1014, varNo, AllVarMin_, AllVarMax_);
 
-    if (idx < SeqPlayer::VARIABLE_NUM + SeqTrack::VARIABLE_NUM) {
-        return pTrack->GetVariablePtr(idx - SeqPlayer::VARIABLE_NUM);
-    }
+	if (varNo < GlobalVarMax_)
+		return player->GetVariablePtr(varNo);
 
-    return NULL;
+	if (varNo < TrackVarMax_)
+		return track->GetVariablePtr(varNo - TrackVarMin_);
+
+	return nullptr;
 }
 
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+u32 MmlParser::ParseAllocTrack(void const *baseAddress, u32 seqOffset,
+                               u32 *allocTrack)
+{
+	NW4RAssertPointerNonnull_Line(1051, baseAddress);
+	NW4RAssertPointerNonnull_Line(1052, allocTrack);
+
+	byte_t const *ptr =
+		static_cast<byte_t const *>(ut::AddOffsetToPtr(baseAddress, seqOffset));
+
+	if (*ptr != MML_ALLOC_TRACK)
+	{
+		*allocTrack = 1;
+		return seqOffset;
+	}
+	else
+	{
+		u32 tracks = *++ptr;
+
+		tracks <<= 8;
+		tracks |= *++ptr;
+
+		*allocTrack = tracks;
+		return seqOffset + 3;
+	}
+}
+
+}}} // namespace nw4r::snd::detail

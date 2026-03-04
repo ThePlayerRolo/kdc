@@ -2,27 +2,20 @@
 #define NW4R_G3D_SCN_PROC_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/g3d_scnobj.h>
+#include "nw4r/g3d/g3d_scnobj.h"
 
 namespace nw4r {
 namespace g3d {
 
 class ScnProc : public ScnLeaf {
 public:
-    typedef void (*DrawProc)(ScnProc* pProc, bool opa);
+    typedef void (*DrawProc)(ScnProc *pProc, bool opa);
 
 public:
-    static ScnProc* Construct(MEMAllocator* pAllocator, u32* pSize,
-                              DrawProc pProc, bool opa, bool xlu,
-                              u32 userData = 0);
+    static ScnProc *Construct(MEMAllocator *pAllocator, u32 *pSize, DrawProc pProc, bool opa, bool xlu, u32 userData);
 
-    ScnProc(MEMAllocator* pAllocator, DrawProc pProc, void* pUserData, bool opa,
-            bool xlu)
-        : ScnLeaf(pAllocator),
-          mFlag(0),
-          mpDrawProc(pProc),
-          mpUserData(pUserData) {
-
+    ScnProc(MEMAllocator *pAllocator, DrawProc pProc, void *pUserData, bool opa, bool xlu)
+        : ScnLeaf(pAllocator), mFlag(0), mpDrawProc(pProc), mpUserData(pUserData) {
         if (opa) {
             mFlag |= SCNPROCFLAG_DRAW_OPA;
         }
@@ -32,7 +25,7 @@ public:
         }
     }
 
-    virtual void G3dProc(u32 task, u32 param, void* pInfo); // at 0xC
+    virtual void G3dProc(u32 task, u32 param, void *pInfo); // at 0xC
     virtual ~ScnProc() {}                                   // at 0x10
 
     void SetDrawProc(DrawProc pProc, bool opa, bool xlu) {
@@ -51,10 +44,10 @@ public:
         }
     }
 
-    void SetUserData(void* pData) {
+    void SetUserData(void *pData) {
         mpUserData = pData;
     }
-    void* GetUserData() {
+    void *GetUserData() {
         return mpUserData;
     }
 
@@ -67,7 +60,7 @@ private:
 private:
     u32 mFlag;           // at 0xE8
     DrawProc mpDrawProc; // at 0xEC
-    void* mpUserData;    // at 0xF0
+    void *mpUserData;    // at 0xF0
 
     NW4R_G3D_RTTI_DECL_DERIVED(ScnProc, ScnLeaf);
 };

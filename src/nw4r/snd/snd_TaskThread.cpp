@@ -1,67 +1,100 @@
-#include <nw4r/snd.h>
+#include "nw4r/snd/snd_TaskThread.h"
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_TaskThread.cpp
+ */
 
-TaskThread::TaskThread()
-    : mStackEnd(NULL), mFinishFlag(false), mCreateFlag(false) {}
+/*******************************************************************************
+ * headers
+ */
 
-TaskThread::~TaskThread() {
-    if (mCreateFlag) {
-        Destroy();
-    }
+#include "common.h"
+
+#include "nw4r/snd/snd_TaskManager.h"
+
+#include <rvl/OS/OSThread.h>
+
+#include "nw4r/NW4RAssert.hpp"
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd { namespace detail {
+
+TaskThread::TaskThread() :
+	mStackEnd	(nullptr),
+	mFinishFlag	(false),
+	mCreateFlag	(false)
+{
 }
 
-bool TaskThread::Create(s32 priority, void* pStack, u32 stackSize) {
-    if (mCreateFlag) {
-        Destroy();
-    }
-
-    if (!OSCreateThread(&mThread, ThreadFunc, &mThread,
-                        static_cast<u8*>(pStack) + stackSize, stackSize,
-                        priority, 0)) {
-        return false;
-    }
-
-    mStackEnd = static_cast<u32*>(pStack);
-    mFinishFlag = false;
-    mCreateFlag = true;
-
-    OSResumeThread(&mThread);
-    return true;
+TaskThread::~TaskThread()
+{
+	if (mCreateFlag)
+		Destroy();
 }
 
-void TaskThread::Destroy() {
-    if (!mCreateFlag) {
-        return;
-    }
+bool TaskThread::Create(s32 priority, void *stack, u32 stackSize)
+{
+	NW4RAssertPointerNonnull_Line(59, stack);
+	NW4RAssertAligned_Line(60, stack, 4);
 
-    mFinishFlag = true;
-    TaskManager::GetInstance().CancelWaitTask();
-    OSJoinThread(&mThread, NULL);
-    mCreateFlag = false;
+	if (mCreateFlag)
+		Destroy();
+
+	BOOL result = OSCreateThread(&mThread, &ThreadFunc, this,
+	                             static_cast<byte_t *>(stack) + stackSize,
+	                             stackSize, priority, OS_THREAD_NO_FLAGS);
+	if (!result)
+		return false;
+
+	mStackEnd	= static_cast<u32 *>(stack);
+	mFinishFlag	= false;
+	mCreateFlag	= true;
+
+	OSResumeThread(&mThread);
+
+	return true;
 }
 
-void* TaskThread::ThreadFunc(void* pArg) {
-    TaskThread* p = static_cast<TaskThread*>(pArg);
-    p->ThreadProc();
+void TaskThread::Destroy()
+{
+	if (!mCreateFlag)
+		return;
 
-    return NULL;
+	mFinishFlag = true;
+	TaskManager::GetInstance().CancelWaitTask();
+
+	BOOL result = OSJoinThread(&mThread, nullptr);
+	NW4RAssert_Line(105, result);
+
+	mCreateFlag = false;
 }
 
-void TaskThread::ThreadProc() {
-    while (!mFinishFlag) {
-        TaskManager::GetInstance().WaitTask();
+void *TaskThread::ThreadFunc(void *arg)
+{
+	TaskThread *taskThread = static_cast<TaskThread *>(arg);
 
-        if (mFinishFlag) {
-            break;
-        }
+	taskThread->ThreadProc();
 
-        TaskManager::GetInstance().ExecuteTask();
-    }
+	return nullptr;
 }
 
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+void TaskThread::ThreadProc()
+{
+	while (!mFinishFlag) // TODO: implies volatile?
+	{
+		TaskManager::GetInstance().WaitTask();
+
+		if (mFinishFlag)
+			break;
+
+		TaskManager::GetInstance().ExecuteTask();
+
+		NW4RAssert_Line(160, *mStackEnd == OS_THREAD_STACK_MAGIC);
+	}
+}
+
+}}} // namespace nw4r::snd::detail

@@ -1,58 +1,56 @@
-#include <nw4r/ut.h>
+// ported from https://github.com/kiwi515/ogws/blob/master/src/nw4r/ut/ut_CharStrmReader.cpp
+
+#include "nw4r/ut/ut_CharStrmReader.h"
 
 namespace nw4r {
 namespace ut {
 namespace {
 
-inline bool IsSJISLeadByte(u8 ch) {
-    return (ch >= 0x81 && ch < 0xA0) || ch >= 0xE0;
+bool IsSJISLeadByte(u8 c) {
+    return ((c >= 0x81) && (c < 0xA0)) || c >= 0xe0;
 }
 
 } // namespace
 
 u16 CharStrmReader::ReadNextCharUTF8() {
-    u16 ch;
+    u16 code;
 
     if (!(GetChar<u8>(0) & 0x80)) {
-        ch = GetChar<u8>(0);
+        code = GetChar<u8>(0);
         StepStrm<u8>(1);
-    } else if ((GetChar<u8>(0) & 0xE0) == 0xC0) {
-        ch = ((GetChar<u8>(0) & 0x1F) << 6) | (GetChar<u8>(1) & 0x3F);
+    } else if ((GetChar<u8>(0) & 0xe0) == 0xC0) {
+        code = ((GetChar<u8>(0) & 0x1F) << 6) | GetChar<u8>(1) & 0x3F;
         StepStrm<u8>(2);
     } else {
-        ch = ((GetChar<u8>(0) & 0x1F) << 12) | ((GetChar<u8>(1) & 0x3F) << 6) |
-             (GetChar<u8>(2) & 0x3F);
+        code = ((GetChar<u8>(0) & 0x1F) << 12) | ((GetChar<u8>(1) & 0x3F) << 6) | (GetChar<u8>(2) & 0x3F);
         StepStrm<u8>(3);
     }
-
-    return ch;
+    return code;
 }
 
 u16 CharStrmReader::ReadNextCharUTF16() {
-    u16 ch = GetChar<u16>(0);
+    u16 code = GetChar<u16>(0);
     StepStrm<u16>(1);
-    return ch;
+    return code;
 }
-
 u16 CharStrmReader::ReadNextCharCP1252() {
-    u16 ch = GetChar<u8>(0);
+    u16 code = GetChar<u8>(0);
     StepStrm<u8>(1);
-    return ch;
+    return code;
 }
-
 u16 CharStrmReader::ReadNextCharSJIS() {
-    u16 ch;
+    u16 code = GetChar<u8>(0);
 
-    if (IsSJISLeadByte(GetChar<u8>(0))) {
-        ch = (GetChar<u8>(0) << 8) | GetChar<u8>(1);
+    if (IsSJISLeadByte((u8)code)) {
+        code = GetChar<u8>(1) | (GetChar<u8>(0) << 8);
         StepStrm<u8>(2);
     } else {
-        ch = GetChar<u8>(0);
+        code = GetChar<u8>(0);
         StepStrm<u8>(1);
     }
-
-    return ch;
+    return code;
 }
 
 } // namespace ut
+
 } // namespace nw4r

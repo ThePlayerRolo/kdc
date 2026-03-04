@@ -1,59 +1,79 @@
-#include <nw4r/snd.h>
+#include "nw4r/snd/snd_DisposeCallbackManager.h"
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_DisposeCallbackManager.cpp
+ */
 
-DisposeCallbackManager& DisposeCallbackManager::GetInstance() {
-    ut::AutoInterruptLock lock;
-    static DisposeCallbackManager instance;
-    return instance;
+/*******************************************************************************
+ * headers
+ */
+
+#include "common.h"
+
+#include "nw4r/snd/snd_SoundThread.h"
+
+#include "nw4r/ut/ut_Lock.h" // ut::AutoInterruptLock
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd { namespace detail {
+
+DisposeCallbackManager &DisposeCallbackManager::GetInstance()
+{
+	ut::AutoInterruptLock lock; // What
+
+	static DisposeCallbackManager instance;
+
+	return instance;
 }
 
 DisposeCallbackManager::DisposeCallbackManager() {}
 
-void DisposeCallbackManager::RegisterDisposeCallback(
-    DisposeCallback* pCallback) {
-    mCallbackList.PushBack(pCallback);
+void DisposeCallbackManager::RegisterDisposeCallback(DisposeCallback *callback)
+{
+	mCallbackList.PushBack(callback);
 }
 
 void DisposeCallbackManager::UnregisterDisposeCallback(
-    DisposeCallback* pCallback) {
-    mCallbackList.Erase(pCallback);
+	DisposeCallback *callback)
+{
+	mCallbackList.Erase(callback);
 }
 
-void DisposeCallbackManager::Dispose(void* pData, u32 size, void* pArg) {
-#pragma unused(pArg)
+void DisposeCallbackManager::Dispose(void *mem, u32 size, void *arg ATTR_UNUSED)
+{
+	void *start = mem;
+	void *end = static_cast<byte_t *>(mem) + size;
 
-    const void* pStart = pData;
-    const void* pEnd = static_cast<u8*>(pData) + size;
+	SoundThread::AutoLock lock;
 
-    DisposeCallbackList::Iterator it =
-        GetInstance().mCallbackList.GetBeginIter();
+	// NOTE: unnecessary call to GetInstance from instance-method
+	NW4R_RANGE_FOR_NO_AUTO_INC(itr, GetInstance().mCallbackList)
+	{
+		decltype(itr) curItr = itr++;
 
-    while (it != GetInstance().mCallbackList.GetEndIter()) {
-        DisposeCallbackList::Iterator curr = it++;
-        // @bug Unnecessary iteration
-        curr++->InvalidateData(pStart, pEnd);
-    }
+		curItr->InvalidateData(start, end);
+	}
 }
 
-void DisposeCallbackManager::DisposeWave(void* pData, u32 size, void* pArg) {
-#pragma unused(pArg)
+void DisposeCallbackManager::DisposeWave(void *mem, u32 size,
+                                         void *arg ATTR_UNUSED)
+{
+	void *start = mem;
+	void *end = static_cast<byte_t *>(mem) + size;
 
-    const void* pStart = pData;
-    const void* pEnd = static_cast<u8*>(pData) + size;
+	SoundThread::AutoLock lock;
 
-    DisposeCallbackList::Iterator it =
-        GetInstance().mCallbackList.GetBeginIter();
+	// same stuff here as the stuff over there
+	NW4R_RANGE_FOR_NO_AUTO_INC(itr, GetInstance().mCallbackList)
+	{
+		decltype(itr) curItr = itr++;
 
-    while (it != GetInstance().mCallbackList.GetEndIter()) {
-        DisposeCallbackList::Iterator curr = it++;
-        // @bug Unnecessary iteration
-        curr++->InvalidateWaveData(pStart, pEnd);
-    }
+		curItr->InvalidateWaveData(start, end);
+	}
 }
 
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+}}} // namespace nw4r::snd::detail

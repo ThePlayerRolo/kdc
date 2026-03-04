@@ -1,10 +1,14 @@
 #ifndef NW4R_G3D_RES_RES_ANM_TEX_SRT_H
 #define NW4R_G3D_RES_RES_ANM_TEX_SRT_H
+
+/** NOTICE: Revision change from 4->5. Structures, Enums, and/or Functions may have changed and not yet done so
+ * (Zeldex72, Feb 1, 2025) */
+
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_resanm.h>
-#include <nw4r/g3d/res/g3d_rescommon.h>
-#include <nw4r/g3d/res/g3d_resdict.h>
+#include "nw4r/g3d/res/g3d_resanm.h"
+#include "nw4r/g3d/res/g3d_rescommon.h"
+#include "nw4r/g3d/res/g3d_resdict.h"
 
 namespace nw4r {
 namespace g3d {
@@ -47,7 +51,7 @@ struct TexSrt : TexSrtTypedef {
     f32 Su; // at 0x0
     f32 Sv; // at 0x4
     f32 R;  // at 0x8
-    f32 Tu; // at 0xC
+    f32 Tu; // at 0xc
     f32 Tv; // at 0x10
 };
 
@@ -118,15 +122,16 @@ struct ResAnmTexSrtData {
     u32 revision;              // at 0x8
     s32 toResFileData;         // at 0xC
     s32 toTexSrtDataDic;       // at 0x10
-    s32 name;                  // at 0x14
-    s32 original_path;         // at 0x18
-    ResAnmTexSrtInfoData info; // at 0x1C
+    s32 toResUserData;         // at 0x14
+    s32 name;                  // at 0x18
+    s32 original_path;         // at 0x1C
+    ResAnmTexSrtInfoData info; // at 0x20
 };
 
 class ResAnmTexSrt : public ResCommon<ResAnmTexSrtData> {
 public:
-    static const u32 SIGNATURE = FOURCC('S', 'R', 'T', '0');
-    static const int REVISION = 4;
+    static const u32 SIGNATURE = 'SRT0';
+    static const int REVISION = 5;
 
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResAnmTexSrt);
@@ -139,15 +144,13 @@ public:
         return GetRevision() == REVISION;
     }
 
-    void GetAnmResult(TexSrtAnmResult* pResult, u32 idx, f32 frame) const;
+    void GetAnmResult(TexSrtAnmResult *pResult, u32 idx, f32 frame) const;
 
-    const ResAnmTexSrtMatData* GetMatAnm(int idx) const {
-        return static_cast<ResAnmTexSrtMatData*>(
-            ofs_to_obj<ResDic>(ref().toTexSrtDataDic)[idx]);
+    const ResAnmTexSrtMatData *GetMatAnm(int idx) const {
+        return static_cast<ResAnmTexSrtMatData *>(ofs_to_obj<ResDic>(ref().toTexSrtDataDic)[idx]);
     }
-    const ResAnmTexSrtMatData* GetMatAnm(u32 idx) const {
-        return static_cast<ResAnmTexSrtMatData*>(
-            ofs_to_obj<ResDic>(ref().toTexSrtDataDic)[idx]);
+    const ResAnmTexSrtMatData *GetMatAnm(u32 idx) const {
+        return static_cast<ResAnmTexSrtMatData *>(ofs_to_obj<ResDic>(ref().toTexSrtDataDic)[idx]);
     }
 
     int GetNumFrame() const {

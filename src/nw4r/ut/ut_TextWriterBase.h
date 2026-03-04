@@ -1,53 +1,32 @@
 #ifndef NW4R_UT_TEXT_WRITER_BASE_H
 #define NW4R_UT_TEXT_WRITER_BASE_H
-#include <nw4r/types_nw4r.h>
 
-#include <nw4r/ut/ut_CharWriter.h>
-#include <nw4r/ut/ut_TagProcessorBase.h>
-
-#include <nw4r/math.h>
-
-#include <cstdio>
-#include <cwchar>
+#include "nw4r/types_nw4r.h"
+#include "nw4r/ut/ut_CharWriter.h"
+#include "nw4r/ut/ut_TagProcessorBase.h"
+#include "stdio.h"
+#include "wprintf.h"
 
 namespace nw4r {
 namespace ut {
 
-template <typename T> class TextWriterBase : public CharWriter {
+template <typename T>
+class TextWriterBase : public CharWriter {
 public:
-    typedef TagProcessorBase<T> TagProcessorType;
+    static T *GetBuffer() {
+        return mFormatBuffer;
+    }
+    static T *SetBuffer(T *buffer, u32 size) {
+        T *old = mFormatBuffer;
+        mFormatBuffer = buffer;
+        mFormatBufferSize = size;
+        return old;
+    }
 
-public:
-    enum DrawFlag {
-        // Align text lines
-        DRAWFLAG_ALIGN_TEXT_BASELINE = 0,
-        DRAWFLAG_ALIGN_TEXT_CENTER = (1 << 0),
-        DRAWFLAG_ALIGN_TEXT_RIGHT = (1 << 1),
+    static u32 GetBufferSize() {
+        return mFormatBufferSize;
+    }
 
-        // Align text block (horizontal)
-        DRAWFLAG_ALIGN_H_BASELINE = 0,
-        DRAWFLAG_ALIGN_H_CENTER = (1 << 4),
-        DRAWFLAG_ALIGN_H_RIGHT = (1 << 5),
-
-        // Align text block (vertical)
-        DRAWFLAG_ALIGN_V_BASELINE = 0,
-        DRAWFLAG_ALIGN_V_CENTER = (1 << 8),
-        DRAWFLAG_ALIGN_V_TOP = (1 << 9),
-
-        // Mask constants
-        DRAWFLAG_MASK_ALIGN_TEXT = DRAWFLAG_ALIGN_TEXT_BASELINE |
-                                   DRAWFLAG_ALIGN_TEXT_CENTER |
-                                   DRAWFLAG_ALIGN_TEXT_RIGHT,
-
-        DRAWFLAG_MASK_ALIGN_H = DRAWFLAG_ALIGN_H_BASELINE |
-                                DRAWFLAG_ALIGN_H_CENTER |
-                                DRAWFLAG_ALIGN_H_RIGHT,
-
-        DRAWFLAG_MASK_ALIGN_V = DRAWFLAG_ALIGN_V_BASELINE |
-                                DRAWFLAG_ALIGN_V_CENTER | DRAWFLAG_ALIGN_V_TOP,
-    };
-
-public:
     TextWriterBase();
     ~TextWriterBase();
 
@@ -82,64 +61,58 @@ public:
         mTabWidth = width;
     }
 
-    u32 GetDrawFlag() const {
-        return mDrawFlag;
-    }
     void SetDrawFlag(u32 flag) {
         mDrawFlag = flag;
     }
 
-    TagProcessorBase<T>* GetTagProcessor() const {
+    TagProcessorBase<T> *GetTagProcessor() const {
         return mTagProcessor;
     }
-    void SetTagProcessor(TagProcessorBase<T>* pProcessor) {
-        mTagProcessor = pProcessor;
+    void SetTagProcessor(TagProcessorBase<T> *processor) {
+        mTagProcessor = processor;
     }
     void ResetTagProcessor() {
         mTagProcessor = &mDefaultTagProcessor;
     }
 
+    void SetLineHeight(f32 height);
     f32 GetLineHeight() const;
 
-    f32 CalcLineWidth(const T* pStr, int len);
-    f32 CalcStringWidth(const T* pStr, int len) const;
-    void CalcStringRect(Rect* pRect, const T* pStr, int len) const;
+    f32 CalcFormatStringWidth(const T *str, ...) const;
+    f32 CalcFormatStringHeight(const T *str, ...) const;
+    void CalcFormatStringRect(Rect *rect, const T *str, ...) const;
+    void CalcVStringRect(Rect *rect, const T *str, va_list args) const;
 
-    int VSNPrintf(T* buffer, u32 count, const T* pStr, std::va_list args);
-    f32 VPrintf(const T* pStr, std::va_list args);
-    f32 Print(const T* pStr, int len);
+    f32 CalcStringWidth(const T *format, int len) const;
+    f32 CalcStringHeight(const T *format, int len) const;
+    void CalcStringRect(Rect *rect, const T *format, int len) const;
 
-    static T* GetBuffer() {
-        return mFormatBuffer;
+    f32 Printf(const T *format, ...);
+    f32 VPrintf(const T *str, va_list args);
+    f32 Print(const T *str, int len);
+    f32 PrintfMutable(const T *format, ...);
+    f32 VPrintfMutable(const T *format, va_list args);
+    f32 PrintMutable(const T *str, int n);
+
+    // static int VSNPrintf(T *buffer, u32 count, const T *fmt, va_list args);
+
+    static int VSNPrintf(char *buffer, u32 count, const char *fmt, va_list args) {
+        return vsnprintf(buffer, count, fmt, args);
     }
-    static T* SetBuffer(T* pBuffer, u32 size) {
-        T* pOldBuffer = mFormatBuffer;
-        mFormatBuffer = pBuffer;
-        mFormatBufferSize = size;
-        return pOldBuffer;
+
+    static int VSNPrintf(wchar_t *buffer, u32 count, const wchar_t *fmt, va_list args) {
+        return vswprintf(buffer, count, fmt, args);
     }
 
-    static u32 GetBufferSize() {
-        return mFormatBufferSize;
-    }
+    f32 CalcLineWidth(const T *format, int len);
+    int CalcLineRectImpl(Rect *rect, const T **str, int len);
+    void CalcStringRectImpl(Rect *rect, const T *str, int len);
+    f32 PrintImpl(const T *str, int len, bool m);
+    f32 AdjustCursor(f32 *x1, f32 *y1, const T *str, int len);
 
-private:
-    static const int DEFAULT_FORMAT_BUFFER_SIZE = 256;
-
-    static const u32 DRAWFLAG_MASK_ALL = DRAWFLAG_MASK_ALIGN_TEXT |
-                                         DRAWFLAG_MASK_ALIGN_H |
-                                         DRAWFLAG_MASK_ALIGN_V;
-
-private:
     bool IsDrawFlagSet(u32 mask, u32 flag) const {
         return (mDrawFlag & mask) == flag;
     }
-
-    bool CalcLineRectImpl(Rect* pRect, const T** ppStr, int len);
-    void CalcStringRectImpl(Rect* pRect, const T* pStr, int len);
-
-    f32 PrintImpl(const T* pStr, int len);
-    f32 AdjustCursor(f32* pX, f32* pY, const T* pStr, int len);
 
 private:
     f32 mWidthLimit;                    // at 0x4C
@@ -147,28 +120,12 @@ private:
     f32 mLineSpace;                     // at 0x54
     int mTabWidth;                      // at 0x58
     u32 mDrawFlag;                      // at 0x5C
-    TagProcessorBase<T>* mTagProcessor; // at 0x60
+    TagProcessorBase<T> *mTagProcessor; // at 0x60
 
-    static T* mFormatBuffer;
-    static u32 mFormatBufferSize;
+    static T *mFormatBuffer;
+    static int mFormatBufferSize;
     static TagProcessorBase<T> mDefaultTagProcessor;
 };
-
-template <>
-inline int TextWriterBase<char>::VSNPrintf(char* pBuffer, u32 count,
-                                           const char* pStr,
-                                           std::va_list args) {
-
-    return std::vsnprintf(pBuffer, count, pStr, args);
-}
-
-template <>
-inline int TextWriterBase<wchar_t>::VSNPrintf(wchar_t* pBuffer, u32 count,
-                                              const wchar_t* pStr,
-                                              std::va_list args) {
-
-    return std::vswprintf(pBuffer, count, pStr, args);
-}
 
 } // namespace ut
 } // namespace nw4r

@@ -1,87 +1,79 @@
-#include <nw4r/lyt.h>
-#include <nw4r/ut.h>
+#include "nw4r/lyt/lyt_group.h"
 
-#include <cstring>
+#include "nw4r/lyt/lyt_layout.h"
+
 
 namespace nw4r {
+
 namespace lyt {
 
-/******************************************************************************
- *
- * Group
- *
- ******************************************************************************/
-Group::Group(const res::Group* pRes, Pane* pRootPane) {
+// __ct__Q34nw4r3lyt5GroupFPCQ44nw4r3lyt3res5GroupPQ34nw4r3lyt4Pane
+Group::Group(const res::Group *pResGroup, Pane *pRootPane) : mLink(), mPaneListLink() {
     Init();
+    strncpy(this->mName, pResGroup->mName, NW4R_RES_NAME_SIZE);
+    this->mName[NW4R_RES_NAME_SIZE] = '\0';
+    const char *paneNameBase = detail::ConvertOffsToPtr<char>(pResGroup, sizeof(res::Group));
 
-    std::strncpy(mName, pRes->name, NW4R_LYT_RES_NAME_LEN);
-    mName[NW4R_LYT_RES_NAME_LEN] = '\0';
-
-    const char* pNameBase =
-        detail::ConvertOffsToPtr<char>(pRes, sizeof(res::Group));
-
-    for (int i = 0; i < pRes->paneNum; i++) {
-        Pane* pResult = pRootPane->FindPaneByName(
-            pNameBase + i * NW4R_LYT_RES_NAME_LEN, true);
-
-        if (pResult != NULL) {
-            AppendPane(pResult);
+    for (int i = 0; i < pResGroup->paneNum; i++) {
+        Pane *pFindPane = pRootPane->FindPaneByName(paneNameBase + i * NW4R_RES_NAME_SIZE, true);
+        if (pFindPane) {
+            AppendPane(pFindPane);
         }
     }
 }
 
+// Init__Q34nw4r3lyt5GroupFv
 void Group::Init() {
-    mbUserAllocated = false;
+    this->mbUserAllocated = false;
 }
 
+// __dt__Q34nw4r3lyt5GroupFv
 Group::~Group() {
-    NW4R_UT_LINKLIST_FOREACH_SAFE (it, mPaneLinkList, {
-        mPaneLinkList.Erase(it);
-        Layout::FreeMemory(&*it);
-    })
-}
-
-void Group::AppendPane(Pane* pPane) {
-    void* pBuffer = Layout::AllocMemory(sizeof(detail::PaneLink));
-    if (pBuffer == NULL) {
-        return;
+    ut::LinkList<detail::PaneLink, 0>::Iterator it = this->mPaneListLink.GetBeginIter();
+    while (it != this->mPaneListLink.GetEndIter()) {
+        ut::LinkList<detail::PaneLink, 0>::Iterator currIt = it++;
+        this->mPaneListLink.Erase(currIt);
+        Layout::DeleteObj<detail::PaneLink>(&*currIt);
     }
-
-    detail::PaneLink* pLink = new (pBuffer) detail::PaneLink();
-    pLink->mTarget = pPane;
-
-    mPaneLinkList.PushBack(pLink);
 }
 
-/******************************************************************************
- *
- * GroupContainer
- *
- ******************************************************************************/
+// AppendPane__Q34nw4r3lyt5GroupFPQ34nw4r3lyt4Pane
+void Group::AppendPane(Pane *pPane) {
+    detail::PaneLink *pPaneLink = Layout::NewObj<detail::PaneLink>();
+    if (pPaneLink) {
+        pPaneLink->mTarget = pPane;
+        this->mPaneListLink.PushBack(pPaneLink);
+    }
+}
+
+//__dt__Q34nw4r3lyt14GroupContainerFv
 GroupContainer::~GroupContainer() {
-    NW4R_UT_LINKLIST_FOREACH_SAFE (it, mGroupList, {
-        mGroupList.Erase(it);
-        
-        if (!it->IsUserAllocated()) {
-            it->~Group();
-            Layout::FreeMemory(&*it);
+    ut::LinkList<Group, 4>::Iterator it = this->mGroupList.GetBeginIter();
+    while (it != this->mGroupList.GetEndIter()) {
+        ut::LinkList<Group, 4>::Iterator currIt = it++;
+        this->mGroupList.Erase(currIt);
+        if (!currIt->IsUserAllocated()) {
+            Layout::DeleteObj<Group>(&*currIt);
         }
-    })
+    }
 }
 
-void GroupContainer::AppendGroup(Group* pGroup) {
-    mGroupList.PushBack(pGroup);
+// AppendGroup__Q34nw4r3lyt14GroupContainerFPQ34nw4r3lyt5Group
+void GroupContainer::AppendGroup(Group *pGroup) {
+    this->mGroupList.PushBack(pGroup);
 }
 
-Group* GroupContainer::FindGroupByName(const char* pName) {
-    NW4R_UT_LINKLIST_FOREACH (it, mGroupList, {
-        if (detail::EqualsResName(it->GetName(), pName)) {
+// FindGroupByName__Q34nw4r3lyt14GroupContainerFPCc
+Group *GroupContainer::FindGroupByName(const char *findName) {
+    for (ut::LinkList<Group, 4>::Iterator it = this->mGroupList.GetBeginIter(); it != this->mGroupList.GetEndIter();
+         it++) {
+        if (detail::EqualsResName(it->GetName(), findName)) {
             return &*it;
         }
-    })
-
-    return NULL;
+    }
+    return nullptr;
 }
 
 } // namespace lyt
+
 } // namespace nw4r

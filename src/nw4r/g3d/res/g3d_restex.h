@@ -2,9 +2,9 @@
 #define NW4R_G3D_RES_RES_TEX_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_rescommon.h>
+#include "nw4r/g3d/res/g3d_rescommon.h"
 
-#include <revolution/GX.h>
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -35,7 +35,7 @@ struct ResTexData {
 
 class ResTex : public ResCommon<ResTexData> {
 public:
-    static const u32 SIGNATURE = FOURCC('T', 'E', 'X', '0');
+    static const u32 SIGNATURE = 'TEX0';
     static const int REVISION = 1;
 
 public:
@@ -51,13 +51,13 @@ public:
         return GetRevision() == REVISION;
     }
 
-    bool GetTexObjParam(void** ppTexData, u16* pWidth, u16* pHeight,
-                        GXTexFmt* pFormat, f32* pMinLod, f32* pMaxLod,
-                        GXBool* pMipMap) const;
+    bool GetTexObjParam(
+        void **ppTexData, u16 *pWidth, u16 *pHeight, GXTexFmt *pFormat, f32 *pMinLod, f32 *pMaxLod, GXBool *pMipMap
+    ) const;
 
-    bool GetTexObjCIParam(void** ppTexData, u16* pWidth, u16* pHeight,
-                          GXCITexFmt* pFormatCI, f32* pMinLod, f32* pMaxLod,
-                          GXBool* pMipMap) const;
+    bool GetTexObjCIParam(
+        void **ppTexData, u16 *pWidth, u16 *pHeight, GXCITexFmt *pFormatCI, f32 *pMinLod, f32 *pMaxLod, GXBool *pMipMap
+    ) const;
 
     bool IsCIFmt() const {
         return ref().flag & ResTexData::FLAG_CIFMT;
@@ -70,7 +70,7 @@ public:
         return ref().height;
     }
 
-    const void* GetTexData() const {
+    const void *GetTexData() const {
         return ofs_to_ptr<void>(ref().toTexData);
     }
 };

@@ -2,7 +2,7 @@
 #define NW4R_G3D_CALC_VIEW_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/math.h>
+#include "nw4r/math.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -25,24 +25,23 @@ struct MtxCacheMap {
 
 } // namespace detail
 
-void CalcView(math::MTX34* pViewPosArray, math::MTX33* pViewNrmArray,
-              const math::MTX34* pModelMtxArray,
-              const u32* pModelMtxAttribArray, u32 numMtx,
-              const math::MTX34* pViewMtx, const ResMdl mdl,
-              math::MTX34* pViewTexMtxArray);
+void CalcView(
+    math::MTX34 *pViewPosArray, math::MTX33 *pViewNrmArray, const math::MTX34 *pModelMtxArray,
+    const u32 *pModelMtxAttribArray, u32 numMtx, const math::MTX34 *pViewMtx, const ResMdl mdl,
+    math::MTX34 *pViewTexMtxArray
+);
 
-void CalcView_LC(math::MTX34* pViewPosArray, math::MTX33* pViewNrmArray,
-                 const math::MTX34* pModelMtxArray,
-                 const u32* pModelMtxAttribArray, u32 numMtx,
-                 const math::MTX34* pViewMtx, const ResMdl mdl,
-                 math::MTX34* pViewTexMtxArray);
+void CalcView_LC(
+    math::MTX34 *pViewPosArray, math::MTX33 *pViewNrmArray, const math::MTX34 *pModelMtxArray,
+    const u32 *pModelMtxAttribArray, u32 numMtx, const math::MTX34 *pViewMtx, const ResMdl mdl,
+    math::MTX34 *pViewTexMtxArray
+);
 
-void CalcView_LC_DMA_ModelMtx(math::MTX34* pViewPosArray,
-                              math::MTX33* pViewNrmArray,
-                              const math::MTX34* pModelMtxArray,
-                              const u32* pModelMtxAttribArray, u32 numMtx,
-                              const math::MTX34* pViewMtx, const ResMdl mdl,
-                              math::MTX34* pViewTexMtxArray);
+void CalcView_LC_DMA_ModelMtx(
+    math::MTX34 *pViewPosArray, math::MTX33 *pViewNrmArray, const math::MTX34 *pModelMtxArray,
+    const u32 *pModelMtxAttribArray, u32 numMtx, const math::MTX34 *pViewMtx, const ResMdl mdl,
+    math::MTX34 *pViewTexMtxArray
+);
 
 } // namespace g3d
 } // namespace nw4r

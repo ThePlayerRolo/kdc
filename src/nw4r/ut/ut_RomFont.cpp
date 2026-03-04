@@ -1,4 +1,6 @@
-#include <nw4r/ut.h>
+// Ported from https://github.com/kiwi515/ogws/blob/master/src/nw4r/ut/ut_RomFont.cpp --- Mostly unused
+
+#include "nw4r/ut.h"
 
 namespace nw4r {
 namespace ut {
@@ -7,21 +9,21 @@ u16 RomFont::mFontEncode = 0xFFFF;
 
 namespace {
 
-inline bool IsCP1252Char(u16 ch) {
-    return ch >= 0x20 && ch <= 0xFF;
+bool IsCP1252Char(u16 c) {
+    return c >= 0x20 && c <= 0xFF;
 }
 
-inline bool IsSJISHalfWidthChar(u16 ch) {
-    if (ch > 0xFF) {
+bool IsSJISHalfWidthChar(u16 c) {
+    if (c > 0xFF) {
         return false;
     }
 
-    return (ch >= 0x20 && ch <= 0x7E) || (ch >= 0xA1 && ch <= 0xDF);
+    return (c >= 0x20 && c <= 0x7E) || (c >= 0xA1 && c <= 0xDF);
 }
 
-inline bool IsSJISFullWidthChar(u16 ch) {
-    u8 hi = BitExtract<u16>(ch, 8, 8);
-    u8 lo = BitExtract<u16>(ch, 0, 8);
+bool IsSJISFullWidthChar(u16 c) {
+    u8 hi = BitExtract<u16>(c, 8, 8);
+    u8 lo = BitExtract<u16>(c, 0, 8);
 
     return hi >= 0x81 && hi <= 0x98 && lo >= 0x40 && lo <= 0xFC;
 }
@@ -29,25 +31,25 @@ inline bool IsSJISFullWidthChar(u16 ch) {
 } // namespace
 
 RomFont::RomFont() : mFontHeader(NULL), mAlternateChar('?') {
-    mDefaultWidths.left = 0;
+    mDefaultWidths.leftSpacing = 0;
     mDefaultWidths.glyphWidth = 0;
     mDefaultWidths.charWidth = 0;
 }
 
 RomFont::~RomFont() {}
 
-bool RomFont::Load(void* pBuffer) {
+bool RomFont::Load(void *buffer) {
     if (mFontHeader != NULL) {
         return false;
     }
 
-    BOOL success = OSInitFont(static_cast<OSFontHeader*>(pBuffer));
+    BOOL success = OSInitFont(static_cast<OSFontHeader *>(buffer));
 
     if (success) {
         mFontEncode = OSGetFontEncode();
-        mFontHeader = static_cast<OSFontHeader*>(pBuffer);
+        mFontHeader = static_cast<OSFontHeader *>(buffer);
 
-        mDefaultWidths.left = 0;
+        mDefaultWidths.leftSpacing = 0;
         mDefaultWidths.glyphWidth = GetCellWidth();
         mDefaultWidths.charWidth = GetMaxCharWidth();
 
@@ -58,15 +60,9 @@ bool RomFont::Load(void* pBuffer) {
 }
 
 u32 RomFont::GetRequireBufferSize() {
-    // TODO(kiwi) How are these calculated?
     switch (OSGetFontEncode()) {
-    case OS_FONT_ENCODE_ANSI: {
-        return 0x00020120;
-    }
-
-    case OS_FONT_ENCODE_SJIS: {
-        return 0x00120F00;
-    }
+        case OS_FONT_ENCODE_ANSI: return 0x00020120;
+        case OS_FONT_ENCODE_SJIS: return 0x00120F00;
     }
 
     return 0;
@@ -120,17 +116,17 @@ CharWidths RomFont::GetDefaultCharWidths() const {
     return mDefaultWidths;
 }
 
-void RomFont::SetDefaultCharWidths(const CharWidths& rWidths) {
-    mDefaultWidths = rWidths;
+void RomFont::SetDefaultCharWidths(const CharWidths &widths) {
+    mDefaultWidths = widths;
 }
 
-bool RomFont::SetAlternateChar(u16 ch) {
+bool RomFont::SetAlternateChar(u16 c) {
     const u16 prev = mAlternateChar;
     mAlternateChar = 0xFFFF;
 
-    u16 undef = HandleUndefinedChar(ch);
+    u16 undef = HandleUndefinedChar(c);
     if (undef != 0xFFFF) {
-        mAlternateChar = ch;
+        mAlternateChar = c;
         return true;
     } else {
         mAlternateChar = prev;
@@ -142,94 +138,82 @@ void RomFont::SetLineFeed(int lf) {
     mFontHeader->leading = lf;
 }
 
-int RomFont::GetCharWidth(u16 ch) const {
+int RomFont::GetCharWidth(u16 c) const {
     u32 width;
-    char buffer[CHAR_PTR_BUFFER_SIZE];
+    char buffer[4];
 
-    MakeCharPtr(buffer, ch);
+    MakeCharPtr(buffer, c);
     OSGetFontWidth(buffer, &width);
 
     return width;
 }
 
-CharWidths RomFont::GetCharWidths(u16 ch) const {
-    int width = GetCharWidth(ch);
+CharWidths RomFont::GetCharWidths(u16 c) const {
+    int width = GetCharWidth(c);
 
     CharWidths widths;
-    widths.left = 0;
+    widths.leftSpacing = 0;
     widths.glyphWidth = width;
     widths.charWidth = width;
 
     return widths;
 }
 
-void RomFont::GetGlyph(Glyph* pGlyph, u16 ch) const {
-    void* pTexture;
+void RomFont::GetGlyph(Glyph *out, u16 c) const {
+    void *texture;
     u32 x, y, width;
-    char buffer[CHAR_PTR_BUFFER_SIZE];
+    char buffer[4];
 
-    MakeCharPtr(buffer, ch);
-    OSGetFontTexture(buffer, &pTexture, &x, &y, &width);
+    MakeCharPtr(buffer, c);
+    OSGetFontTexture(buffer, &texture, &x, &y, &width);
 
-    pGlyph->pTexture = pTexture;
+    out->texture = texture;
 
-    pGlyph->widths.left = 0;
-    pGlyph->widths.glyphWidth = width;
-    pGlyph->widths.charWidth = width;
+    out->widths.leftSpacing = 0;
+    out->widths.glyphWidth = width;
+    out->widths.charWidth = width;
 
-    pGlyph->height = mFontHeader->cellHeight;
-    pGlyph->texFormat = GX_TF_I4;
+    out->height = mFontHeader->cellHeight;
+    out->format = GX_TF_I4;
 
-    pGlyph->texWidth = mFontHeader->sheetWidth;
-    pGlyph->texHeight = mFontHeader->sheetHeight;
+    out->texWidth = mFontHeader->sheetWidth;
+    out->texHeight = mFontHeader->sheetHeight;
 
-    pGlyph->cellX = x;
-    pGlyph->cellY = y;
+    out->cellX = x;
+    out->cellY = y;
 }
 
 FontEncoding RomFont::GetEncoding() const {
     switch (mFontEncode) {
-    case OS_FONT_ENCODE_ANSI: {
-        return FONT_ENCODING_CP1252;
+        case OS_FONT_ENCODE_ANSI: return FONT_ENCODE_CP1252;
+        case OS_FONT_ENCODE_SJIS: return FONT_ENCODE_SJIS;
     }
 
-    case OS_FONT_ENCODE_SJIS: {
-        return FONT_ENCODING_SJIS;
-    }
-    }
-
-    return FONT_ENCODING_CP1252;
+    return FONT_ENCODE_CP1252;
 }
 
-void RomFont::MakeCharPtr(char* pBuffer, u16 ch) const {
-    ch = HandleUndefinedChar(ch);
+void RomFont::MakeCharPtr(char *buffer, u16 c) const {
+    c = HandleUndefinedChar(c);
 
-    if (BitExtract<u16>(ch, 8, 8) == 0) {
-        pBuffer[0] = ch & 0x00FF;
-        pBuffer[1] = '\0';
+    if (BitExtract<u16>(c, 8, 8) == 0) {
+        buffer[0] = c & 0x00FF;
+        buffer[1] = '\0';
     } else {
-        pBuffer[0] = BitExtract<u16>(ch, 8, 8);
-        pBuffer[1] = ch & 0x00FF;
-        pBuffer[2] = '\0';
+        buffer[0] = BitExtract<u16>(c, 8, 8);
+        buffer[1] = c & 0x00FF;
+        buffer[2] = '\0';
     }
 }
 
-u16 RomFont::HandleUndefinedChar(u16 ch) const {
+u16 RomFont::HandleUndefinedChar(u16 c) const {
     bool valid;
 
     switch (mFontEncode) {
-    case OS_FONT_ENCODE_ANSI: {
-        valid = IsCP1252Char(ch);
-        break;
+        case OS_FONT_ENCODE_ANSI: valid = IsCP1252Char(c); break;
+        case OS_FONT_ENCODE_SJIS: valid = IsSJISHalfWidthChar(c) || IsSJISFullWidthChar(c); break;
     }
 
-    case OS_FONT_ENCODE_SJIS: {
-        valid = IsSJISHalfWidthChar(ch) || IsSJISFullWidthChar(ch);
-        break;
-    }
-    }
-
-    return valid ? ch : mAlternateChar;
+    return valid ? c : mAlternateChar;
 }
 
 } // namespace ut

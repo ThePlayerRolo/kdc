@@ -1,111 +1,55 @@
 #ifndef NW4R_LYT_GROUP_H
 #define NW4R_LYT_GROUP_H
-#include <nw4r/types_nw4r.h>
-
-#include <nw4r/lyt/lyt_resources.h>
-
-#include <nw4r/ut.h>
+#include "common.h"
+#include "nw4r/lyt/lyt_common.h"
+#include "nw4r/lyt/lyt_pane.h"
+#include "nw4r/ut/ut_LinkList.h"
 
 namespace nw4r {
 namespace lyt {
 
-// Forward declarations
-class Pane;
-
 namespace detail {
-
-/******************************************************************************
- *
- * PaneLink
- *
- ******************************************************************************/
 struct PaneLink {
-    NW4R_UT_LINKLIST_NODE_DECL(); // at 0x4
-    Pane* mTarget;                // at 0x8
+    ut::LinkListNode mLink; // at 0x0
+    Pane *mTarget;          // at 0x08
 };
-
-NW4R_UT_LINKLIST_TYPEDEF_DECL(PaneLink);
-
 } // namespace detail
 
-namespace res {
+typedef ut::LinkList<detail::PaneLink, 0> PaneList;
 
-/******************************************************************************
- *
- * GRP1 binary layout
- *
- ******************************************************************************/
-struct Group {
-    static const u32 SIGNATURE = FOURCC('g', 'r', 'p', '1');
-
-    DataBlockHeader blockHeader;      // at 0x0
-    char name[NW4R_LYT_RES_NAME_LEN]; // at 0x8
-    u16 paneNum;                      // at 0x18
-    u8 PADDING_0x1A[0x1C - 0x1A];     // at 0x1A
-};
-
-} // namespace res
-
-/******************************************************************************
- *
- * Group
- *
- ******************************************************************************/
 class Group {
 public:
-    Group(const res::Group* pRes, Pane* pRootPane);
-    virtual ~Group(); // at 0x8
+    Group(const res::Group *pResGroup, Pane *pRootPane);
 
-    void AppendPane(Pane* pPane);
+    virtual ~Group();
+    void AppendPane(Pane *pPane);
+    void Init();
 
-    detail::PaneLinkList& GetPaneList() {
-        return mPaneLinkList;
+    PaneList *GetPaneList() {
+        return &mPaneListLink;
     }
-
-    const char* GetName() const {
-        return mName;
-    }
-
     bool IsUserAllocated() const {
         return mbUserAllocated;
     }
-
-public:
-    NW4R_UT_LINKLIST_NODE_DECL(); // at 0x4
-
-protected:
-    detail::PaneLinkList mPaneLinkList;    // at 0xC
-    char mName[NW4R_LYT_RES_NAME_LEN + 1]; // at 0x18
-    bool mbUserAllocated;                  // at 0x29
-    u8 PADDING_0x2A[0x2C - 0x2A];          // at 0x2A
-
-private:
-    void Init();
-};
-
-NW4R_UT_LINKLIST_TYPEDEF_DECL(Group);
-
-/******************************************************************************
- *
- * GroupContainer
- *
- ******************************************************************************/
-class GroupContainer {
-public:
-    GroupContainer() {}
-    ~GroupContainer();
-
-    void AppendGroup(Group* pGroup);
-    Group* FindGroupByName(const char* pName);
-
-    GroupList& GetGroupList() {
-        return mGroupList;
+    const char *GetName() const {
+        return mName;
     }
 
-protected:
-    GroupList mGroupList; // at 0x0
+private:
+    ut::LinkListNode mLink;                          // at 0x04
+    PaneList mPaneListLink; // at 0x0C
+    char mName[NW4R_RES_NAME_SIZE + 1];              // at 0x18
+    bool mbUserAllocated;                            // at 0x29
+    u8 mPadding[2];                                  // at 0x2A
 };
 
+struct GroupContainer {
+    ~GroupContainer();
+    void AppendGroup(Group *pGroup);
+    Group *FindGroupByName(const char *findName);
+
+    ut::LinkList<Group, 4> mGroupList; // at 0x4
+};
 } // namespace lyt
 } // namespace nw4r
 

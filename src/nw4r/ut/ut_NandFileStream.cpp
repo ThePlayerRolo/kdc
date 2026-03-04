@@ -1,128 +1,124 @@
-#include <nw4r/ut.h>
+
+// Ported From https://github.com/kiwi515/ogws/blob/master/src/nw4r/ut/ut_NandFileStream.cpp
+
+#include "nw4r/ut.h"
 
 namespace nw4r {
 namespace ut {
 
 NW4R_UT_RTTI_DEF_DERIVED(NandFileStream, FileStream);
 
-void NandFileStream::NandAsyncCallback_(s32 result, NANDCommandBlock* pBlock) {
-    NandFileStream* p = reinterpret_cast<NandFileStreamInfo*>(pBlock)->stream;
+void NandFileStream::NandAsyncCallback_(s32 result, NANDCommandBlock *block) {
+    NandFileStream *self = reinterpret_cast<AsyncContext *>(block)->stream;
 
-    p->mIsBusy = false;
-    p->mAsyncResult = result;
+    self->mIsBusy = false;
+    self->mResult = result;
 
-    if (p->mCallback != NULL) {
-        p->mCallback(result, p, p->mArg);
+    if (self->mCallback != NULL) {
+        self->mCallback(result, self, self->mCallbackArg);
     }
 }
 
 void NandFileStream::Initialize_() {
     mCanRead = false;
     mCanWrite = false;
-
-    mCloseOnDestroyFlg = false;
-    mCloseEnableFlg = false;
-
-    mAvailable = false;
+    mCloseOnDestroy = false;
+    mAllowClose = false;
+    mIsOpen = false;
     mIsBusy = false;
-
     mCallback = NULL;
-    mArg = NULL;
-    mAsyncResult = NAND_RESULT_OK;
-
-    mFileInfo.stream = this;
+    mCallbackArg = NULL;
+    mResult = NAND_RESULT_OK;
+    mAsyncContext.stream = this;
 }
 
-NandFileStream::NandFileStream(const char* pPath, u32 mode) {
+NandFileStream::NandFileStream(const char *path, u32 access) {
     Initialize_();
-    Open(pPath, mode);
+    Open(path, access);
 }
 
-NandFileStream::NandFileStream(const NANDFileInfo* pInfo, u32 mode,
-                               bool enableClose) {
+NandFileStream::NandFileStream(const NANDFileInfo *info, u32 access, bool close) {
     Initialize_();
-    Open(pInfo, mode, enableClose);
+    Open(info, access, close);
 }
 
 NandFileStream::~NandFileStream() {
-    if (mCloseOnDestroyFlg) {
+    if (mCloseOnDestroy) {
         Close();
     }
 }
 
-bool NandFileStream::Open(const char* pPath, u32 mode) {
-    if (mCloseOnDestroyFlg) {
+bool NandFileStream::Open(const char *path, u32 access) {
+    if (mCloseOnDestroy) {
         Close();
     }
 
-    mCanRead = mode & NAND_ACCESS_READ;
-    mCanWrite = mode & NAND_ACCESS_WRITE;
+    mCanRead = access & NAND_ACCESS_READ;
+    mCanWrite = access & NAND_ACCESS_WRITE;
 
-    if (NANDOpen(pPath, &mFileInfo.nandInfo, mode) != NAND_RESULT_OK) {
+    if (NANDOpen(path, &mAsyncContext.info, access) != NAND_RESULT_OK) {
         return false;
     }
 
     if (mCanRead) {
         u32 fileSize;
 
-        if (NANDGetLength(&mFileInfo.nandInfo, &fileSize) != NAND_RESULT_OK) {
-            NANDClose(&mFileInfo.nandInfo);
+        if (NANDGetLength(&mAsyncContext.info, &fileSize) != NAND_RESULT_OK) {
+            NANDClose(&mAsyncContext.info);
             return false;
         }
 
         mFilePosition.SetFileSize(fileSize);
     }
 
-    mFilePosition.Seek(0, SEEK_ORIGIN_BEG);
+    mFilePosition.Seek(0, SEEKORG_BEG);
 
-    mCloseOnDestroyFlg = true;
-    mCloseEnableFlg = true;
-    mAvailable = true;
+    mCloseOnDestroy = true;
+    mAllowClose = true;
+    mIsOpen = true;
 
     return true;
 }
 
-bool NandFileStream::Open(const NANDFileInfo* pInfo, u32 mode,
-                          bool enableClose) {
-    if (mCloseOnDestroyFlg) {
+bool NandFileStream::Open(const NANDFileInfo *info, u32 access, bool close) {
+    if (mCloseOnDestroy) {
         Close();
     }
 
-    mCanRead = mode & NAND_ACCESS_READ;
-    mCanWrite = mode & NAND_ACCESS_WRITE;
+    mCanRead = access & NAND_ACCESS_READ;
+    mCanWrite = access & NAND_ACCESS_WRITE;
 
-    mFileInfo.nandInfo = *pInfo;
+    mAsyncContext.info = *info;
 
     u32 fileSize;
-    if (NANDGetLength(&mFileInfo.nandInfo, &fileSize) != NAND_RESULT_OK) {
-        if (enableClose) {
-            NANDClose(&mFileInfo.nandInfo);
+    if (mCanRead) {
+        if (NANDGetLength(&mAsyncContext.info, &fileSize) != NAND_RESULT_OK) {
+            if (close) {
+                NANDClose(&mAsyncContext.info);
+            }
+            return false;
         }
-
-        return false;
+        mFilePosition.SetFileSize(fileSize);
     }
+    mFilePosition.Seek(0, SEEKORG_BEG);
 
-    mFilePosition.SetFileSize(fileSize);
-    mFilePosition.Seek(0, SEEK_ORIGIN_BEG);
-
-    mCloseOnDestroyFlg = false;
-    mCloseEnableFlg = enableClose;
-    mAvailable = true;
-
+    mCloseOnDestroy = false;
+    mAllowClose = close;
+    mIsOpen = true;
     return true;
 }
 
 void NandFileStream::Close() {
-    if (mCloseEnableFlg && mAvailable) {
-        NANDClose(&mFileInfo.nandInfo);
-        mAvailable = false;
+    if (mAllowClose && mIsOpen) {
+        NANDClose(&mAsyncContext.info);
+        mIsOpen = false;
     }
 }
 
-s32 NandFileStream::Read(void* pDst, u32 size) {
-    NANDSeek(&mFileInfo.nandInfo, mFilePosition.Tell(), NAND_SEEK_BEG);
+s32 NandFileStream::Read(void *dst, u32 size) {
+    NANDSeek(&mAsyncContext.info, mFilePosition.Tell(), NAND_SEEK_BEG);
 
-    s32 result = NANDRead(&mFileInfo.nandInfo, pDst, size);
+    s32 result = NANDRead(&mAsyncContext.info, dst, size);
     if (result > 0) {
         mFilePosition.Skip(result);
     }
@@ -130,17 +126,15 @@ s32 NandFileStream::Read(void* pDst, u32 size) {
     return result;
 }
 
-bool NandFileStream::ReadAsync(void* pDst, u32 size, StreamCallback pCallback,
-                               void* pCallbackArg) {
-    mCallback = pCallback;
-    mArg = pCallbackArg;
+bool NandFileStream::ReadAsync(void *dst, u32 size, AsyncCallback callback, void *arg) {
+    mCallback = callback;
+    mCallbackArg = arg;
     mIsBusy = true;
 
-    NANDSeek(&mFileInfo.nandInfo, mFilePosition.Tell(), NAND_SEEK_BEG);
+    NANDSeek(&mAsyncContext.info, mFilePosition.Tell(), NAND_SEEK_BEG);
 
     bool success =
-        NANDReadAsync(&mFileInfo.nandInfo, pDst, size, NandAsyncCallback_,
-                      &mFileInfo.nandBlock) == NAND_RESULT_OK;
+        NANDReadAsync(&mAsyncContext.info, dst, size, NandAsyncCallback_, &mAsyncContext.block) == NAND_RESULT_OK;
 
     if (success) {
         mFilePosition.Skip(size);
@@ -151,24 +145,23 @@ bool NandFileStream::ReadAsync(void* pDst, u32 size, StreamCallback pCallback,
     return success;
 }
 
-void NandFileStream::Write(const void* pSrc, u32 size) {
-    NANDSeek(&mFileInfo.nandInfo, mFilePosition.Tell(), NAND_SEEK_BEG);
-    s32 result = NANDWrite(&mFileInfo.nandInfo, pSrc, size);
-
-    // @bug Error code will be interpreted as a negative size
-    mFilePosition.Append(result);
+s32 NandFileStream::Write(const void *src, u32 size) {
+    NANDSeek(&mAsyncContext.info, mFilePosition.Tell(), NAND_SEEK_BEG);
+    s32 result = NANDWrite(&mAsyncContext.info, src, size);
+    if (result > 0) {
+        mFilePosition.Append(result);
+    }
+    return result;
 }
 
-bool NandFileStream::WriteAsync(const void* pSrc, u32 size,
-                                StreamCallback pCallback, void* pCallbackArg) {
-    mCallback = pCallback;
-    mArg = pCallbackArg;
+bool NandFileStream::WriteAsync(const void *src, u32 size, AsyncCallback callback, void *arg) {
+    mCallback = callback;
+    mCallbackArg = arg;
     mIsBusy = true;
 
-    NANDSeek(&mFileInfo.nandInfo, mFilePosition.Tell(), NAND_SEEK_BEG);
+    NANDSeek(&mAsyncContext.info, mFilePosition.Tell(), NAND_SEEK_BEG);
 
-    s32 result = NANDWriteAsync(&mFileInfo.nandInfo, pSrc, size,
-                                NandAsyncCallback_, &mFileInfo.nandBlock);
+    s32 result = NANDWriteAsync(&mAsyncContext.info, src, size, NandAsyncCallback_, &mAsyncContext.block);
 
     if (result == NAND_RESULT_OK) {
         mFilePosition.Append(size);

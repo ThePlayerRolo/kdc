@@ -2,8 +2,9 @@
 #define NW4R_G3D_RES_RES_NODE_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_rescommon.h>
-#include <nw4r/math.h>
+#include "nw4r/g3d/res/g3d_rescommon.h"
+
+#include "nw4r/math.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -81,27 +82,22 @@ class ResNode : public ResCommon<ResNodeData>, public ResNodeDataTypedef {
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResNode);
 
-    void PatchChrAnmResult(ChrAnmResult* pResult) const;
-    void CalcChrAnmResult(ChrAnmResult* pResult) const;
-
-    const char* GetName() const {
-        const ResNodeData& r = ref();
-
-        if (r.name != 0) {
-            return reinterpret_cast<const char*>(&r) + r.name;
-        }
-
-        return NULL;
-    }
+    void PatchChrAnmResult(ChrAnmResult *pResult) const;
+    void CalcChrAnmResult(ChrAnmResult *pResult) const;
 
     ResName GetResName() const {
-        const ResNodeData& r = ref();
+        const ResNodeData &r = ref();
 
         if (r.name != 0) {
             return NW4R_G3D_OFS_TO_RESNAME(&r, r.name);
         }
 
         return ResName(NULL);
+    }
+
+    const char *GetName() const {
+        const ResNodeData &r = ref();
+        return ofs_to_ptr<const char>(r.name);
     }
 
     u32 GetID() const {
@@ -113,11 +109,7 @@ public:
     }
 
     u32 GetMtxID() const {
-        if (IsValid()) {
-            return ptr()->mtxID;
-        }
-
-        return 0;
+        return IsValid() ? ptr()->mtxID : 0;
     }
 
     bool IsVisible() const {
@@ -148,8 +140,18 @@ public:
         return BILLBOARD_OFF;
     }
 
-    const math::VEC3& GetTranslate() const {
+    const math::VEC3 &GetTranslate() const {
         return ref().translate;
+    }
+
+    // not in the dwarf
+    const math::VEC3 &GetBoundsMin() const {
+        return *(const math::VEC3 *)&ref().volume_min;
+    }
+
+    // not in the dwarf
+    const math::VEC3 &GetBoundsMax() const {
+        return *(const math::VEC3 *)&ref().volume_max;
     }
 
     ResNode GetParentNode() {

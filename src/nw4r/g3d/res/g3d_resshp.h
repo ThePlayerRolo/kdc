@@ -3,11 +3,11 @@
 
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_rescommon.h>
-#include <nw4r/g3d/res/g3d_resmdl.h>
-#include <nw4r/g3d/res/g3d_resvtx.h>
+#include "nw4r/g3d/res/g3d_rescommon.h"
+// #include "nw4r/g3d/res/g3d_resmdl.h"
+#include "nw4r/g3d/res/g3d_resvtx.h"
 
-#include <revolution/GX.h>
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -18,9 +18,6 @@ namespace g3d {
  *
  ******************************************************************************/
 struct ResPrePrimDL {
-    static const int SIZE_GXVTXDESCLIST = (GX_VA_TEX7 + 1) + 1;
-    static const int SIZE_GXVTXATTRFMTLIST = (GX_VA_TEX7 - GX_VA_POS + 1) + 1;
-
     union {
         struct {
             u8 cullMode[10];                                          // at 0x0
@@ -57,10 +54,8 @@ struct ResCacheVtxDescv {
         data_u32[0] = data_u32[1] = data_u32[2] = 0;
     }
 
-    bool operator==(const ResCacheVtxDescv& rRhs) const {
-        return data_u32[0] == rRhs.data_u32[0] &&
-               data_u32[1] == rRhs.data_u32[1] &&
-               data_u32[2] == rRhs.data_u32[2];
+    bool operator==(const ResCacheVtxDescv &rRhs) const {
+        return data_u32[0] == rRhs.data_u32[0] && data_u32[1] == rRhs.data_u32[1] && data_u32[2] == rRhs.data_u32[2];
     }
 };
 
@@ -94,8 +89,10 @@ struct ResShpData {
     s16 idVtxNormal;                                  // at 0x4A
     s16 idVtxColor[GX_VA_TEX0 - GX_VA_CLR0];          // at 0x4C
     s16 idVtxTexCoord[GX_POS_MTX_ARRAY - GX_VA_TEX0]; // at 0x50
-    s32 toMtxSetUsed;                                 // at 0x60
-    ResMtxSetUsed msu;                                // at 0x64
+    s16 idVtxFurVec;                                  // at 0x60
+    s16 idVtxFurPos;                                  // at 0x62
+    s32 toMtxSetUsed;                                 // at 0x64
+    ResMtxSetUsed msu;                                // at 0x68
 };
 
 class ResShp : public ResCommon<ResShpData> {
@@ -107,29 +104,17 @@ public:
 
     ResMdl GetParent() const;
 
-    const char* GetName() const {
-        const ResShpData& r = ref();
-
-        if (r.name != 0) {
-            return reinterpret_cast<const char*>(&r) + r.name;
-        }
-
-        return NULL;
-    }
-
-    u32 GetID() const {
-        return ref().id;
-    }
-
-    bool GXGetVtxDescv(GXVtxDescList* pList) const;
-    bool GXGetVtxAttrFmtv(GXVtxAttrFmtList* pList) const;
-    void GXSetArray(GXAttr attr, const void* pBase, u8 stride);
+    bool GXGetVtxDescv(GXVtxDescList *pList) const;
+    bool GXGetVtxAttrFmtv(GXVtxAttrFmtList *pList) const;
+    void GXSetArray(GXAttr attr, const void *pBase, u8 stride);
     void DisableSetArray(GXAttr attr);
 
     ResVtxPos GetResVtxPos() const;
     ResVtxNrm GetResVtxNrm() const;
     ResVtxClr GetResVtxClr(u32 idx) const;
     ResVtxTexCoord GetResVtxTexCoord(u32 idx) const;
+    ResVtxClr GetResVtxFurVec(u32 idx) const;
+    ResVtxFurPos GetResVtxFurPos() const;
 
     void CallPrePrimitiveDisplayList(bool sync, bool cacheIsSame) const;
     void CallPrimitiveDisplayList(bool sync) const;
@@ -138,14 +123,14 @@ public:
         return ResTagDL(&ref().tagPrePrimDL);
     }
     ResTagDL GetPrePrimDLTag() const {
-        return ResTagDL(const_cast<ResTagDLData*>(&ref().tagPrePrimDL));
+        return ResTagDL(const_cast<ResTagDLData *>(&ref().tagPrePrimDL));
     }
 
     ResTagDL GetPrimDLTag() {
         return ResTagDL(&ref().tagPrimDL);
     }
     ResTagDL GetPrimDLTag() const {
-        return ResTagDL(const_cast<ResTagDLData*>(&ref().tagPrimDL));
+        return ResTagDL(const_cast<ResTagDLData *>(&ref().tagPrimDL));
     }
 
     ResShpPrePrim GetResShpPrePrim() {
@@ -163,13 +148,16 @@ public:
         return !(ref().flag & ResShpData::FLAG_INVISIBLE);
     }
 
-    void SetVisible(bool visible) {
+    // Not sure, copied from ResNode
+    void SetVisibility(bool visible) {
         if (visible) {
-            ref().flag &= ~ResShpData::FLAG_INVISIBLE;
+            ptr()->flag &= ~ResShpData::FLAG_INVISIBLE;
         } else {
-            ref().flag |= ResShpData::FLAG_INVISIBLE;
+            ptr()->flag |= ResShpData::FLAG_INVISIBLE;
         }
     }
+
+    void DCStore(bool sync);
 };
 
 } // namespace g3d

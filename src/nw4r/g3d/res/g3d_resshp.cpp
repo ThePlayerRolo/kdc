@@ -1,6 +1,6 @@
-#include <nw4r/g3d.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
 
-#include <revolution/GX.h>
+#include "revolution/GX.h" // IWYU pragma: export
 
 #include <cstring>
 
@@ -11,7 +11,7 @@ ResMdl ResShp::GetParent() const {
     return ofs_to_obj<ResMdl>(ref().toResMdlData);
 }
 
-bool ResShp::GXGetVtxDescv(GXVtxDescList* pList) const {
+bool ResShp::GXGetVtxDescv(GXVtxDescList *pList) const {
     ResShpPrePrim prim = GetResShpPrePrim();
 
     if (prim.ref().dl.vtxDescv[GX_CP_CMD_SZ * 0] == 0) {
@@ -64,7 +64,7 @@ bool ResShp::GXGetVtxDescv(GXVtxDescList* pList) const {
     return true;
 }
 
-bool ResShp::GXGetVtxAttrFmtv(GXVtxAttrFmtList* pList) const {
+bool ResShp::GXGetVtxAttrFmtv(GXVtxAttrFmtList *pList) const {
     ResShpPrePrim prim = GetResShpPrePrim();
 
     if (prim.ref().dl.vtxFmtv[GX_CP_CMD_SZ * 0] == 0) {
@@ -143,19 +143,19 @@ bool ResShp::GXGetVtxAttrFmtv(GXVtxAttrFmtList* pList) const {
     return true;
 }
 
-void ResShp::GXSetArray(GXAttr attr, const void* pBase, u8 stride) {
-    u8* pCmd = GetResShpPrePrim().ref().dl.array[attr - GX_VA_POS];
+void ResShp::GXSetArray(GXAttr attr, const void *pBase, u8 stride) {
+    u8 *pCmd = GetResShpPrePrim().ref().dl.array[attr - GX_VA_POS];
     u32 cpAttr = attr != GX_VA_NBT ? attr - GX_VA_POS : 1;
 
-    detail::ResWriteCPCmd(&pCmd[GX_CP_CMD_SZ * 0], cpAttr + GX_CP_REG_ARRAYBASE,
-                          reinterpret_cast<u32>(OSCachedToPhysical(pBase)));
+    detail::ResWriteCPCmd(
+        &pCmd[GX_CP_CMD_SZ * 0], cpAttr + GX_CP_REG_ARRAYBASE, reinterpret_cast<u32>(OSCachedToPhysical(pBase))
+    );
 
-    detail::ResWriteCPCmd(&pCmd[GX_CP_CMD_SZ * 1],
-                          cpAttr + GX_CP_REG_ARRAYSTRIDE, stride);
+    detail::ResWriteCPCmd(&pCmd[GX_CP_CMD_SZ * 1], cpAttr + GX_CP_REG_ARRAYSTRIDE, stride);
 }
 
 void ResShp::DisableSetArray(GXAttr attr) {
-    u8* pCmd = GetResShpPrePrim().ref().dl.array[attr - GX_VA_POS];
+    u8 *pCmd = GetResShpPrePrim().ref().dl.array[attr - GX_VA_POS];
     std::memset(pCmd, 0, GX_CP_CMD_SZ * 2);
 }
 
@@ -164,7 +164,7 @@ ResVtxPos ResShp::GetResVtxPos() const {
 }
 
 ResVtxNrm ResShp::GetResVtxNrm() const {
-    const ResShpData& r = ref();
+    const ResShpData &r = ref();
 
     if (r.idVtxNormal != -1) {
         return GetParent().GetResVtxNrm(r.idVtxNormal);
@@ -174,7 +174,7 @@ ResVtxNrm ResShp::GetResVtxNrm() const {
 }
 
 ResVtxClr ResShp::GetResVtxClr(u32 idx) const {
-    const ResShpData& r = ref();
+    const ResShpData &r = ref();
 
     if (r.idVtxColor[idx] != -1) {
         return GetParent().GetResVtxClr(r.idVtxColor[idx]);
@@ -184,7 +184,7 @@ ResVtxClr ResShp::GetResVtxClr(u32 idx) const {
 }
 
 ResVtxTexCoord ResShp::GetResVtxTexCoord(u32 idx) const {
-    const ResShpData& r = ref();
+    const ResShpData &r = ref();
 
     if (r.idVtxTexCoord[idx] != -1) {
         return GetParent().GetResVtxTexCoord(r.idVtxTexCoord[idx]);
@@ -193,8 +193,18 @@ ResVtxTexCoord ResShp::GetResVtxTexCoord(u32 idx) const {
     return ResVtxTexCoord(NULL);
 }
 
+ResVtxFurPos ResShp::GetResVtxFurPos() const {
+    const ResShpData &r = ref();
+
+    if (r.idVtxFurPos != -1) {
+        return GetParent().GetResVtxFurPos(r.idVtxFurPos);
+    }
+
+    return ResVtxFurPos(NULL);
+}
+
 void ResShp::Init() {
-    const void* pBase;
+    const void *pBase;
     u8 stride;
 
     GetResVtxPos().GetArray(&pBase, &stride);
@@ -228,8 +238,8 @@ void ResShp::Init() {
 
     GetResShpPrePrim().DCStore(false);
 
-    // TODO(kiwi) Fakematch
-    ResShpData& r = ref();
+    // TODO: Fakematch
+    ResShpData &r = ref();
     DC::StoreRangeNoSync(GetPrimDLTag().GetDL(), r.tagPrimDL.bufSize);
 }
 
@@ -251,41 +261,39 @@ void ResShp::Terminate() {
 }
 
 void ResShp::CallPrePrimitiveDisplayList(bool sync, bool cacheIsSame) const {
-    // TODO(kiwi) Should be non-const, and initialized by value
-    const ResTagDL& rTag = GetPrePrimDLTag();
+    // TODO: Should be non-const, and initialized by value
+    const ResTagDL &rTag = GetPrePrimDLTag();
 
     if (cacheIsSame) {
         if (sync) {
-            GXCallDisplayList(const_cast<u8*>(rTag.GetDL() + 32),
-                              rTag.GetCmdSize() - 32);
+            GXCallDisplayList(const_cast<u8 *>(rTag.GetDL() + 32), rTag.GetCmdSize() - 32);
         } else {
-            GXFastCallDisplayList(const_cast<u8*>(rTag.GetDL() + 32),
-                                  rTag.GetCmdSize() - 32);
+            GXFastCallDisplayList(const_cast<u8 *>(rTag.GetDL() + 32), rTag.GetCmdSize() - 32);
         }
 
         return;
     }
 
     if (sync) {
-        GXCallDisplayList(const_cast<u8*>(rTag.GetDL()), rTag.GetCmdSize());
+        GXCallDisplayList(const_cast<u8 *>(rTag.GetDL()), rTag.GetCmdSize());
     } else {
-        GXFastCallDisplayList(const_cast<u8*>(rTag.GetDL()), rTag.GetCmdSize());
+        GXFastCallDisplayList(const_cast<u8 *>(rTag.GetDL()), rTag.GetCmdSize());
     }
 }
 
 void ResShp::CallPrimitiveDisplayList(bool sync) const {
-    // TODO(kiwi) Should be non-const, and initialized by value
-    const ResTagDL& rTag = GetPrimDLTag();
+    // TODO: Should be non-const, and initialized by value
+    const ResTagDL &rTag = GetPrimDLTag();
 
     if (sync) {
-        GXCallDisplayList(const_cast<u8*>(rTag.GetDL()), rTag.GetCmdSize());
+        GXCallDisplayList(const_cast<u8 *>(rTag.GetDL()), rTag.GetCmdSize());
     } else {
-        GXFastCallDisplayList(const_cast<u8*>(rTag.GetDL()), rTag.GetCmdSize());
+        GXFastCallDisplayList(const_cast<u8 *>(rTag.GetDL()), rTag.GetCmdSize());
     }
 }
 
 void ResShpPrePrim::DCStore(bool sync) {
-    ResPrePrimDL& r = ref();
+    ResPrePrimDL &r = ref();
     u32 size = sizeof(ResPrePrimDL);
 
     if (sync) {
@@ -295,5 +303,15 @@ void ResShpPrePrim::DCStore(bool sync) {
     }
 }
 
+void ResShp::DCStore(bool sync) {
+    ResShpData &r = ref();
+    u32 size = r.size;
+
+    if (sync) {
+        DC::StoreRange(&r, size);
+    } else {
+        DC::StoreRangeNoSync(&r, size);
+    }
+}
 } // namespace g3d
 } // namespace nw4r

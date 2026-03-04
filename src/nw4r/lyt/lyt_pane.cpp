@@ -1,468 +1,528 @@
-#include <nw4r/lyt.h>
-#include <nw4r/math.h>
-#include <nw4r/ut.h>
+#include "nw4r/lyt/lyt_pane.h"
 
-#include <revolution/GX.h>
-#include <revolution/MTX.h>
+#include "nw4r/lyt/lyt_drawInfo.h"
+#include "nw4r/lyt/lyt_layout.h"
+#include "nw4r/lyt/lyt_material.h"
+#include "nw4r/ut/ut_Color.h"
+#include "nw4r/ut/ut_Rect.h"
+#include "nw4r/ut/ut_RuntimeTypeInfo.h"
+#include "nw4r/ut/ut_list.h"
 
-#include <cstring>
-
-/******************************************************************************
- *
- * Utility functions
- *
- ******************************************************************************/
-namespace {
-
-using namespace nw4r;
-using namespace nw4r::lyt;
-
-void ReverseYAxis(math::MTX34* pMtx) {
-    pMtx->m[0][1] = -pMtx->m[0][1];
-    pMtx->m[1][1] = -pMtx->m[1][1];
-    pMtx->m[2][1] = -pMtx->m[2][1];
-}
-
-} // namespace
-
+// ReverseYAxis__22@unnamed@lyt_pane_cpp@FPQ34nw4r4math5MTX34
 namespace nw4r {
+
 namespace lyt {
-
-NW4R_UT_RTTI_DEF_BASE(Pane);
-
 namespace detail {
+// __ct__Q44nw4r3lyt6detail8PaneBaseFv
+PaneBase::PaneBase() : mLink() {}
 
-/******************************************************************************
- *
- * PaneBase
- *
- ******************************************************************************/
-PaneBase::PaneBase() {}
-
+// __dt__Q44nw4r3lyt6detail8PaneBaseFv
 PaneBase::~PaneBase() {}
 
 } // namespace detail
 
-/******************************************************************************
- *
- * Pane
- *
- ******************************************************************************/
-Pane::Pane(const res::Pane* pRes) {
-    Init();
+NW4R_UT_RTTI_DEF_BASE(Pane);
 
-    mBasePosition = pRes->basePosition;
-
-    SetName(pRes->name);
-    SetUserData(pRes->userData);
-
-    mTranslate = pRes->translate;
-    mRotate = pRes->rotate;
-    mScale = pRes->scale;
-    mSize = pRes->size;
-
-    mAlpha = pRes->alpha;
-    mGlbAlpha = mAlpha;
-    mFlag = pRes->flag;
+// __ct__Q34nw4r3lyt4PaneFv
+// Guess pulled from BBA/slight modified
+Pane::Pane() : mChildList(), mAnimList(), mSize() {
+    this->mpParent = nullptr;
+    this->mpMaterial = nullptr;
+    this->mbUserAllocated = false;
+    this->mpExtUserDataList = nullptr;
+    this->mBasePosition = 4;
+    memset(this->mName, 0, PANE_NAME_SIZE + 1);
+    memset(this->mUserData, 0, PANE_USERDATA_SIZE + 1);
+    this->mTranslate = math::VEC3(0.0f, 0.0f, 0.0f);
+    this->mRotate = math::VEC3(0.0f, 0.0f, 0.0f);
+    this->mScale = math::VEC2(1.0f, 1.0f);
+    this->mSize = Size();
+    this->mAlpha = 0xFF;
+    this->mGlbAlpha = 0xFF;
+    SetVisible(true);
 }
 
+// __dt__Q34nw4r2ut38LinkList<Q34nw4r3lyt13AnimationLink,0>Fv
+
+// __dt__Q34nw4r2ut28LinkList<Q34nw4r3lyt4Pane,4>Fv
+
+// __ct__Q34nw4r3lyt4PaneFPCQ44nw4r3lyt3res4Pane
+Pane::Pane(const res::Pane *pBlock) : mChildList(), mAnimList(), mSize() {
+    this->mpParent = nullptr;
+    this->mpMaterial = nullptr;
+    this->mbUserAllocated = false;
+    this->mpExtUserDataList = nullptr;
+    this->mBasePosition = pBlock->basePosition;
+    strncpy(this->mName, pBlock->name, PANE_NAME_SIZE);
+    this->mName[PANE_NAME_SIZE] = '\0';
+    strncpy(this->mUserData, pBlock->mUserData, PANE_USERDATA_SIZE);
+    this->mUserData[PANE_USERDATA_SIZE] = '\0';
+    this->mTranslate = pBlock->translate;
+    this->mRotate = pBlock->rotate;
+    this->mScale = pBlock->scale;
+    this->mSize = pBlock->size;
+    this->mGlbAlpha = this->mAlpha = pBlock->alpha;
+    this->mFlag = pBlock->flag;
+}
+
+// Init__Q34nw4r3lyt4PaneFv
 void Pane::Init() {
-    mpParent = NULL;
-    mpMaterial = NULL;
-    mbUserAllocated = false;
+    this->mpParent = NULL;
+    this->mpMaterial = NULL;
+    this->mbUserAllocated = false;
+    this->mpExtUserDataList = NULL;
 }
 
+// __dt__Q34nw4r3lyt4PaneFv
 Pane::~Pane() {
-    NW4R_UT_LINKLIST_FOREACH_SAFE (it, mChildList, {
-        mChildList.Erase(it);
-
-        if (!it->IsUserAllocated()) {
-            it->~Pane();
-            Layout::FreeMemory(&*it);
+    ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter();
+    while (it != this->mChildList.GetEndIter()) {
+        ut::LinkList<Pane, 4>::Iterator currIt = it++;
+        mChildList.Erase(currIt);
+        if (!currIt->mbUserAllocated) {
+            Layout::DeleteObj(&*currIt);
         }
-    })
-
-    UnbindAnimationSelf(NULL);
-
-    if (mpMaterial != NULL && !mpMaterial->IsUserAllocated()) {
-        mpMaterial->~Material();
-        Layout::FreeMemory(mpMaterial);
+    }
+    this->UnbindAnimationSelf(nullptr);
+    if (this->mpMaterial && !this->mpMaterial->IsUserAllocated()) {
+        Layout::DeleteObj(this->mpMaterial);
     }
 }
 
-void Pane::SetName(const char* pName) {
-    std::strncpy(mName, pName, NW4R_LYT_RES_NAME_LEN);
-    mName[NW4R_LYT_RES_NAME_LEN] = '\0';
+// SetName__Q34nw4r3lyt4PaneFPCc
+void Pane::SetName(const char *pName) {
+    strncpy(this->mName, pName, PANE_NAME_SIZE);
+    this->mName[PANE_NAME_SIZE - 1] = '\0';
 }
 
-void Pane::SetUserData(const char* pUserData) {
-    std::strncpy(mUserData, pUserData, NW4R_LYT_PANE_USERDATA_LEN);
-    mUserData[NW4R_LYT_PANE_USERDATA_LEN] = '\0';
+// SetUserData__Q34nw4r3lyt4PaneFPCc
+void Pane::SetUserData(const char *pData) {
+    strncpy(this->mUserData, pData, PANE_USERDATA_SIZE);
+    this->mUserData[PANE_USERDATA_SIZE - 1] = '\0';
 }
 
-void Pane::AppendChild(Pane* pChild) {
-    InsertChild(mChildList.GetEndIter(), pChild);
+// AppendChild__Q34nw4r3lyt4PaneFPQ34nw4r3lyt4Pane
+void Pane::AppendChild(Pane *pChild) {
+    InsertChild(this->mChildList.GetEndIter(), pChild);
 }
 
-void Pane::InsertChild(PaneList::Iterator next, Pane* pChild) {
-    mChildList.Insert(next, pChild);
+// PrependChild__Q34nw4r3lyt4PaneFPQ34nw4r3lyt4Pane
+void Pane::PrependChild(Pane *pChild) {
+    InsertChild(this->mChildList.GetBeginIter(), pChild);
+}
+
+// InsertChild__Q34nw4r3lyt4PaneFPQ34nw4r3lyt4PanePQ34nw4r3lyt4Pane
+void Pane::InsertChild(Pane *at, Pane *pChild) {
+    this->mChildList.Insert(mChildList.GetIteratorFromPointer(&at->mLink), pChild);
     pChild->mpParent = this;
 }
 
-void Pane::RemoveChild(Pane* pChild) {
-    mChildList.Erase(pChild);
-    pChild->mpParent = NULL;
+// InsertChild__Q34nw4r3lyt4PaneFQ44nw4r2ut28LinkList<Q34nw4r3lyt4Pane,4>8IteratorPQ34nw4r3lyt4Pane
+// Guess for now. Not in SS
+void Pane::InsertChild(ut::LinkList<Pane, 4>::Iterator next, Pane *pChild) {
+    this->mChildList.Insert(next, pChild);
+    pChild->mpParent = this;
 }
 
-ut::Rect Pane::GetPaneRect(const DrawInfo& rInfo) const {
-    ut::Rect rect;
-    math::VEC2 base = GetVtxPos();
+// RemoveChild__Q34nw4r3lyt4PaneFPQ34nw4r3lyt4Pane
+void Pane::RemoveChild(Pane *pChild) {
+    this->mChildList.Erase(pChild);
+    pChild->mpParent = nullptr;
+}
+// GetPaneRect__Q34nw4r3lyt4PaneCFv
+ut::Rect Pane::GetPaneRect() const {
+    ut::Rect ret;
+    math::VEC2 basePt = GetVtxPos();
 
-    rect.left = base.x;
-    rect.top = base.y;
-    rect.right = base.x + mSize.width;
-    rect.bottom = base.y + mSize.height;
+    ret.left = basePt.x;
+    ret.top = basePt.y;
+    ret.right = basePt.x + mSize.width;
+    ret.bottom = basePt.y - mSize.height;
 
-    if (rInfo.IsYAxisUp()) {
-        rect.top = -rect.top;
-        rect.bottom = -rect.bottom;
-    }
-
-    return rect;
+    return ret;
 }
 
-ut::Color Pane::GetVtxColor(u32 idx) const {
-#pragma unused(idx)
-
-    return ut::Color::WHITE;
+// GetPaneRect__Q34nw4r3lyt4PaneCFRCQ34nw4r3lyt8DrawInfo
+ut::Rect Pane::GetPaneRect(const DrawInfo &) const {
+    return GetPaneRect();
 }
 
-void Pane::SetVtxColor(u32 idx, ut::Color color) {
-#pragma unused(idx)
-#pragma unused(color)
+// GetVtxColor__Q34nw4r3lyt4PaneCFUl
+ut::Color Pane::GetVtxColor(u32) const {
+    return ut::Color();
 }
 
+// SetVtxColor__Q34nw4r3lyt4PaneFUlQ34nw4r2ut5Color
+void Pane::SetVtxColor(u32, ut::Color) {}
+
+// GetColorElement__Q34nw4r3lyt4PaneCFUl
 u8 Pane::GetColorElement(u32 idx) const {
-    switch (idx) {
-    case ANIMTARGET_PANE_COLOR_ALPHA: {
-        return mAlpha;
-    }
-
-    default: {
+    if (idx == 0x10) {
+        return this->mAlpha;
+    } else {
         return GetVtxColorElement(idx);
     }
-    }
 }
 
+// SetColorElement__Q34nw4r3lyt4PaneFUlUc
 void Pane::SetColorElement(u32 idx, u8 value) {
-    switch (idx) {
-    case ANIMTARGET_PANE_COLOR_ALPHA: {
-        mAlpha = value;
-        break;
-    }
-
-    default: {
-        SetVtxColorElement(idx, value);
-        break;
-    }
+    if (idx == 0x10) {
+        this->mAlpha = value;
+    } else {
+        return SetVtxColorElement(idx, value);
     }
 }
 
+// GetVtxColorElement__Q34nw4r3lyt4PaneCFUl
 u8 Pane::GetVtxColorElement(u32 idx) const {
-#pragma unused(idx)
-
     return 0xFF;
 }
 
-void Pane::SetVtxColorElement(u32 idx, u8 value) {
-#pragma unused(idx)
-#pragma unused(value)
-}
+// SetVtxColorElement__Q34nw4r3lyt4PaneFUlUc
+void Pane::SetVtxColorElement(u32 idx, u8 value) {}
 
-Pane* Pane::FindPaneByName(const char* pName, bool recursive) {
-    if (detail::EqualsResName(mName, pName)) {
+// FindPaneByName__Q34nw4r3lyt4PaneFPCcb
+Pane *Pane::FindPaneByName(const char *findName, bool bRecursive) {
+    if (detail::EqualsResName(this->mName, findName)) {
         return this;
     }
-
-    if (recursive) {
-        NW4R_UT_LINKLIST_FOREACH (it, mChildList, {
-            Pane* pResult = it->FindPaneByName(pName, true);
-
-            if (pResult != NULL) {
-                return pResult;
+    if (bRecursive) {
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+             it++) {
+            Pane *pPane = it->FindPaneByName(findName, bRecursive);
+            if (pPane != nullptr) {
+                return pPane;
             }
-        })
-    }
-
-    return NULL;
-}
-
-Material* Pane::FindMaterialByName(const char* pName, bool recursive) {
-    if (mpMaterial != NULL &&
-        detail::EqualsMaterialName(mpMaterial->GetName(), pName)) {
-
-        return mpMaterial;
-    }
-
-    if (recursive) {
-        NW4R_UT_LINKLIST_FOREACH (it, mChildList, {
-            Material* pResult = it->FindMaterialByName(pName, true);
-
-            if (pResult != NULL) {
-                return pResult;
-            }
-        })
-    }
-
-    return NULL;
-}
-
-void Pane::CalculateMtx(const DrawInfo& rInfo) {
-    if (!IsVisible() && !rInfo.IsInvisiblePaneCalculateMtx()) {
-        return;
-    }
-
-    math::MTX34 mtx1, mtx2;
-    math::MTX34 rotateMtx;
-
-    math::VEC2 scale = mScale;
-    if (rInfo.IsLocationAdjust() && IsLocationAdjust()) {
-        scale.x *= rInfo.GetLocationAdjustScale().x;
-        scale.y *= rInfo.GetLocationAdjustScale().y;
-    }
-
-    PSMTXScale(mtx2, scale.x, scale.y, 1.0f);
-
-    PSMTXRotRad(rotateMtx, 'x', NW4R_MATH_DEG_TO_RAD(mRotate.x));
-    PSMTXConcat(rotateMtx, mtx2, mtx1);
-
-    PSMTXRotRad(rotateMtx, 'y', NW4R_MATH_DEG_TO_RAD(mRotate.y));
-    PSMTXConcat(rotateMtx, mtx1, mtx2);
-
-    PSMTXRotRad(rotateMtx, 'z', NW4R_MATH_DEG_TO_RAD(mRotate.z));
-    PSMTXConcat(rotateMtx, mtx2, mtx1);
-
-    PSMTXTransApply(mtx1, mMtx, mTranslate.x, mTranslate.y, mTranslate.z);
-
-    if (mpParent != NULL) {
-        math::MTX34Mult(&mGlbMtx, &mpParent->mGlbMtx, &mMtx);
-    } else if (rInfo.IsMultipleViewMtxOnDraw()) {
-        mGlbMtx = mMtx;
-    } else {
-        math::MTX34Mult(&mGlbMtx, &rInfo.GetViewMtx(), &mMtx);
-    }
-
-    if (rInfo.IsInfluencedAlpha() && mpParent != NULL) {
-        mGlbAlpha = static_cast<u8>(mAlpha * rInfo.GetGlobalAlpha());
-    } else {
-        mGlbAlpha = mAlpha;
-    }
-
-    f32 glbAlpha = rInfo.GetGlobalAlpha();
-    bool influenced = rInfo.IsInfluencedAlpha();
-    bool modifyInfo = IsInfluencedAlpha() && mAlpha != 255;
-
-    if (modifyInfo) {
-        DrawInfo& rMtInfo = const_cast<DrawInfo&>(rInfo);
-        rMtInfo.SetGlobalAlpha(glbAlpha * mAlpha * (1.0f / 255.0f));
-        rMtInfo.SetInfluencedAlpha(true);
-    }
-
-    CalculateMtxChild(rInfo);
-
-    if (modifyInfo) {
-        DrawInfo& rMtInfo = const_cast<DrawInfo&>(rInfo);
-        rMtInfo.SetGlobalAlpha(glbAlpha);
-        rMtInfo.SetInfluencedAlpha(influenced);
-    }
-}
-
-void Pane::CalculateMtxChild(const DrawInfo& rInfo) {
-    NW4R_UT_LINKLIST_FOREACH (it, mChildList, { it->CalculateMtx(rInfo); })
-}
-
-void Pane::Draw(const DrawInfo& rInfo) {
-    if (!IsVisible()) {
-        return;
-    }
-
-    DrawSelf(rInfo);
-    NW4R_UT_LINKLIST_FOREACH (it, mChildList, { it->Draw(rInfo); })
-}
-
-void Pane::DrawSelf(const DrawInfo& rInfo) {
-#pragma unused(rInfo)
-    // Debug draw stripped out
-}
-
-void Pane::Animate(u32 option) {
-    AnimateSelf(option);
-
-    if (IsVisible() || !(option & ANIMOPTION_SKIP_INVISIBLE)) {
-        NW4R_UT_LINKLIST_FOREACH (it, mChildList, { it->Animate(option); })
-    }
-}
-
-void Pane::AnimateSelf(u32 option) {
-    NW4R_UT_LINKLIST_FOREACH (it, mAnimList, {
-        if (!it->IsEnable()) {
-            continue;
         }
+    }
+    return nullptr;
+}
 
-        AnimTransform* pAnimTrans = it->GetAnimTransform();
-        pAnimTrans->Animate(it->GetIndex(), this);
-    })
+// FindMaterialByName__Q34nw4r3lyt4PaneFPCcb
+Material *Pane::FindMaterialByName(const char *findName, bool bRecursive) {
+    if (this->mpMaterial && detail::EqualsMaterialName(this->mpMaterial->GetName(), findName)) {
+        return this->mpMaterial;
+    }
+    if (bRecursive) {
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+             it++) {
+            Material *pPane = it->FindMaterialByName(findName, bRecursive);
+            if (pPane != nullptr) {
+                return pPane;
+            }
+        }
+    }
+    return nullptr;
+}
 
-    if (IsVisible() || !(option & ANIMOPTION_SKIP_INVISIBLE)) {
-        if (mpMaterial != NULL) {
+// CalculateMtx__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt8DrawInfo
+// Matches for SS, applying the rotation and scale seems to be different accross versions.
+// Also look out for the Bottom CalculateMtxChild section. In other version this is actually seperated differently
+void Pane::CalculateMtx(const DrawInfo &drawInfo) {
+    if (!IsVisible() && !drawInfo.IsInvisiblePaneCalculateMtx()) {
+        return;
+    }
+
+    math::VEC2 scale = this->mScale;
+
+    if (drawInfo.IsLocationAdjust() && IsLocationAdjust()) {
+        scale.x *= drawInfo.GetLocationAdjustScale().x;
+        scale.y *= drawInfo.GetLocationAdjustScale().y;
+    }
+    if (mRotate.x != 0.0f || mRotate.y != 0.0f) {
+        f32 sinx, siny, sinz;
+        f32 cosx, cosy, cosz;
+
+        math::SinCosDeg(&sinx, &cosx, mRotate.x);
+        math::SinCosDeg(&siny, &cosy, mRotate.y);
+        math::SinCosDeg(&sinz, &cosz, mRotate.z);
+        const f32 cosz_cosx = cosz * cosx;
+        const f32 siny_sinx = siny * sinx;
+        const f32 sinz_cosx = sinz * cosx;
+        this->mMtx._00 = cosz * cosy * scale.x;
+        this->mMtx._10 = (sinz * cosy) * scale.x;
+        this->mMtx._20 = (-siny) * scale.x;
+        this->mMtx._01 = (-sinz_cosx + cosz * siny_sinx) * scale.y;
+        this->mMtx._11 = (cosz_cosx + sinz * siny_sinx) * scale.y;
+        this->mMtx._21 = (cosy * sinx) * scale.y;
+        this->mMtx._02 = (sinz * sinx) + (cosz_cosx * siny);
+        this->mMtx._12 = (-cosz * sinx) + (sinz_cosx * siny);
+        this->mMtx._22 = (cosy * cosx);
+
+    } else if (mRotate.z != 0.0f) {
+        f32 sinz;
+        f32 cosz;
+        math::SinCosDeg(&sinz, &cosz, mRotate.z);
+        this->mMtx._00 = cosz * scale.x;
+        this->mMtx._01 = -sinz * scale.y;
+        this->mMtx._02 = 0.0f;
+        this->mMtx._10 = sinz * scale.x;
+        this->mMtx._11 = cosz * scale.y;
+        this->mMtx._12 = 0.0f;
+        this->mMtx._20 = 0.0f;
+        this->mMtx._21 = 0.0f;
+        this->mMtx._22 = 1.0f;
+    } else {
+        this->mMtx._00 = scale.x;
+        this->mMtx._01 = 0.0f;
+        this->mMtx._02 = 0.0f;
+        this->mMtx._10 = 0.0f;
+        this->mMtx._11 = scale.y;
+        this->mMtx._12 = 0.0f;
+        this->mMtx._20 = 0.0f;
+        this->mMtx._21 = 0.0f;
+        this->mMtx._22 = 1.0f;
+    }
+    this->mMtx._03 = this->mTranslate.x;
+    this->mMtx._13 = this->mTranslate.y;
+    this->mMtx._23 = this->mTranslate.z;
+    if (this->mpParent) {
+        PSMTXConcat(this->mpParent->mGlbMtx, this->mMtx, this->mGlbMtx);
+    } else {
+        if (drawInfo.IsMultipleViewMtxOnDraw()) {
+            this->mGlbMtx = this->mMtx;
+        } else {
+            PSMTXConcat(drawInfo.GetViewMtx(), this->mMtx, this->mGlbMtx);
+        }
+    }
+
+    u8 alpha;
+    bool b = drawInfo.IsInfluencedAlpha() && this->mpParent;
+    if (b) {
+        alpha = this->mAlpha * drawInfo.GetGlobalAlpha();
+    } else {
+        alpha = this->mAlpha;
+    }
+    this->mGlbAlpha = alpha;
+
+    if (IsInfluencedAlpha() && this->mAlpha != 0xFF) {
+        DrawInfo &mtDrawInfo = const_cast<DrawInfo &>(drawInfo);
+        const f32 crGlobalAlpha = drawInfo.GetGlobalAlpha();
+        const bool bCdInfluenced = drawInfo.IsInfluencedAlpha();
+        mtDrawInfo.SetGlobalAlpha(crGlobalAlpha * mAlpha * (1.0f / 0xFF));
+        mtDrawInfo.SetInfluencedAlpha(true);
+        CalculateMtxChild(drawInfo);
+        mtDrawInfo.SetGlobalAlpha(crGlobalAlpha);
+        mtDrawInfo.SetInfluencedAlpha(bCdInfluenced);
+    } else {
+        CalculateMtxChild(drawInfo);
+    }
+}
+
+// CalculateMtxChild__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt8DrawInfo
+// Guess but makes sense
+void Pane::CalculateMtxChild(const DrawInfo &drawInfo) {
+    for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+         it++) {
+        it->CalculateMtx(drawInfo);
+    }
+}
+
+// Draw__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt8DrawInfo
+void Pane::Draw(const DrawInfo &drawInfo) {
+    if (IsVisible()) {
+        this->DrawSelf(drawInfo);
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+             it++) {
+            it->Draw(drawInfo);
+        }
+    }
+}
+
+// DrawSelf__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt8DrawInfo
+void Pane::DrawSelf(const DrawInfo &drawInfo) {}
+
+// Animate__Q34nw4r3lyt4PaneFUl
+void Pane::Animate(u32 option) {
+    this->AnimateSelf(option);
+    if (IsVisible() || !(option & 1)) {
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+             it++) {
+            it->Animate(option);
+        }
+    }
+}
+
+// AnimateSelf__Q34nw4r3lyt4PaneFUl
+void Pane::AnimateSelf(u32 option) {
+    for (ut::LinkList<AnimationLink, 0>::Iterator it = this->mAnimList.GetBeginIter();
+         it != this->mAnimList.GetEndIter(); it++) {
+        if (it->IsEnable()) {
+            AnimTransform *animTrans = it->GetAnimTransform();
+            animTrans->Animate(it->GetIndex(), this);
+        }
+    }
+    if (IsVisible() || !detail::TestBit(option, 0)) {
+        if (this->mpMaterial) {
             mpMaterial->Animate();
         }
     }
 }
 
-void Pane::BindAnimation(AnimTransform* pAnimTrans, bool recursive, bool disable) {
-    pAnimTrans->Bind(this, recursive, disable);
+// BindAnimation__Q34nw4r3lyt4PaneFPQ34nw4r3lyt13AnimTransformbb
+void Pane::BindAnimation(AnimTransform *pAnimTrans, bool bRecursive, bool bDisable) {
+    pAnimTrans->Bind(this, bRecursive, bDisable);
 }
 
-void Pane::UnbindAnimation(AnimTransform* pAnimTrans, bool recursive) {
-    UnbindAnimationSelf(pAnimTrans);
-
-    if (recursive) {
-        NW4R_UT_LINKLIST_FOREACH (it, mChildList,
-            { it->UnbindAnimation(pAnimTrans, recursive); })
-    }
-}
-
-void Pane::UnbindAllAnimation(bool recursive) {
-    UnbindAnimation(NULL, recursive);
-}
-
-void Pane::UnbindAnimationSelf(AnimTransform* pAnimTrans) {
-    if (mpMaterial != NULL) {
-        mpMaterial->UnbindAnimation(pAnimTrans);
-    }
-
-    NW4R_UT_LINKLIST_FOREACH_SAFE (it, mAnimList, {
-        if (pAnimTrans == NULL || it->GetAnimTransform() == pAnimTrans) {
-            mAnimList.Erase(it);
-            it->Reset();
-        }
-    })
-}
-
-void Pane::AddAnimationLink(AnimationLink* pAnimLink) {
-    mAnimList.PushBack(pAnimLink);
-}
-
-AnimationLink* Pane::FindAnimationLinkSelf(AnimTransform* pAnimTrans) {
-    AnimationLink* pAnimLink =
-        detail::FindAnimationLink(&mAnimList, pAnimTrans);
-
-    if (pAnimLink != NULL) {
-        return pAnimLink;
-    }
-
-    if (mpMaterial != NULL) {
-        pAnimLink = mpMaterial->FindAnimationLink(pAnimTrans);
-
-        if (pAnimLink != NULL) {
-            return pAnimLink;
+// UnbindAnimation__Q34nw4r3lyt4PaneFPQ34nw4r3lyt13AnimTransformb
+void Pane::UnbindAnimation(AnimTransform *pAnimTrans, bool bRecusive) {
+    this->UnbindAnimationSelf(pAnimTrans);
+    if (bRecusive) {
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+             it++) {
+            it->UnbindAnimation(pAnimTrans, bRecusive);
         }
     }
-
-    return NULL;
 }
 
-void Pane::SetAnimationEnable(AnimTransform* pAnimTrans, bool enable,
-                              bool recursive) {
+// UnbindAllAnimation__Q34nw4r3lyt4PaneFb
+void Pane::UnbindAllAnimation(bool bRecursive) {
+    UnbindAnimation(nullptr, bRecursive);
+}
 
-    AnimationLink* pAnimLink =
-        detail::FindAnimationLink(&mAnimList, pAnimTrans);
+// UnbindAnimationSelf__Q34nw4r3lyt4PaneFPQ34nw4r3lyt13AnimTransform
+void Pane::UnbindAnimationSelf(AnimTransform *pAnimTrans) {
+    if (this->mpMaterial) {
+        this->mpMaterial->UnbindAnimation(pAnimTrans);
+    }
+    detail::UnbindAnimationLink(&this->mAnimList, pAnimTrans);
+}
 
-    if (pAnimLink != NULL) {
-        pAnimLink->SetEnable(enable);
+// AddAnimationLink__Q34nw4r3lyt4PaneFPQ34nw4r3lyt13AnimationLink
+void Pane::AddAnimationLink(AnimationLink *pAnimationLink) {
+    this->mAnimList.PushBack(pAnimationLink);
+}
+
+// FindAnimationLinkSelf__Q34nw4r3lyt4PaneFPQ34nw4r3lyt13AnimTransform
+AnimationLink *Pane::FindAnimationLinkSelf(AnimTransform *pAnimTrans) {
+    return detail::FindAnimationLink(&this->mAnimList, pAnimTrans);
+}
+
+// FindAnimationLinkSelf__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt12AnimResource
+AnimationLink *Pane::FindAnimationLinkSelf(const AnimResource &animRes) {
+    return detail::FindAnimationLink(&this->mAnimList, animRes);
+}
+
+// SetAnimationEnable__Q34nw4r3lyt4PaneFPQ34nw4r3lyt13AnimTransformbb
+void Pane::SetAnimationEnable(AnimTransform *pAnimTrans, bool bEnable, bool bRecursive) {
+    AnimationLink *pAnimLink = FindAnimationLinkSelf(pAnimTrans);
+    if (pAnimLink) {
+        pAnimLink->SetEnable(bEnable);
     }
 
-    if (mpMaterial != NULL) {
-        mpMaterial->SetAnimationEnable(pAnimTrans, enable);
+    u8 materialNum = GetMaterialNum();
+    for (u8 i = 0; i < materialNum; i++) {
+        GetMaterial(i)->SetAnimationEnable(pAnimTrans, bEnable);
     }
-
-    if (recursive) {
-        NW4R_UT_LINKLIST_FOREACH (it, mChildList,
-            { it->SetAnimationEnable(pAnimTrans, enable, recursive); })
+    if (bRecursive) {
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+             it++) {
+            it->SetAnimationEnable(pAnimTrans, bEnable, bRecursive);
+        }
     }
 }
 
-void Pane::LoadMtx(const DrawInfo& rInfo) {
+// SetAnimationEnable__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt12AnimResourcebb
+void Pane::SetAnimationEnable(const AnimResource &animRes, bool bEnable, bool bRecursive) {
+    AnimationLink *pAnimLink = FindAnimationLinkSelf(animRes);
+    if (pAnimLink) {
+        pAnimLink->SetEnable(bEnable);
+    }
+
+    u8 materialNum = GetMaterialNum();
+    for (u8 i = 0; i < materialNum; i++) {
+        GetMaterial(i)->SetAnimationEnable(animRes, bEnable);
+    }
+    if (bRecursive) {
+        for (ut::LinkList<Pane, 4>::Iterator it = this->mChildList.GetBeginIter(); it != this->mChildList.GetEndIter();
+             it++) {
+            it->SetAnimationEnable(animRes, bEnable, bRecursive);
+        }
+    }
+}
+
+// LoadMtx__Q34nw4r3lyt4PaneFRCQ34nw4r3lyt8DrawInfo
+void Pane::LoadMtx(const DrawInfo &drawInfo) {
     math::MTX34 mtx;
-    math::MTX34* pMtx = NULL;
-
-    if (rInfo.IsMultipleViewMtxOnDraw()) {
-        math::MTX34Mult(&mtx, &rInfo.GetViewMtx(), &mGlbMtx);
-
-        if (rInfo.IsYAxisUp()) {
-            ReverseYAxis(&mtx);
-        }
-
-        pMtx = &mtx;
-    } else if (rInfo.IsYAxisUp()) {
-        math::MTX34Copy(&mtx, &mGlbMtx);
-        pMtx = &mtx;
-
-        ReverseYAxis(&mtx);
+    math::MTX34 *mtxPtr;
+    if (drawInfo.IsMultipleViewMtxOnDraw()) {
+        PSMTXConcat(drawInfo.GetViewMtx(), this->mGlbMtx, mtx);
+        mtxPtr = &mtx;
     } else {
-        pMtx = &mGlbMtx;
+        mtxPtr = &this->mGlbMtx;
     }
-
-    GXLoadPosMtxImm(*pMtx, GX_PNMTX0);
+    GXLoadPosMtxImm(*mtxPtr, GX_PNMTX0);
     GXSetCurrentMtx(GX_PNMTX0);
 }
 
+// GetVtxPos__Q34nw4r3lyt4PaneCFv
 math::VEC2 Pane::GetVtxPos() const {
-    math::VEC2 base(0.0f, 0.0f);
+    math::VEC2 basePt(0.0f, 0.0f);
 
-    switch (mBasePosition % HORIZONTALPOSITION_MAX) {
-    default:
-    case HORIZONTALPOSITION_LEFT: {
-        base.x = 0.0f;
-        break;
+    switch (this->mBasePosition % 3) {
+        default: basePt.x = 0.0f; break;
+        case 1:  basePt.x = -this->mSize.width / 2; break;
+        case 2:  basePt.x = -this->mSize.width; break;
     }
-
-    case HORIZONTALPOSITION_CENTER: {
-        base.x = -mSize.width / 2;
-        break;
+    switch (this->mBasePosition / 3) {
+        default: basePt.y = 0.0f; break;
+        case 1:  basePt.y = this->mSize.height / 2; break;
+        case 2:  basePt.y = this->mSize.height; break;
     }
-
-    case HORIZONTALPOSITION_RIGHT: {
-        base.x = -mSize.width;
-        break;
-    }
-    }
-
-    switch (mBasePosition / HORIZONTALPOSITION_MAX) {
-    default:
-    case VERTICALPOSITION_TOP: {
-        base.y = 0.0f;
-        break;
-    }
-
-    case HORIZONTALPOSITION_CENTER: {
-        base.y = -mSize.height / 2;
-        break;
-    }
-
-    case HORIZONTALPOSITION_RIGHT: {
-        base.y = -mSize.height;
-        break;
-    }
-    }
-
-    return base;
+    return basePt;
 }
 
-Material* Pane::GetMaterial() const {
-    return mpMaterial;
+// GetMaterialNum__Q34nw4r3lyt4PaneCFv
+u8 Pane::GetMaterialNum() const {
+    if (this->mpMaterial) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+// GetMaterial__Q34nw4r3lyt4PaneCFv
+Material *Pane::GetMaterial() const {
+    return this->mpMaterial;
+}
+
+// GetMaterial__Q34nw4r3lyt4PaneCFUl
+Material *Pane::GetMaterial(u32 idx) const {
+    if (idx == 0) {
+        return GetMaterial();
+    }
+    return nullptr;
+}
+
+u16 Pane::GetExtUserDataNum() const {
+    if (this->mpExtUserDataList) {
+        return this->mpExtUserDataList->num;
+    }
+    return 0;
+}
+const res::ExtUserData *Pane::GetExtUserData() const {
+    if (this->mpExtUserDataList) {
+        return detail::ConvertOffsToPtr<res::ExtUserData>(this->mpExtUserDataList, sizeof(res::ExtUserDataList));
+    }
+    return nullptr;
+}
+
+const res::ExtUserData *Pane::FindExtUserDataByName(const char *name) {
+    const res::ExtUserData *pUserData = GetExtUserData();
+
+    if (!pUserData) {
+        return nullptr;
+    }
+    int i = 0;
+    for (int i = 0; i < this->mpExtUserDataList->num; i++, pUserData++) {
+        const char *str = pUserData->GetName();
+        if (strcmp(name, str) == 0) {
+            return pUserData;
+        };
+    }
+    return nullptr;
 }
 
 } // namespace lyt
+
 } // namespace nw4r

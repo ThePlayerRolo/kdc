@@ -1,10 +1,14 @@
 #ifndef NW4R_G3D_RES_RES_ANM_CLR_H
 #define NW4R_G3D_RES_RES_ANM_CLR_H
+
+/** NOTICE: Revision change from 3->4. Structures, Enums, and/or Functions may have changed and not yet done so
+ * (Zeldex72, Feb 1, 2025) */
+
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_resanm.h>
-#include <nw4r/g3d/res/g3d_rescommon.h>
-#include <nw4r/g3d/res/g3d_resdict.h>
+#include "nw4r/g3d/res/g3d_resanm.h"
+#include "nw4r/g3d/res/g3d_rescommon.h"
+#include "nw4r/g3d/res/g3d_resdict.h"
 
 namespace nw4r {
 namespace g3d {
@@ -73,15 +77,16 @@ struct ResAnmClrData {
     u32 revision;              // at 0x8
     s32 toResFileData;         // at 0xC
     s32 toClrDataDic;          // at 0x10
-    s32 name;                  // at 0x14
-    s32 original_path;         // at 0x18
-    ResAnmClrInfoData info;    // at 0x1C
+    s32 toResUserData;         // at 0x14
+    s32 name;                  // at 0x18
+    s32 original_path;         // at 0x1C
+    ResAnmClrInfoData info;    // at 0x20
 };
 
 class ResAnmClr : public ResCommon<ResAnmClrData> {
 public:
-    static const u32 SIGNATURE = FOURCC('C', 'L', 'R', '0');
-    static const int REVISION = 3;
+    static const u32 SIGNATURE = 'CLR0';
+    static const int REVISION = 4;
 
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResAnmClr);
@@ -94,15 +99,13 @@ public:
         return GetRevision() == REVISION;
     }
 
-    void GetAnmResult(ClrAnmResult* pResult, u32 idx, f32 frame) const;
+    void GetAnmResult(ClrAnmResult *pResult, u32 idx, f32 frame) const;
 
-    const ResAnmClrMatData* GetMatAnm(int idx) const {
-        return static_cast<ResAnmClrMatData*>(
-            ofs_to_obj<ResDic>(ref().toClrDataDic)[idx]);
+    const ResAnmClrMatData *GetMatAnm(int idx) const {
+        return static_cast<ResAnmClrMatData *>(ofs_to_obj<ResDic>(ref().toClrDataDic)[idx]);
     }
-    const ResAnmClrMatData* GetMatAnm(u32 idx) const {
-        return static_cast<ResAnmClrMatData*>(
-            ofs_to_obj<ResDic>(ref().toClrDataDic)[idx]);
+    const ResAnmClrMatData *GetMatAnm(u32 idx) const {
+        return static_cast<ResAnmClrMatData *>(ofs_to_obj<ResDic>(ref().toClrDataDic)[idx]);
     }
 
     int GetNumFrame() const {

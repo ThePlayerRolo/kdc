@@ -1,97 +1,98 @@
-#ifndef NW4R_LYT_DRAW_INFO_H
-#define NW4R_LYT_DRAW_INFO_H
-#include <nw4r/types_nw4r.h>
-
-#include <nw4r/math.h>
-#include <nw4r/ut.h>
+#ifndef NW4R_LYT_DRAWINFO_H
+#define NW4R_LYT_DRAWINFO_H
+#include "common.h"
+#include "nw4r/lyt/lyt_types.h"
+#include "nw4r/math/math_types.h"
+#include "nw4r/ut/ut_Rect.h"
 
 namespace nw4r {
 namespace lyt {
-
-class DrawInfo {
-public:
+struct DrawInfo {
+    virtual ~DrawInfo();
     DrawInfo();
-    virtual ~DrawInfo(); // at 0x8
 
-    bool IsYAxisUp() const {
-        return mViewRect.bottom - mViewRect.top < 0.0f;
+    bool isYAxisUp() const {
+        // NYI
+        return false;
+    }
+    // field accessors
+    const math::VEC2 &GetLocationAdjustScale() const {
+        return mScale;
+    }
+    void SetLocationAdjustScale(const math::VEC2 &scale) {
+        this->mScale = scale;
     }
 
-    const math::MTX34& GetViewMtx() const {
+    const math::MTX34 &GetViewMtx() const {
         return mViewMtx;
     }
-    void SetViewMtx(const math::MTX34& rViewMtx) {
-        mViewMtx = rViewMtx;
-    }
-
-    const ut::Rect& GetViewRect() const {
-        return mViewRect;
-    }
-    void SetViewRect(const ut::Rect& rViewRect) {
-        mViewRect = rViewRect;
-    }
-
-    const math::VEC2& GetLocationAdjustScale() const {
-        return mLocationAdjustScale;
-    }
-    void SetLocationAdjustScale(const math::VEC2& rScale) {
-        mLocationAdjustScale = rScale;
+    void SetViewMtx(const math::MTX34 &value) {
+        this->mViewMtx = value;
     }
 
     f32 GetGlobalAlpha() const {
         return mGlobalAlpha;
     }
     void SetGlobalAlpha(f32 alpha) {
-        mGlobalAlpha = alpha;
+        this->mGlobalAlpha = alpha;
     }
 
-    bool IsMultipleViewMtxOnDraw() const {
-        return mFlag.mulViewDraw;
+    const ut::Rect &GetViewRect() const {
+        return this->mViewRect;
+    }
+    void SetViewRect(const ut::Rect &value) {
+        this->mViewRect = value;
     }
 
-    bool IsInfluencedAlpha() const {
-        return mFlag.influencedAlpha;
+    // mFlags accessors
+    bool IsInvisiblePaneCalculateMtx() const {
+        return mFlags.invisiblePaneCalculateMtx;
     }
-    void SetInfluencedAlpha(bool influenced) {
-        mFlag.influencedAlpha = influenced;
+    void SetInvisiblePaneCalculateMtx(bool bEnable) {
+        this->mFlags.invisiblePaneCalculateMtx = bEnable;
     }
 
     bool IsLocationAdjust() const {
-        return mFlag.locationAdjust;
+        return mFlags.locationAdjust;
     }
-    void SetLocationAdjust(bool adjust) {
-        mFlag.locationAdjust = adjust;
+    void SetLocationAdjust(bool bEnable) {
+        this->mFlags.locationAdjust = bEnable;
     }
 
-    bool IsInvisiblePaneCalculateMtx() const {
-        return mFlag.invisiblePaneCalculateMtx;
+    bool IsMultipleViewMtxOnDraw() const {
+        return mFlags.mulViewDraw;
     }
-    void SetInvisiblePaneCalculateMtx(bool calc) {
-        mFlag.invisiblePaneCalculateMtx = calc;
+    void SetMultipleViewMtxOnDraw(bool bEnable) {
+        this->mFlags.mulViewDraw = bEnable;
+    }
+
+    bool IsInfluencedAlpha() const {
+        return mFlags.influencedAlpha;
+    }
+    void SetInfluencedAlpha(bool bEnable) {
+        this->mFlags.influencedAlpha = bEnable;
     }
 
     bool IsDebugDrawMode() const {
-        return mFlag.debugDrawMode;
+        return mFlags.debugDrawMode;
     }
-    void SetDebugDrawMode(bool debug) {
-        mFlag.debugDrawMode = debug;
+    void SetDebugDrawMode(bool bEnable) {
+        this->mFlags.debugDrawMode = bEnable;
     }
 
-protected:
-    math::MTX34 mViewMtx;            // at 0x4
-    ut::Rect mViewRect;              // at 0x34
-    math::VEC2 mLocationAdjustScale; // at 0x44
-    f32 mGlobalAlpha;                // at 0x4C
-
+private:
+    math::MTX34 mViewMtx; // at 0x0
+    ut::Rect mViewRect;   // at 0x34
+    math::VEC2 mScale;    // at 0x44
+    f32 mGlobalAlpha;     // at 0x48
     struct {
         u8 mulViewDraw : 1;
         u8 influencedAlpha : 1;
         u8 locationAdjust : 1;
         u8 invisiblePaneCalculateMtx : 1;
         u8 debugDrawMode : 1;
-    } mFlag; // at 0x50
+    } mFlags; // at 0x50
 };
-
 } // namespace lyt
 } // namespace nw4r
 

@@ -1,56 +1,105 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_WaveSound.h"
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_WaveSound.cpp
+ */
 
-NW4R_UT_RTTI_DEF_DERIVED(WaveSound, BasicSound);
+/*******************************************************************************
+ * headers
+ */
 
-WaveSound::WaveSound(SoundInstanceManager<WaveSound>* pManager)
-    : mManager(pManager), mTempSpecialHandle(NULL), mPreparedFlag(false) {}
+#include "common.h"
 
-bool WaveSound::Prepare(const void* pWsdData, s32 wsdOffset,
-                        WsdPlayer::StartOffsetType startType, s32 startOffset,
-                        int voices, const WsdPlayer::WsdCallback* pCallback,
-                        u32 callbackArg) {
-    InitParam();
+#include "nw4r/snd/snd_BasicSound.h"
+#include "nw4r/snd/snd_SoundInstanceManager.h"
+#include "nw4r/snd/snd_WaveSoundHandle.h"
+#include "nw4r/snd/snd_WsdPlayer.h"
 
-    if (!mWsdPlayer.Prepare(pWsdData, wsdOffset, startType, startOffset, voices,
-                            pCallback, callbackArg)) {
-        return false;
-    }
+#include "nw4r/ut/ut_RuntimeTypeInfo.h"
 
-    mPreparedFlag = true;
-    return true;
+#include "nw4r/NW4RAssert.hpp"
+
+/*******************************************************************************
+ * variables
+ */
+
+namespace nw4r { namespace snd { namespace detail
+{
+	// .sbss
+	ut::detail::RuntimeTypeInfo const WaveSound::typeInfo(
+		&BasicSound::typeInfo);
+}}} // namespace nw4r::snd::detail
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd { namespace detail {
+
+WaveSound::WaveSound(SoundInstanceManager<WaveSound> *manager, int priority,
+                     int ambientPriority) :
+	BasicSound			(priority, ambientPriority),
+	mTempSpecialHandle	(nullptr),
+	mManager			(manager),
+	mPreparedFlag		(false)
+{
 }
 
-void WaveSound::Shutdown() {
-    BasicSound::Shutdown();
-    mManager->Free(this);
+bool WaveSound::Prepare(void const *waveSoundBase, s32 waveSoundOffset,
+                        WsdPlayer::StartOffsetType startOffsetType, s32 offset,
+                        WsdPlayer::WsdCallback const *callback,
+                        u32 callbackData)
+{
+	NW4RAssertPointerNonnull_Line(74, waveSoundBase);
+	NW4RAssertPointerNonnull_Line(75, callback);
+
+	InitParam();
+
+	bool result =
+		mWsdPlayer.Prepare(waveSoundBase, waveSoundOffset, startOffsetType,
+	                       offset, GetVoiceOutCount(), callback, callbackData);
+	if (!result)
+		return false;
+
+	mPreparedFlag = true;
+	return true;
 }
 
-void WaveSound::SetChannelPriority(int priority) {
-    mWsdPlayer.SetChannelPriority(priority);
+void WaveSound::Shutdown()
+{
+	BasicSound::Shutdown();
+
+	mManager->Free(this);
 }
 
-void WaveSound::SetReleasePriorityFix(bool flag) {
-    mWsdPlayer.SetReleasePriorityFix(flag);
+void WaveSound::SetChannelPriority(int priority)
+{
+	// specifically not the source variant
+	NW4RAssertHeaderClampedLRValue_Line(124, priority, BasicSound::PRIORITY_MIN,
+	                                    BasicSound::PRIORITY_MAX);
+
+	mWsdPlayer.SetChannelPriority(priority);
 }
 
-void WaveSound::SetPlayerPriority(int priority) {
-    BasicSound::SetPlayerPriority(priority);
-    mManager->UpdatePriority(this, CalcCurrentPlayerPriority());
+void WaveSound::SetReleasePriorityFix(bool flag)
+{
+	mWsdPlayer.SetReleasePriorityFix(flag);
 }
 
-bool WaveSound::IsAttachedTempSpecialHandle() {
-    return mTempSpecialHandle != NULL;
+void WaveSound::OnUpdatePlayerPriority()
+{
+	mManager->UpdatePriority(this, CalcCurrentPlayerPriority());
 }
 
-void WaveSound::DetachTempSpecialHandle() {
-    mTempSpecialHandle->DetachSound();
+bool WaveSound::IsAttachedTempSpecialHandle()
+{
+	return mTempSpecialHandle != nullptr;
 }
 
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+void WaveSound::DetachTempSpecialHandle()
+{
+	mTempSpecialHandle->DetachSound();
+}
+
+}}} // namespace nw4r::snd::detail

@@ -1,20 +1,27 @@
-#include <nw4r/snd.h>
+#include "nw4r/snd/snd_MmlSeqTrack.h"
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_MmlSeqTrack.cpp
+ */
 
-MmlSeqTrack::MmlSeqTrack() {
-    mMmlParserParam.noteWaitFlag = true;
-    mMmlParserParam.tieFlag = false;
-    mMmlParserParam.cmpFlag = true;
-    mMmlParserParam.callStackDepth = 0;
+/*******************************************************************************
+ * headers
+ */
+
+#include "nw4r/snd/snd_MmlParser.h"
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd { namespace detail {
+
+MmlSeqTrack::MmlSeqTrack() {}
+
+MmlSeqTrack::ParseResult MmlSeqTrack::Parse(bool doNoteOn)
+{
+	return mParser->Parse(this, doNoteOn);
 }
 
-ParseResult MmlSeqTrack::Parse(bool doNoteOn) {
-    return mParser->Parse(this, doNoteOn);
-}
-
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+}}} // namespace nw4r::snd::detail

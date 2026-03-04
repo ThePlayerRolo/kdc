@@ -1,13 +1,17 @@
 #ifndef NW4R_G3D_RES_RES_ANM_TEX_PAT_H
 #define NW4R_G3D_RES_RES_ANM_TEX_PAT_H
+
+/** NOTICE: Revision change from 3->4. Structures, Enums, and/or Functions may have changed and not yet done so
+ * (Zeldex72, Feb 1, 2025) */
+
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_resanm.h>
-#include <nw4r/g3d/res/g3d_rescommon.h>
-#include <nw4r/g3d/res/g3d_resdict.h>
-#include <nw4r/g3d/res/g3d_resfile.h>
-#include <nw4r/g3d/res/g3d_respltt.h>
-#include <nw4r/g3d/res/g3d_restex.h>
+#include "nw4r/g3d/res/g3d_resanm.h"
+#include "nw4r/g3d/res/g3d_rescommon.h"
+#include "nw4r/g3d/res/g3d_resdict.h"
+#include "nw4r/g3d/res/g3d_resmat.h"
+#include "nw4r/g3d/res/g3d_respltt.h"
+#include "nw4r/g3d/res/g3d_restex.h"
 
 namespace nw4r {
 namespace g3d {
@@ -87,15 +91,16 @@ struct ResAnmTexPatData {
     s32 toPlttNameArray;       // at 0x18
     s32 toResTexArray;         // at 0x1C
     s32 toResPlttArray;        // at 0x20
-    s32 name;                  // at 0x24
-    s32 original_path;         // at 0x28
-    ResAnmTexPatInfoData info; // at 0x2C
+    s32 toResUserData;         // at 0x24
+    s32 name;                  // at 0x28
+    s32 original_path;         // at 0x2C
+    ResAnmTexPatInfoData info; // at 0x30
 };
 
 class ResAnmTexPat : public ResCommon<ResAnmTexPatData> {
 public:
-    static const u32 SIGNATURE = FOURCC('P', 'A', 'T', '0');
-    static const int REVISION = 3;
+    static const u32 SIGNATURE = 'PAT0';
+    static const int REVISION = 4;
 
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResAnmTexPat);
@@ -113,15 +118,13 @@ public:
         return GetRevision() == REVISION;
     }
 
-    void GetAnmResult(TexPatAnmResult* pResult, u32 idx, f32 frame) const;
+    void GetAnmResult(TexPatAnmResult *pResult, u32 idx, f32 frame) const;
 
-    const ResAnmTexPatMatData* GetMatAnm(int idx) const {
-        return static_cast<ResAnmTexPatMatData*>(
-            ofs_to_obj<ResDic>(ref().toTexPatDataDic)[idx]);
+    const ResAnmTexPatMatData *GetMatAnm(int idx) const {
+        return static_cast<ResAnmTexPatMatData *>(ofs_to_obj<ResDic>(ref().toTexPatDataDic)[idx]);
     }
-    const ResAnmTexPatMatData* GetMatAnm(u32 idx) const {
-        return static_cast<ResAnmTexPatMatData*>(
-            ofs_to_obj<ResDic>(ref().toTexPatDataDic)[idx]);
+    const ResAnmTexPatMatData *GetMatAnm(u32 idx) const {
+        return static_cast<ResAnmTexPatMatData *>(ofs_to_obj<ResDic>(ref().toTexPatDataDic)[idx]);
     }
 
     int GetNumFrame() const {

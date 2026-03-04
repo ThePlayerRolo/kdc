@@ -1,8 +1,12 @@
-#include <nw4r/g3d.h>
+#include "nw4r/g3d/g3d_scnroot.h"
 
-#include <revolution/GX.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
+#include "nw4r/g3d/g3d_scnobj.h"
+
+#include "revolution/GX.h" // IWYU pragma: export
 
 #include <algorithm>
+#include <new>
 
 namespace nw4r {
 namespace g3d {
@@ -14,16 +18,15 @@ NW4R_G3D_RTTI_DEF(ScnRoot);
  * ScnRoot
  *
  ******************************************************************************/
-ScnRoot* ScnRoot::Construct(MEMAllocator* pAllocator, u32* pSize,
-                            u32 maxChildren, u32 maxScnObj, u32 numLightObj,
-                            u32 numLightSet) {
-    ScnRoot* pScnRoot = NULL;
+ScnRoot *ScnRoot::Construct(
+    MEMAllocator *pAllocator, u32 *pSize, u32 maxChildren, u32 maxScnObj, u32 numLightObj, u32 numLightSet
+) {
+    ScnRoot *pScnRoot = NULL;
     u32 scnRootSize = sizeof(ScnRoot);
     u32 scnObjGatherSize = sizeof(ScnObjGather);
 
-    u32 childrenSize = maxChildren * sizeof(ScnObj*);
-    u32 scnObjBufSize =
-        maxScnObj * sizeof(ScnObj*) + maxScnObj * sizeof(ScnObj*);
+    u32 childrenSize = maxChildren * sizeof(ScnObj *);
+    u32 scnObjBufSize = maxScnObj * sizeof(ScnObj *) + maxScnObj * sizeof(ScnObj *);
 
     u32 lightObjSize = numLightObj * sizeof(LightObj);
     u32 ambLightObjSize = numLightObj * sizeof(AmbLightObj);
@@ -42,25 +45,21 @@ ScnRoot* ScnRoot::Construct(MEMAllocator* pAllocator, u32* pSize,
     }
 
     if (pAllocator != NULL) {
-        u8* pBuffer = reinterpret_cast<u8*>(Alloc(pAllocator, size));
+        u8 *pBuffer = reinterpret_cast<u8 *>(Alloc(pAllocator, size));
         if (pBuffer == NULL) {
             return NULL;
         }
 
-        ScnObj** ppScnObjBuf =
-            reinterpret_cast<ScnObj**>(pBuffer + scnObjBufOfs);
+        ScnObj **ppScnObjBuf = reinterpret_cast<ScnObj **>(pBuffer + scnObjBufOfs);
 
-        IScnObjGather* pGather = new (pBuffer + scnObjGatherOfs)
-            ScnObjGather(ppScnObjBuf, ppScnObjBuf + maxScnObj, maxScnObj);
+        IScnObjGather *pGather =
+            new (pBuffer + scnObjGatherOfs) ScnObjGather(ppScnObjBuf, ppScnObjBuf + maxScnObj, maxScnObj);
 
-        LightObj* pLightObjBuf =
-            reinterpret_cast<LightObj*>(pBuffer + lightObjOfs);
+        LightObj *pLightObjBuf = reinterpret_cast<LightObj *>(pBuffer + lightObjOfs);
 
-        AmbLightObj* pAmbObjBuf =
-            reinterpret_cast<AmbLightObj*>(pBuffer + ambLightOfs);
+        AmbLightObj *pAmbObjBuf = reinterpret_cast<AmbLightObj *>(pBuffer + ambLightOfs);
 
-        LightSetData* pLightSetBuf =
-            reinterpret_cast<LightSetData*>(pBuffer + lightSetDataOfs);
+        LightSetData *pLightSetBuf = reinterpret_cast<LightSetData *>(pBuffer + lightSetDataOfs);
 
         // clang-format off
         pScnRoot = new (pBuffer) ScnRoot(
@@ -79,31 +78,31 @@ ScnRoot* ScnRoot::Construct(MEMAllocator* pAllocator, u32* pSize,
     return pScnRoot;
 }
 
-void ScnRoot::G3dProc(u32 task, u32 param, void* pInfo) {
+void ScnRoot::G3dProc(u32 task, u32 param, void *pInfo) {
     if (IsG3dProcDisabled(task)) {
         return;
     }
 
     switch (task) {
-    case G3DPROC_CHILD_DETACHED: {
-        if (mpAnmScn == pInfo) {
-            mpAnmScn->G3dProc(G3DPROC_DETACH_PARENT, 0, this);
-            mpAnmScn = NULL;
-            break;
+        case G3DPROC_CHILD_DETACHED: {
+            if (mpAnmScn == pInfo) {
+                mpAnmScn->G3dProc(G3DPROC_DETACH_PARENT, 0, this);
+                mpAnmScn = NULL;
+                break;
+            }
+
+            // FALLTHROUGH, detach may be for ScnGroup
         }
 
-        // FALLTHROUGH, detach may be for ScnGroup
-    }
-
-    default: {
-        DefG3dProcScnGroup(task, param, pInfo);
-        break;
-    }
+        default: {
+            DefG3dProcScnGroup(task, param, pInfo);
+            break;
+        }
     }
 }
 
 Camera ScnRoot::GetCamera(int idx) {
-    if (idx >= 0 && idx < G3DState::NUM_CAMERA) {
+    if (0 <= idx && idx < G3DState::NUM_CAMERA) {
         return Camera(&mCamera[idx]);
     }
 
@@ -119,7 +118,7 @@ void ScnRoot::SetCurrentCamera(int idx) {
 }
 
 Fog ScnRoot::GetFog(int idx) {
-    if (idx >= 0 && idx < G3DState::NUM_FOG) {
+    if (0 <= idx && idx < G3DState::NUM_FOG) {
         return Fog(&mFog[idx]);
     }
 
@@ -148,8 +147,7 @@ void ScnRoot::SetGlbSettings() {
     cam.GXSetScissorBoxOffset();
 
     for (i = 0; i < G3DState::NUM_CAMERA; i++) {
-        G3DState::SetCameraProjMtx(Camera(&mCamera[i]), i,
-                                   i == mCurrentCameraID);
+        G3DState::SetCameraProjMtx(Camera(&mCamera[i]), i, i == mCurrentCameraID);
     }
 
     bool persp = cam.GetProjectionType() != GX_ORTHOGRAPHIC;
@@ -168,9 +166,9 @@ void ScnRoot::SetGlbSettings() {
         Fog fog(&mFog[i]);
         fog.SetNearFar(near, far);
 
-        if (fog.ref().type != GX_FOG_NONE) {
-            fog.ref().type = static_cast<GXFogType>(
-                (fog.ref().type & ~(GX_ORTHOGRAPHIC << 3)) | projOrthoBit);
+        // Enum Comparison mismatch on purpose
+        if (fog.ref().type != GX_PERSPECTIVE) {
+            fog.ref().type = static_cast<GXFogType>((fog.ref().type & ~(GX_ORTHOGRAPHIC << 3)) | projOrthoBit);
         }
 
         if (fog.IsFogRangeAdjEnable()) {
@@ -217,8 +215,7 @@ void ScnRoot::CalcAnmScn() {
     }
 
     if (numCamera > 0) {
-        const u32 numLoadableCamera =
-            std::min<u32>(G3DState::NUM_CAMERA, numCamera);
+        const u32 numLoadableCamera = std::min<u32>(G3DState::NUM_CAMERA, numCamera);
 
         for (u32 i = 0; i < numLoadableCamera; i++) {
             Camera cam(&mCamera[i]);
@@ -257,12 +254,12 @@ void ScnRoot::GatherDrawScnObj() {
     cam.GetCameraMtx(&mtx);
 
     if (cam.ref().flags & CameraData::FLAG_PROJ_PERSP) {
-        frustum.Set(cam.ref().projFovy, cam.ref().projAspect,
-                    cam.ref().projNear, cam.ref().projFar, mtx);
+        frustum.Set(cam.ref().projFovy, cam.ref().projAspect, cam.ref().projNear, cam.ref().projFar, mtx);
     } else {
-        frustum.Set(cam.ref().projTop, cam.ref().projBottom, cam.ref().projLeft,
-                    cam.ref().projRight, cam.ref().projNear, cam.ref().projFar,
-                    mtx);
+        frustum.Set(
+            cam.ref().projTop, cam.ref().projBottom, cam.ref().projLeft, cam.ref().projRight, cam.ref().projNear,
+            cam.ref().projFar, mtx
+        );
     }
 
     gpCullingFrustum = &frustum;
@@ -299,19 +296,17 @@ void ScnRoot::DrawXlu() {
     G3DState::Invalidate(G3DState::INVALIDATE_TEV);
 }
 
-ScnRoot::ScnRoot(MEMAllocator* pAllocator, IScnObjGather* pGather,
-                 ScnObj** ppChildrenBuf, u32 maxChildren, u32 numLight,
-                 u32 numLightSet, LightObj* pLightObjBuf,
-                 AmbLightObj* pAmbObjBuf, LightSetData* pLightSetBuf)
+ScnRoot::ScnRoot(
+    MEMAllocator *pAllocator, IScnObjGather *pGather, ScnObj **ppChildrenBuf, u32 maxChildren, u32 numLight,
+    u32 numLightSet, LightObj *pLightObjBuf, AmbLightObj *pAmbObjBuf, LightSetData *pLightSetBuf
+)
     : ScnGroup(pAllocator, ppChildrenBuf, maxChildren),
       mpCollection(pGather),
       mDrawMode(RESMDL_DRAWMODE_DEFAULT),
       mScnRootFlags(0),
       mCurrentCameraID(0),
-      mLightSetting(pLightObjBuf, pAmbObjBuf, numLight, pLightSetBuf,
-                    numLightSet),
+      mLightSetting(pLightObjBuf, pAmbObjBuf, numLight, pLightSetBuf, numLightSet),
       mpAnmScn(NULL) {
-
     for (u32 i = 0; i < G3DState::NUM_CAMERA; i++) {
         Camera res(&mCamera[i]);
         res.Init();
@@ -336,31 +331,29 @@ ScnRoot::~ScnRoot() {
  ******************************************************************************/
 namespace {
 
-inline bool LessZSortOpa(const ScnObj* pLhs, const ScnObj* pRhs) {
+inline bool LessZSortOpa(const ScnObj *pLhs, const ScnObj *pRhs) {
     int lhsPrio = pLhs->GetPriorityDrawOpa();
     int rhsPrio = pRhs->GetPriorityDrawOpa();
 
     if (lhsPrio == rhsPrio) {
-        return pLhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23 >
-               pRhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23;
+        return pLhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23 > pRhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23;
     }
 
     return lhsPrio < rhsPrio;
 }
 
-inline bool LessZSortXlu(const ScnObj* pLhs, const ScnObj* pRhs) {
+inline bool LessZSortXlu(const ScnObj *pLhs, const ScnObj *pRhs) {
     int lhsPrio = pLhs->GetPriorityDrawXlu();
     int rhsPrio = pRhs->GetPriorityDrawXlu();
 
     if (lhsPrio == rhsPrio) {
-        return pLhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23 <
-               pRhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23;
+        return pLhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23 < pRhs->GetMtxPtr(ScnObj::MTX_VIEW)->_23;
     }
 
     return lhsPrio < rhsPrio;
 }
 
-inline bool LessByGetValueForSortOpa(const ScnObj* pLhs, const ScnObj* pRhs) {
+inline bool LessByGetValueForSortOpa(const ScnObj *pLhs, const ScnObj *pRhs) {
     int lhsPrio = pLhs->GetPriorityDrawOpa();
     int rhsPrio = pRhs->GetPriorityDrawOpa();
 
@@ -371,7 +364,7 @@ inline bool LessByGetValueForSortOpa(const ScnObj* pLhs, const ScnObj* pRhs) {
     return lhsPrio < rhsPrio;
 }
 
-inline bool LessByGetValueForSortXlu(const ScnObj* pLhs, const ScnObj* pRhs) {
+inline bool LessByGetValueForSortXlu(const ScnObj *pLhs, const ScnObj *pRhs) {
     int lhsPrio = pLhs->GetPriorityDrawXlu();
     int rhsPrio = pRhs->GetPriorityDrawXlu();
 
@@ -389,16 +382,14 @@ inline bool LessByGetValueForSortXlu(const ScnObj* pLhs, const ScnObj* pRhs) {
  * ScnObjGather
  *
  ******************************************************************************/
-IScnObjGather::CullingStatus ScnObjGather::Add(ScnObj* pObj, bool opa,
-                                               bool xlu) {
-    IScnObjGather::CullingStatus status =
-        IScnObjGather::CULLINGSTATUS_INTERSECT;
+IScnObjGather::CullingStatus ScnObjGather::Add(ScnObj *pObj, bool opa, bool xlu) {
+    IScnObjGather::CullingStatus status = IScnObjGather::CULLINGSTATUS_INTERSECT;
 
     math::IntersectionResult ixResult = math::INTERSECTION_INTERSECT;
 
     if (gpCullingFrustum != NULL) {
         u32 value;
-        pObj->GetScnObjOption(ScnObj::OPTID_ENABLE_CULLING, &value);
+        pObj->GetScnObjOption(ScnObj::OPTION_ENABLE_CULLING, &value);
 
         if (value) {
             math::AABB aabb;
@@ -447,24 +438,24 @@ void ScnObjGather::Sort(LessThanFunc pOpaFunc, LessThanFunc pXluFunc) {
     std::sort(mpArrayXlu, mpArrayXlu + mNumScnObjXlu, pXluFunc);
 }
 
-void ScnObjGather::DrawOpa(ResMdlDrawMode* pForceMode) {
+void ScnObjGather::DrawOpa(ResMdlDrawMode *pForceMode) {
     for (u32 i = 0; i != mNumScnObjOpa;) {
         mpArrayOpa[i++]->G3dProc(G3dObj::G3DPROC_DRAW_OPA, 0, pForceMode);
     }
 }
 
-void ScnObjGather::DrawXlu(ResMdlDrawMode* pForceMode) {
+void ScnObjGather::DrawXlu(ResMdlDrawMode *pForceMode) {
     for (u32 i = 0; i != mNumScnObjXlu;) {
         mpArrayXlu[i++]->G3dProc(G3dObj::G3DPROC_DRAW_XLU, 0, pForceMode);
     }
 }
 
-ScnObjGather::ScnObjGather(ScnObj** ppBufOpa, ScnObj** ppBufXlu, u32 capacity)
-    : mpArrayOpa(ppBufOpa),
-      mpArrayXlu(ppBufXlu),
-      mSizeScnObj(capacity),
-      mNumScnObjOpa(0),
-      mNumScnObjXlu(0) {}
+ScnObjGather::CheckStatus ScnObjGather::CheckScnObj(ScnObj *) {
+    return ScnObjGather::CHECKSTATUS_GATHER_SCNOBJ;
+}
+
+ScnObjGather::ScnObjGather(ScnObj **ppBufOpa, ScnObj **ppBufXlu, u32 capacity)
+    : mpArrayOpa(ppBufOpa), mpArrayXlu(ppBufXlu), mSizeScnObj(capacity), mNumScnObjOpa(0), mNumScnObjXlu(0) {}
 
 } // namespace g3d
 } // namespace nw4r

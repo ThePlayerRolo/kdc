@@ -1,6 +1,6 @@
-#include <nw4r/g3d.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
 
-// TODO(kiwi) Naming
+// TODO: Naming
 enum TMemCachePlan {
     TMEM_CACHE_NONE,
 
@@ -152,9 +152,9 @@ static const TexRegionSize scaaaTexRegionSize[TMEM_CACHE_MAX - 1] = {
 // clang-format on
 
 // Forward declarations
-static GXTexRegion* TexRegionCallback(const GXTexObj* pObj, GXTexMapID map);
-static GXTlutRegion* TlutRegionCallback(u32 id);
-static void setTexRegion_(TMemCachePlan plan) DECOMP_DONT_INLINE;
+static GXTexRegion *TexRegionCallback(const GXTexObj *pObj, GXTexMapID map);
+static GXTlutRegion *TlutRegionCallback(u32 id);
+static void setTexRegion_(TMemCachePlan plan) __attribute__((never_inline));
 
 namespace nw4r {
 namespace g3d {
@@ -179,35 +179,32 @@ void SetTMemLayout(TMemLayout layout) {
     setTexRegion_(sTMemCachePlan);
 
     switch (layout) {
-    case TMEM_LAYOUT_NONE:
-    case TMEM_LAYOUT_1: {
-        GXSetTlutRegionCallback(sfpDefaultTlutRegionCallback);
-        break;
-    }
-
-    case TMEM_LAYOUT_2: {
-        int i;
-        u32 num = 0;
-
-        u32 addr;
-        GXTlutRegion* pRegion = saaTlutRegion;
-
-        for (i = 0, addr = 0xF0000; i < GX_MAX_TEXMAP;
-             i++, pRegion++, num++, addr += 0x2000) {
-
-            GXInitTlutRegion(pRegion, addr, 16);
+        case TMEM_LAYOUT_NONE:
+        case TMEM_LAYOUT_1:    {
+            GXSetTlutRegionCallback(sfpDefaultTlutRegionCallback);
+            break;
         }
 
-        sTlutRegionNum = num;
-        GXSetTlutRegionCallback(TlutRegionCallback);
-        break;
-    }
+        case TMEM_LAYOUT_2: {
+            int i;
+            u32 num = 0;
 
-    // TODO(kiwi) Seems to imply no TMEM_LAYOUT_3 exists. Then why the [plan -
-    // 1]?
-    default: {
-        break;
-    }
+            u32 addr;
+            GXTlutRegion *pRegion = saaTlutRegion;
+
+            for (i = 0, addr = 0xF0000; i < GX_MAX_TEXMAP; i++, pRegion++, num++, addr += 0x2000) {
+                GXInitTlutRegion(pRegion, addr, 16);
+            }
+
+            sTlutRegionNum = num;
+            GXSetTlutRegionCallback(TlutRegionCallback);
+            break;
+        }
+
+        // TODO: Seems to imply no TMEM_LAYOUT_3 exists. Then why the [plan - 1]?
+        default: {
+            break;
+        }
     }
 }
 
@@ -215,32 +212,29 @@ void SetTMemLayout(TMemLayout layout) {
 } // namespace g3d
 } // namespace nw4r
 
-static GXTexRegion* TexRegionCallback(const GXTexObj* pObj, GXTexMapID map) {
-    int fmt = static_cast<int>(GXGetTexObjFmt(pObj));
+static GXTexRegion *TexRegionCallback(const GXTexObj *pObj, GXTexMapID map) {
+    GXTexFmt fmt = GXGetTexObjFmt(pObj);
     GXBool mipmap = GXGetTexObjMipMap(pObj);
 
     switch (fmt) {
-    case GX_TF_RGBA8: {
-        return mipmap ? &saaTexRegion[TEX_REGION_RGBA8_MIPMAP][map]
-                      : &saaTexRegion[TEX_REGION_RGBA8][map];
-    }
+        case GX_TF_RGBA8: {
+            return mipmap ? &saaTexRegion[TEX_REGION_RGBA8_MIPMAP][map] : &saaTexRegion[TEX_REGION_RGBA8][map];
+        }
 
-    case GX_TF_C4:
-    case GX_TF_C8:
-    case GX_TF_C14X2: {
-        return mipmap ? &saaTexRegion[TEX_REGION_CI_MIPMAP][map]
-                      : &saaTexRegion[TEX_REGION_CI][map];
-    }
+        case GX_TF_C4:
+        case GX_TF_C8:
+        case GX_TF_C14X2: {
+            return mipmap ? &saaTexRegion[TEX_REGION_CI_MIPMAP][map] : &saaTexRegion[TEX_REGION_CI][map];
+        }
 
-    default: {
-        return mipmap ? &saaTexRegion[TEX_REGION_DEFAULT_MIPMAP][map]
-                      : &saaTexRegion[TEX_REGION_DEFAULT][map];
-    }
+        default: {
+            return mipmap ? &saaTexRegion[TEX_REGION_DEFAULT_MIPMAP][map] : &saaTexRegion[TEX_REGION_DEFAULT][map];
+        }
     }
 }
 
-static GXTlutRegion* TlutRegionCallback(u32 id) {
-    GXTlutRegion* pRegion = NULL;
+static GXTlutRegion *TlutRegionCallback(u32 id) {
+    GXTlutRegion *pRegion = NULL;
 
     if (id < sTlutRegionNum) {
         pRegion = &saaTlutRegion[id];

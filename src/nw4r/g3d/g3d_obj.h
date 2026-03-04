@@ -2,8 +2,8 @@
 #define NW4R_G3D_OBJ_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/g3d_rtti.h>
-#include <nw4r/g3d/platform/g3d_allocator.h>
+#include "nw4r/g3d/g3d_rtti.h"
+#include "nw4r/g3d/platform/g3d_allocator.h"
 
 namespace nw4r {
 namespace g3d {
@@ -30,7 +30,8 @@ inline u32 align32(u32 x) {
  ******************************************************************************/
 class G3dObj {
 public:
-    template <u32 N> struct ResNameDataT {
+    template <u32 N>
+    struct ResNameDataT {
         u32 len; // at 0x0
         // @bug 'N' already includes the null terminator
         char str[ROUND_UP(N + 1, 4)]; // at 0x4
@@ -45,24 +46,23 @@ public:
 
     public:
         template <u32 N>
-        explicit TypeObj(const ResNameDataT<N>& rName)
-            : mName(reinterpret_cast<const ResNameDataPT*>(&rName)) {}
+        explicit TypeObj(const ResNameDataT<N> &rName) : mName(reinterpret_cast<const ResNameDataPT *>(&rName)) {}
 
         u32 GetTypeID() const {
             // @note Address is used for comparing TypeObjs
             return reinterpret_cast<u32>(mName);
         }
 
-        const char* GetTypeName() const {
+        const char *GetTypeName() const {
             return mName->str;
         }
 
-        bool operator==(const TypeObj& rOther) const {
+        bool operator==(const TypeObj &rOther) const {
             return GetTypeID() == rOther.GetTypeID();
         }
 
     private:
-        const ResNameDataPT* mName; // at 0x0
+        const ResNameDataPT *mName; // at 0x0
     };
 
     enum G3dProcTask {
@@ -91,7 +91,7 @@ public:
         return other == GetTypeObjStatic();
     } // at 0x8
 
-    virtual void G3dProc(u32 task, u32 param, void* pInfo) = 0; // at 0xC
+    virtual void G3dProc(u32 task, u32 param, void *pInfo) = 0; // at 0xC
     virtual ~G3dObj();                                          // at 0x10
 
     virtual const TypeObj GetTypeObj() const {
@@ -100,43 +100,45 @@ public:
     static const G3dObj::TypeObj GetTypeObjStatic() {
         return TypeObj(TYPE_NAME);
     }
-    virtual const char* GetTypeName() const {
+    virtual const char *GetTypeName() const {
         return GetTypeObj().GetTypeName();
     } // at 0x18
 
-    G3dObj(MEMAllocator* pAllocator, G3dObj* pParent)
-        : mpHeap(pAllocator), mpParent(pParent) {}
+    G3dObj(MEMAllocator *pAllocator, G3dObj *pParent) : mpHeap(pAllocator), mpParent(pParent) {}
 
-    G3dObj* GetParent() const {
+    G3dObj *GetParent() const {
         return mpParent;
     }
-    void SetParent(G3dObj* pParent) {
+    void SetParent(G3dObj *pParent) {
         mpParent = pParent;
     }
 
     void Destroy();
+    G3dObj *DetachFromParent();
 
-    static void* Alloc(MEMAllocator* pAllocator, u32 size) {
+    static void *Alloc(MEMAllocator *pAllocator, u32 size) {
         return detail::AllocFromAllocator(pAllocator, size);
     }
-    static void Dealloc(MEMAllocator* pAllocator, void* pBlock) {
+    static void Dealloc(MEMAllocator *pAllocator, void *pBlock) {
         detail::FreeToAllocator(pAllocator, pBlock);
     }
 
-    static inline void* operator new(size_t /* size */, void* pBlock) {
+    static inline void *operator new(size_t /* size */, void *pBlock) {
         return pBlock;
     }
-    static inline void operator delete(void* /* pBlock */) {}
+    static inline void operator delete(void * /* pBlock */) {}
 
-    template <typename TTo> static TTo* DynamicCast(G3dObj* pObj) {
-        return (pObj != NULL && pObj->IsDerivedFrom(TTo::GetTypeObjStatic()))
-                   ? static_cast<TTo*>(pObj)
-                   : NULL;
+    template <typename TTo>
+    static TTo *DynamicCast(G3dObj *pObj) {
+        if (pObj != NULL && pObj->IsDerivedFrom(TTo::GetTypeObjStatic())) {
+            return static_cast<TTo *>(pObj);
+        }
+        return NULL;
     }
 
 private:
-    G3dObj* mpParent;     // at 0x4
-    MEMAllocator* mpHeap; // at 0x8
+    G3dObj *mpParent;     // at 0x4
+    MEMAllocator *mpHeap; // at 0x8
 
     __NW4R_G3D_TYPEOBJ_DECL(G3dObj);
 };

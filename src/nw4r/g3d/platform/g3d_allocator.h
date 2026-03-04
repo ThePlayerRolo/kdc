@@ -2,16 +2,16 @@
 #define NW4R_G3D_PLATFORM_ALLOCATOR_H
 #include <nw4r/types_nw4r.h>
 
-#include <revolution/MEM.h>
+#include "revolution/MEM.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
 namespace detail {
 
-inline void* AllocFromAllocator(MEMAllocator* pAllocator, u32 size) {
+inline void *AllocFromAllocator(MEMAllocator *pAllocator, u32 size) {
     return MEMAllocFromAllocator(pAllocator, size);
 }
-inline void FreeToAllocator(MEMAllocator* pAllocator, void* pBlock) {
+inline void FreeToAllocator(MEMAllocator *pAllocator, void *pBlock) {
     return MEMFreeToAllocator(pAllocator, pBlock);
 }
 

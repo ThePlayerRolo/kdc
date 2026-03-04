@@ -2,14 +2,11 @@
 #define NW4R_G3D_ANM_OBJ_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/g3d_obj.h>
-#include <nw4r/g3d/res/g3d_resanm.h>
+#include "nw4r/g3d/g3d_obj.h"
+#include "nw4r/g3d/res/g3d_resanm.h"
 
 namespace nw4r {
 namespace g3d {
-
-// Forward declarations
-class ResMdl;
 
 /******************************************************************************
  *
@@ -29,10 +26,9 @@ public:
     };
 
 public:
-    AnmObj(MEMAllocator* pAllocator, G3dObj* pParent)
-        : G3dObj(pAllocator, pParent), mFlags(0) {}
+    AnmObj(MEMAllocator *pAllocator, G3dObj *pParent) : G3dObj(pAllocator, pParent), mFlags(0) {}
 
-    virtual void G3dProc(u32 task, u32 param, void* pInfo) = 0; // at 0xC
+    virtual void G3dProc(u32 task, u32 param, void *pInfo) = 0; // at 0xC
     virtual ~AnmObj() {}                                        // at 0x10
 
     virtual void SetFrame(f32 frame) = 0; // at 0x1C
@@ -67,8 +63,7 @@ f32 PlayPolicy_Loop(f32 start, f32 end, f32 frame);
 typedef f32 (*PlayPolicyFunc)(f32 start, f32 end, f32 frame);
 
 inline PlayPolicyFunc GetAnmPlayPolicy(AnmPolicy policy) {
-    static PlayPolicyFunc policyTable[ANM_POLICY_MAX] = {PlayPolicy_Onetime,
-                                                         PlayPolicy_Loop};
+    static PlayPolicyFunc policyTable[ANM_POLICY_MAX] = {PlayPolicy_Onetime, PlayPolicy_Loop};
     return policyTable[policy];
 }
 
@@ -80,11 +75,7 @@ inline PlayPolicyFunc GetAnmPlayPolicy(AnmPolicy policy) {
 class FrameCtrl {
 public:
     FrameCtrl(f32 start, f32 end, PlayPolicyFunc pPolicy)
-        : mFrame(0.0f),
-          mUpdateRate(1.0f),
-          mStartFrame(start),
-          mEndFrame(end),
-          mpPlayPolicy(pPolicy) {}
+        : mFrame(0.0f), mUpdateRate(1.0f), mStartFrame(start), mEndFrame(end), mpPlayPolicy(pPolicy) {}
 
     f32 GetFrm() const {
         return mFrame;

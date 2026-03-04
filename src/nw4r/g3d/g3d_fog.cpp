@@ -1,18 +1,18 @@
-#include <nw4r/g3d.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
 
-#include <revolution/GX.h>
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
 
-Fog::Fog(FogData* pData) : ResCommon(pData) {}
+Fog::Fog(FogData *pData) : ResCommon(pData) {}
 
 void Fog::Init() {
     if (!IsValid()) {
         return;
     }
 
-    FogData& r = ref();
+    FogData &r = ref();
 
     r.type = GX_FOG_NONE;
 
@@ -32,12 +32,13 @@ void Fog::Init() {
     }
 }
 
-Fog Fog::CopyTo(register void* pDst) const {
+Fog Fog::CopyTo(register void *pDst) const {
     if (pDst != NULL && IsValid()) {
-        register const FogData* pSrc = ptr();
+        register const FogData *pSrc = ptr();
         register f64 work0, work1, work2, work3, work4, work5;
 
-        ASM (
+        // clang-format off
+        asm {
             lfd  work0, 0(pSrc)
             stfd work0, 0(pDst)
 
@@ -55,21 +56,21 @@ Fog Fog::CopyTo(register void* pDst) const {
 
             lfd  work5, 40(pSrc)
             stfd work5, 40(pDst)
-        )
+        }
+        // clang-format on
 
-        return Fog(static_cast<FogData*>(pDst));
+        return Fog(static_cast<FogData *>(pDst));
     }
 
     return Fog(NULL);
 }
 
-void Fog::SetFogRangeAdjParam(u16 width, u16 center,
-                              const math::MTX44& rProjMtx) {
+void Fog::SetFogRangeAdjParam(u16 width, u16 center, const math::MTX44 &rProjMtx) {
     if (!IsValid()) {
         return;
     }
 
-    FogData& r = ref();
+    FogData &r = ref();
 
     r.adjCenter = center;
     GXInitFogAdjTable(&r.adjTable, width, rProjMtx);
@@ -80,7 +81,7 @@ void Fog::SetGP() const {
         return;
     }
 
-    const FogData& r = ref();
+    const FogData &r = ref();
 
     if (r.type != GX_FOG_NONE) {
         GXSetFogRangeAdj(r.adjEnable, r.adjCenter, &r.adjTable);

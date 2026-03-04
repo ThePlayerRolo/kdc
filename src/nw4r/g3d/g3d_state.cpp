@@ -1,4 +1,5 @@
-#include <nw4r/g3d.h>
+#include "common.h"
+#include "nw4r/g3d.h" // IWYU pragma: export
 
 #include <algorithm>
 #include <cstring>
@@ -12,14 +13,13 @@ namespace ScnDependentMtxFunc {
  * ScnDependentMtxFunc
  *
  ******************************************************************************/
-void EnvironmentMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
+void EnvironmentMapping(math::MTX34 *pMtx, s8 camRef, s8 lightRef) {
     if (pMtx == NULL) {
         return;
     }
 
     if (camRef >= 0 && camRef < G3DState::NUM_CAMERA) {
-        math::MTX34Mult(pMtx, G3DState::GetCameraMtxPtr(camRef),
-                        G3DState::GetInvCameraMtxPtr());
+        math::MTX34Mult(pMtx, G3DState::GetCameraMtxPtr(camRef), G3DState::GetInvCameraMtxPtr());
 
         pMtx->_03 = pMtx->_13 = pMtx->_23 = 0.0f;
 
@@ -27,19 +27,15 @@ void EnvironmentMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
         return;
     }
 
-    if (lightRef >= 0 && lightRef < G3DState::NUM_LIGHT &&
-        G3DState::GetLightObj(lightRef)->IsEnable()) {
-
+    if (lightRef >= 0 && lightRef < G3DState::NUM_LIGHT && G3DState::GetLightObj(lightRef)->IsEnable()) {
         math::VEC3 look, camUp, right, up;
 
-        const LightObj* pLight = G3DState::GetLightObj(lightRef);
+        const LightObj *pLight = G3DState::GetLightObj(lightRef);
         pLight->GetLightDir(&look);
 
-        const math::MTX34* pInvCamMtx = G3DState::GetInvCameraMtxPtr();
+        const math::MTX34 *pInvCamMtx = G3DState::GetInvCameraMtxPtr();
 
-        if (pLight->IsDiffuseLight() ||
-            (look.x == 0.0f && look.y == 0.0f && look.z == 0.0f)) {
-
+        if (pLight->IsDiffuseLight() || (look.x == 0.0f && look.y == 0.0f && look.z == 0.0f)) {
             pLight->GetLightPos(&look);
             math::VEC3TransformNormal(&look, pInvCamMtx, &look);
 
@@ -94,14 +90,14 @@ void EnvironmentMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
             // clang-format on
         };
 
-        math::MTX34Mult(pMtx, static_cast<const math::MTX34*>(&envMtx), pMtx);
+        math::MTX34Mult(pMtx, static_cast<const math::MTX34 *>(&envMtx), pMtx);
         return;
     }
 
     math::MTX34Copy(pMtx, G3DState::GetEnvironmentTexMtxPtr());
 }
 
-void ProjectionMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
+void ProjectionMapping(math::MTX34 *pMtx, s8 camRef, s8 lightRef) {
 #pragma unused(lightRef)
 
     if (pMtx == NULL) {
@@ -109,8 +105,7 @@ void ProjectionMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
     }
 
     if (camRef >= 0 && camRef < G3DState::NUM_CAMERA) {
-        math::MTX34Mult(pMtx, G3DState::GetCameraMtxPtr(camRef),
-                        G3DState::GetInvCameraMtxPtr());
+        math::MTX34Mult(pMtx, G3DState::GetCameraMtxPtr(camRef), G3DState::GetInvCameraMtxPtr());
 
         math::MTX34Mult(pMtx, G3DState::GetProjectionTexMtxPtr(camRef), pMtx);
     } else {
@@ -118,39 +113,33 @@ void ProjectionMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
     }
 }
 
-void EnvironmentSpecularMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
+void EnvironmentSpecularMapping(math::MTX34 *pMtx, s8 camRef, s8 lightRef) {
     if (pMtx == NULL) {
         return;
     }
 
     math::VEC3 look, camUp, camLook;
 
-    const math::MTX34* pCamMtx = G3DState::GetCameraMtxPtr();
+    const math::MTX34 *pCamMtx = G3DState::GetCameraMtxPtr();
     camLook.x = -pCamMtx->_20;
     camLook.y = -pCamMtx->_21;
     camLook.z = -pCamMtx->_22;
 
-    const math::MTX34* pInvCamMtx = G3DState::GetInvCameraMtxPtr();
+    const math::MTX34 *pInvCamMtx = G3DState::GetInvCameraMtxPtr();
 
-    if (lightRef >= 0 && lightRef < G3DState::NUM_LIGHT &&
-        G3DState::GetLightObj(lightRef)->IsEnable()) {
-
+    if (lightRef >= 0 && lightRef < G3DState::NUM_LIGHT && G3DState::GetLightObj(lightRef)->IsEnable()) {
         math::VEC3 lightLook;
 
-        const LightObj* pLight = G3DState::GetLightObj(lightRef);
+        const LightObj *pLight = G3DState::GetLightObj(lightRef);
         pLight->GetLightDir(&lightLook);
 
-        if (pLight->IsDiffuseLight() ||
-            (lightLook.x == 0.0f && lightLook.y == 0.0f &&
-             lightLook.z == 0.0f)) {
-
+        if (pLight->IsDiffuseLight() || (lightLook.x == 0.0f && lightLook.y == 0.0f && lightLook.z == 0.0f)) {
             pLight->GetLightPos(&lightLook);
             math::VEC3TransformNormal(&lightLook, pInvCamMtx, &lightLook);
 
             lightLook = -lightLook;
 
-            if (lightLook.x == 0.0f && lightLook.y == 0.0f &&
-                lightLook.z == 0.0f) {
+            if (lightLook.x == 0.0f && lightLook.y == 0.0f && lightLook.z == 0.0f) {
                 lightLook.y = -1.0f;
             }
         } else {
@@ -177,13 +166,12 @@ void EnvironmentSpecularMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
         }
 
     } else if (camRef >= 0 && camRef < G3DState::NUM_CAMERA) {
-        const math::MTX34* pLightCamMtx = G3DState::GetCameraMtxPtr(camRef);
+        const math::MTX34 *pLightCamMtx = G3DState::GetCameraMtxPtr(camRef);
         camUp.x = pLightCamMtx->_10;
         camUp.y = pLightCamMtx->_11;
         camUp.z = pLightCamMtx->_12;
 
-        math::VEC3 lightLook(-pLightCamMtx->_20, -pLightCamMtx->_21,
-                             -pLightCamMtx->_22);
+        math::VEC3 lightLook(-pLightCamMtx->_20, -pLightCamMtx->_21, -pLightCamMtx->_22);
 
         C_VECHalfAngle(camLook, lightLook, look);
     } else {
@@ -218,7 +206,7 @@ void EnvironmentSpecularMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
     math::MTX34Mult(pMtx, G3DState::GetEnvironmentTexMtxPtr(), pMtx);
 }
 
-void DefaultMapping(math::MTX34* pMtx, s8 camRef, s8 lightRef) {
+void DefaultMapping(math::MTX34 *pMtx, s8 camRef, s8 lightRef) {
 #pragma unused(camRef)
 #pragma unused(lightRef)
 
@@ -239,16 +227,14 @@ namespace {
  * Utility functions
  *
  ******************************************************************************/
-inline bool IsEqualTexObj(const GXTexObj& rLhs, const GXTexObj& rRhs) {
-    return rLhs.dummy[0] == rRhs.dummy[0] && rLhs.dummy[1] == rRhs.dummy[1] &&
-           rLhs.dummy[2] == rRhs.dummy[2] && rLhs.dummy[3] == rRhs.dummy[3] &&
-           rLhs.dummy[4] == rRhs.dummy[4] && rLhs.dummy[5] == rRhs.dummy[5] &&
+inline bool IsEqualTexObj(const GXTexObj &rLhs, const GXTexObj &rRhs) {
+    return rLhs.dummy[0] == rRhs.dummy[0] && rLhs.dummy[1] == rRhs.dummy[1] && rLhs.dummy[2] == rRhs.dummy[2] &&
+           rLhs.dummy[3] == rRhs.dummy[3] && rLhs.dummy[4] == rRhs.dummy[4] && rLhs.dummy[5] == rRhs.dummy[5] &&
            rLhs.dummy[6] == rRhs.dummy[6] && rLhs.dummy[7] == rRhs.dummy[7];
 }
 
-inline bool IsEqualTlutObj(const GXTlutObj& rLhs, const GXTlutObj& rRhs) {
-    return rLhs.dummy[0] == rRhs.dummy[0] && rLhs.dummy[1] == rRhs.dummy[1] &&
-           rLhs.dummy[2] == rRhs.dummy[2];
+inline bool IsEqualTlutObj(const GXTlutObj &rLhs, const GXTlutObj &rRhs) {
+    return rLhs.dummy[0] == rRhs.dummy[0] && rLhs.dummy[1] == rRhs.dummy[1] && rLhs.dummy[2] == rRhs.dummy[2];
 }
 
 } // namespace
@@ -260,44 +246,44 @@ inline bool IsEqualTlutObj(const GXTlutObj& rLhs, const GXTlutObj& rRhs) {
  ******************************************************************************/
 IndTexMtxInfo::IndTexMtxInfo(const ResMatIndMtxAndScale ind) : flag(0) {
     if (ind.GXGetIndTexMtx(GX_ITM_0, &offset_mtx[GX_ITM_0 - 1])) {
-        flag |= 1 << (GX_ITM_0 - 1);
+        flag |= 1 << GX_ITM_0 - 1;
     }
 
     if (ind.GXGetIndTexMtx(GX_ITM_1, &offset_mtx[GX_ITM_1 - 1])) {
-        flag |= 1 << (GX_ITM_1 - 1);
+        flag |= 1 << GX_ITM_1 - 1;
     }
 
     if (ind.GXGetIndTexMtx(GX_ITM_2, &offset_mtx[GX_ITM_2 - 1])) {
-        flag |= 1 << (GX_ITM_2 - 1);
+        flag |= 1 << GX_ITM_2 - 1;
     }
 }
 
 void IndTexMtxInfo::FifoSend() const {
-    if (flag & (1 << (GX_ITM_0 - 1))) {
+    if (flag & (1 << GX_ITM_0 - 1)) {
         fifo::GDSetIndTexMtx(GX_PNMTX0, offset_mtx[GX_ITM_0 - 1]);
     }
 
-    if (flag & (1 << (GX_ITM_1 - 1))) {
+    if (flag & (1 << GX_ITM_1 - 1)) {
         fifo::GDSetIndTexMtx(GX_PNMTX1, offset_mtx[GX_ITM_1 - 1]);
     }
 
-    if (flag & (1 << (GX_ITM_2 - 1))) {
+    if (flag & (1 << GX_ITM_2 - 1)) {
         fifo::GDSetIndTexMtx(GX_PNMTX2, offset_mtx[GX_ITM_2 - 1]);
     }
 }
 
-void IndTexMtxInfo::SetMtx(GXIndTexMtxID id, const math::MTX34& rMtx) {
+void IndTexMtxInfo::SetMtx(GXIndTexMtxID id, const math::MTX34 &rMtx) {
     if (id == GX_ITM_0) {
         offset_mtx[GX_ITM_0 - 1] = rMtx;
-        flag |= 1 << (GX_ITM_0 - 1);
+        flag |= 1 << GX_ITM_0 - 1;
 
     } else if (id == GX_ITM_1) {
         offset_mtx[GX_ITM_1 - 1] = rMtx;
-        flag |= 1 << (GX_ITM_1 - 1);
+        flag |= 1 << GX_ITM_1 - 1;
 
     } else if (id == GX_ITM_2) {
         offset_mtx[GX_ITM_2 - 1] = rMtx;
-        flag |= 1 << (GX_ITM_2 - 1);
+        flag |= 1 << GX_ITM_2 - 1;
     }
 }
 
@@ -344,13 +330,7 @@ void SyncGX::Set() {
  ******************************************************************************/
 class GenMode2 {
 public:
-    GenMode2()
-        : mNumTexGens(1),
-          mNumChans(0),
-          mNumTevs(1),
-          mNumInds(0),
-          mCullMode(GX_CULL_BACK),
-          flag(0) {}
+    GenMode2() : mNumTexGens(1), mNumChans(0), mNumTevs(1), mNumInds(0), mCullMode(GX_CULL_BACK), flag(0) {}
 
     void Invalidate() {
         mNumTexGens = 1;
@@ -362,22 +342,16 @@ public:
     }
 
     void LoadBP() {
-        if ((flag & FLAG_FIRST_SET) &&
-            (flag & FLAG_ALL_LOADED) == FLAG_XF_LOADED) {
-
-            fifo::GDSetGenMode2Ex_BP(mNumTexGens, mNumChans, mNumTevs, mNumInds,
-                                     mCullMode);
+        if ((flag & FLAG_FIRST_SET) && (flag & FLAG_ALL_LOADED) == FLAG_XF_LOADED) {
+            fifo::GDSetGenMode2Ex_BP(mNumTexGens, mNumChans, mNumTevs, mNumInds, mCullMode);
 
             flag |= FLAG_BP_LOADED;
         }
     }
 
     void LoadXF() {
-        if ((flag & FLAG_FIRST_SET) &&
-            (flag & FLAG_ALL_LOADED) != FLAG_ALL_LOADED) {
-
-            fifo::GDSetGenMode2(mNumTexGens, mNumChans, mNumTevs, mNumInds,
-                                mCullMode);
+        if ((flag & FLAG_FIRST_SET) && (flag & FLAG_ALL_LOADED) != FLAG_ALL_LOADED) {
+            fifo::GDSetGenMode2(mNumTexGens, mNumChans, mNumTevs, mNumInds, mCullMode);
 
             flag |= FLAG_BP_LOADED | FLAG_XF_LOADED;
         }
@@ -482,12 +456,9 @@ public:
     }
 
     void UpdateTable(const ResTev tev) {
-        const u32* pTable =
-            reinterpret_cast<const u32*>(tev.ref().texCoordToTexMapID);
+        const u32 *pTable = reinterpret_cast<const u32 *>(tev.ref().texCoordToTexMapID);
 
-        if (!(mUpToDate & FLAG_TEXMAP) || pTable[0] != table_data[0] ||
-            pTable[1] != table_data[1]) {
-
+        if (!(mUpToDate & FLAG_TEXMAP) || pTable[0] != table_data[0] || pTable[1] != table_data[1]) {
             table_data[0] = pTable[0];
             table_data[1] = pTable[1];
 
@@ -497,9 +468,7 @@ public:
     }
 
     void LoadTexCoordScale(u8 texGens) {
-        if ((mUpToDate & FLAG_TEXMAP) && !(mUpToDate & FLAG_TEXCOORD) &&
-            texGens != 0) {
-
+        if ((mUpToDate & FLAG_TEXMAP) && !(mUpToDate & FLAG_TEXCOORD) && texGens != 0) {
             LoadTexCoordScale_(texGens);
         }
     }
@@ -535,8 +504,9 @@ void TexCoordScaleState::LoadTexCoordScale_(u8 texGens) {
         scale[i].width = wh[table[i]].width;
         scale[i].height = wh[table[i]].height;
 
-        fifo::GDSetTexCoordScale2(static_cast<GXTexCoordID>(i), scale[i].width,
-                                  false, false, scale[i].height, false, false);
+        fifo::GDSetTexCoordScale2(
+            static_cast<GXTexCoordID>(i), scale[i].width, false, false, scale[i].height, false, false
+        );
     }
 
     mUpToDate |= FLAG_TEXCOORD;
@@ -566,7 +536,7 @@ public:
             }
 
             GXTexMapID id = static_cast<GXTexMapID>(i);
-            const GXTexObj* pGXObj = texObj.GetTexObj(id);
+            const GXTexObj *pGXObj = texObj.GetTexObj(id);
 
             u8 mask = 1 << id;
 
@@ -576,8 +546,7 @@ public:
 
                 GXLoadTexObj(pGXObj, id);
 
-                sTexCoordScale.UpdateTexMapSize(id, GXGetTexObjWidth(pGXObj),
-                                                GXGetTexObjHeight(pGXObj));
+                sTexCoordScale.UpdateTexMapSize(id, GXGetTexObjWidth(pGXObj), GXGetTexObjHeight(pGXObj));
             }
         }
     }
@@ -590,7 +559,7 @@ private:
     u8 PADDING_0x103;                // at 0x103
 };
 
-TexState sTex ALIGN(32);
+TexState sTex ALIGN_DECL(32);
 
 /******************************************************************************
  *
@@ -612,7 +581,7 @@ public:
             }
 
             GXTlut id = static_cast<GXTlut>(i);
-            const GXTlutObj* pGXObj = tlutObj.GetTlut(id);
+            const GXTlutObj *pGXObj = tlutObj.GetTlut(id);
 
             u16 mask = 1 << id;
 
@@ -620,7 +589,7 @@ public:
                 mFlag |= mask;
                 mTlutObj[id] = *pGXObj;
 
-                GXLoadTlut(const_cast<GXTlutObj*>(pGXObj), id);
+                GXLoadTlut(const_cast<GXTlutObj *>(pGXObj), id);
                 sTex.Invalidate(static_cast<GXTexMapID>(id));
             }
         }
@@ -632,7 +601,7 @@ private:
     u16 PADDING_0x62;                            // at 0x62
 };
 
-TlutState sTlut ALIGN(32);
+TlutState sTlut ALIGN_DECL(32);
 
 /******************************************************************************
  *
@@ -649,7 +618,7 @@ public:
         mCache.Clear();
     }
 
-    bool IsCacheEqual(const ResCacheVtxDescv& rOther) {
+    bool IsCacheEqual(const ResCacheVtxDescv &rOther) {
         if (rOther == mCache) {
             return true;
         }
@@ -735,8 +704,8 @@ public:
     }
 
     void Invalidate() {
-        mType[0] = mType[1] = mType[2] = mType[3] = mType[4] = mType[5] =
-            mType[6] = mType[7] = SCNDEPENDENT_TEXMTX_FUNCTYPE_TEXMTX_NOT_EXIST;
+        mType[0] = mType[1] = mType[2] = mType[3] = mType[4] = mType[5] = mType[6] = mType[7] =
+            SCNDEPENDENT_TEXMTX_FUNCTYPE_TEXMTX_NOT_EXIST;
     }
 
     void SetFuncType(u32 id, ScnDependentTexMtxFuncType type) {
@@ -754,8 +723,7 @@ public:
         for (u32 i = 0; i < NUM_TEX_MTX; i++) {
             if (mType[i] == SCNDEPENDENT_TEXMTX_FUNCTYPE_SRC_NRM) {
                 idArray[i] = i * 3 + GX_TEXMTX0;
-                fifo::GDLoadTexMtxImm3x3(
-                    *GetViewNrmMtxPtr(static_cast<u16>(id)), idArray[i]);
+                fifo::GDLoadTexMtxImm3x3(*GetViewNrmMtxPtr(static_cast<u16>(id)), idArray[i]);
                 allIdent = false;
             } else if (mType[i] == SCNDEPENDENT_TEXMTX_FUNCTYPE_SRC_POS) {
                 idArray[i] = GX_PNMTX0;
@@ -805,7 +773,7 @@ public:
     }
 
 private:
-    const ResTevData* mpTevData; // at 0x0
+    const ResTevData *mpTevData; // at 0x0
 };
 
 TevState sTev;
@@ -817,10 +785,7 @@ TevState sTev;
  ******************************************************************************/
 class PosNrmMtxArrayState {
 public:
-    PosNrmMtxArrayState()
-        : mpViewPosMtxArray(NULL),
-          mpViewNrmMtxArray(NULL),
-          mpViewEnvTexMtxArray(NULL) {}
+    PosNrmMtxArrayState() : mpViewPosMtxArray(NULL), mpViewNrmMtxArray(NULL), mpViewEnvTexMtxArray(NULL) {}
 
     void Invalidate() {
         mpViewPosMtxArray = NULL;
@@ -832,30 +797,27 @@ public:
         return mpViewPosMtxArray != NULL;
     }
 
-    void SetViewPosNrmMtxArray(const math::MTX34* pViewPosMtxArray,
-                               const math::MTX33* pViewNrmMtxArray,
-                               const math::MTX34* pViewEnvTexMtxArray) {
+    void SetViewPosNrmMtxArray(
+        const math::MTX34 *pViewPosMtxArray, const math::MTX33 *pViewNrmMtxArray, const math::MTX34 *pViewEnvTexMtxArray
+    ) {
         mpViewPosMtxArray = pViewPosMtxArray;
         mpViewNrmMtxArray = pViewNrmMtxArray;
         mpViewEnvTexMtxArray = pViewEnvTexMtxArray;
 
         if (mpViewPosMtxArray != NULL) {
-            GXSetArray(GX_POS_MTX_ARRAY, mpViewPosMtxArray,
-                       sizeof(math::MTX34));
+            GXSetArray(GX_POS_MTX_ARRAY, mpViewPosMtxArray, sizeof(math::MTX34));
         }
 
         if (mpViewNrmMtxArray != NULL) {
-            GXSetArray(GX_NRM_MTX_ARRAY, mpViewNrmMtxArray,
-                       sizeof(math::MTX33));
+            GXSetArray(GX_NRM_MTX_ARRAY, mpViewNrmMtxArray, sizeof(math::MTX33));
         }
 
         if (mpViewEnvTexMtxArray != NULL) {
-            GXSetArray(GX_TEX_MTX_ARRAY, mpViewEnvTexMtxArray,
-                       sizeof(math::MTX34));
+            GXSetArray(GX_TEX_MTX_ARRAY, mpViewEnvTexMtxArray, sizeof(math::MTX34));
         }
     }
 
-    const math::MTX34* GetViewPosMtxPtr(u32 id) const {
+    const math::MTX34 *GetViewPosMtxPtr(u32 id) const {
         if (mpViewPosMtxArray != NULL) {
             return &mpViewPosMtxArray[id];
         }
@@ -863,27 +825,22 @@ public:
         return NULL;
     }
 
-    const math::MTX33* GetViewNrmMtxPtr(u32 id) const {
+    const math::MTX33 *GetViewNrmMtxPtr(u32 id) const {
         if (mpViewNrmMtxArray != NULL) {
             return &mpViewNrmMtxArray[id];
         }
 
         static math::MTX33 m;
 
-        if (!math::MTX34InvTranspose(&m, GetViewPosMtxPtr(id))) {
-            m._00 = m._11 = m._22 = 1.0f;
-            m._20 = m._21 = 0.0f;
-            m._10 = m._12 = 0.0f;
-            m._01 = m._02 = 0.0f;
-        }
+        detail::CalcViewNrmMtx(&m, GetViewPosMtxPtr(id));
 
         return &m;
     }
 
 private:
-    const math::MTX34* mpViewPosMtxArray;    // at 0x0
-    const math::MTX33* mpViewNrmMtxArray;    // at 0x4
-    const math::MTX34* mpViewEnvTexMtxArray; // at 0x8
+    const math::MTX34 *mpViewPosMtxArray;    // at 0x0
+    const math::MTX33 *mpViewNrmMtxArray;    // at 0x4
+    const math::MTX34 *mpViewEnvTexMtxArray; // at 0x8
 };
 
 PosNrmMtxArrayState sPosNrmArrayState;
@@ -908,8 +865,7 @@ public:
         mTable[3].func = detail::ScnDependentMtxFunc::EnvironmentMapping;
         mTable[3].type = SCNDEPENDENT_TEXMTX_FUNCTYPE_SRC_NRM;
 
-        mTable[4].func =
-            detail::ScnDependentMtxFunc::EnvironmentSpecularMapping;
+        mTable[4].func = detail::ScnDependentMtxFunc::EnvironmentSpecularMapping;
         mTable[4].type = SCNDEPENDENT_TEXMTX_FUNCTYPE_SRC_NRM;
 
         for (u32 i = 5; i < NUM_SCNDEPENDENT_TEXMTX_FUNCTYPE; i++) {
@@ -918,9 +874,7 @@ public:
         }
     }
 
-    void SetFunc(u32 id, ScnDependentTexMtxFuncPtr func,
-                 ScnDependentTexMtxFuncType type) {
-
+    void SetFunc(u32 id, ScnDependentTexMtxFuncPtr func, ScnDependentTexMtxFuncType type) {
         if (id <= 4 || id >= NUM_SCNDEPENDENT_TEXMTX_FUNCTYPE) {
             return;
         }
@@ -938,9 +892,7 @@ public:
         }
     }
 
-    bool GetFunc(u32 id, ScnDependentTexMtxFuncPtr* pFunc,
-                 ScnDependentTexMtxFuncType* pType) {
-
+    bool GetFunc(u32 id, ScnDependentTexMtxFuncPtr *pFunc, ScnDependentTexMtxFuncType *pType) {
         if (id < NUM_SCNDEPENDENT_TEXMTX_FUNCTYPE) {
             if (pFunc != NULL) {
                 *pFunc = mTable[id].func;
@@ -964,7 +916,7 @@ public:
         return mTable[id].type;
     }
 
-    void Calc(u32 id, math::MTX34* pMtx, s8 camRef, s8 lightRef) {
+    void Calc(u32 id, math::MTX34 *pMtx, s8 camRef, s8 lightRef) {
         if (id >= NUM_SCNDEPENDENT_TEXMTX_FUNCTYPE) {
             id = 0;
         }
@@ -1061,11 +1013,11 @@ public:
 
     void Invalidate();
 
-    void SetLightSetting(const LightSetting& rSetting);
-    const LightObj* GetLightObj(int id) const;
-    void LoadLightSet(int id, u32* pDiffColorMask, u32* pDiffAlphaMask,
-                      u32* pSpecColorMask, u32* pSpecAlphaMask,
-                      AmbLightObj* pAmb);
+    void SetLightSetting(const LightSetting &rSetting);
+    const LightObj *GetLightObj(int id) const;
+    void LoadLightSet(
+        int id, u32 *pDiffColorMask, u32 *pDiffAlphaMask, u32 *pSpecColorMask, u32 *pSpecAlphaMask, AmbLightObj *pAmb
+    );
 
 private:
     LightSetting mLightSetting;                 // at 0x0
@@ -1082,10 +1034,7 @@ private:
 
 LightState sLightState;
 
-LightState::LightState()
-    : mLightSetting(mLightObj, mAmbLightObj, NUM_LIGHT, mLightSetData,
-                    NUM_LIGHT_SET) {
-
+LightState::LightState() : mLightSetting(mLightObj, mAmbLightObj, NUM_LIGHT, mLightSetData, NUM_LIGHT_SET) {
     Invalidate();
 }
 
@@ -1098,15 +1047,14 @@ void LightState::Invalidate() {
     mCurrentMaskSpecColor = 0;
     mCurrentMaskSpecAlpha = 0;
 
-    mLoadedLightIdx[0] = mLoadedLightIdx[1] = mLoadedLightIdx[2] =
-        mLoadedLightIdx[3] = mLoadedLightIdx[4] = mLoadedLightIdx[5] =
-            mLoadedLightIdx[6] = mLoadedLightIdx[7] = -1;
+    mLoadedLightIdx[0] = mLoadedLightIdx[1] = mLoadedLightIdx[2] = mLoadedLightIdx[3] = mLoadedLightIdx[4] =
+        mLoadedLightIdx[5] = mLoadedLightIdx[6] = mLoadedLightIdx[7] = -1;
 }
 
-void LightState::SetLightSetting(const LightSetting& rSetting) {
+void LightState::SetLightSetting(const LightSetting &rSetting) {
     mLightSetting.Import(rSetting);
 
-    const math::MTX34* pCamMtx = GetCameraMtxPtr();
+    const math::MTX34 *pCamMtx = GetCameraMtxPtr();
     mLightSetting.ApplyViewMtx(*pCamMtx, rSetting.GetNumLightObj());
     Invalidate();
 
@@ -1116,7 +1064,7 @@ void LightState::SetLightSetting(const LightSetting& rSetting) {
     u32 idx = 0;
 
     for (; i < G3DState::NUM_LIGHT_IN_LIGHT_SET && idx < lightNum; idx++) {
-        const LightObj& rLight = mLightSetting.GetLightObjArray()[idx];
+        const LightObj &rLight = mLightSetting.GetLightObjArray()[idx];
         if (!rLight.IsEnable()) {
             continue;
         }
@@ -1130,7 +1078,7 @@ void LightState::SetLightSetting(const LightSetting& rSetting) {
     }
 }
 
-const LightObj* LightState::GetLightObj(int id) const {
+const LightObj *LightState::GetLightObj(int id) const {
     if (id >= 0 && id < NUM_LIGHT) {
         return &mLightObj[id];
     }
@@ -1138,10 +1086,9 @@ const LightObj* LightState::GetLightObj(int id) const {
     return NULL;
 }
 
-void LightState::LoadLightSet(int id, u32* pDiffColorMask, u32* pDiffAlphaMask,
-                              u32* pSpecColorMask, u32* pSpecAlphaMask,
-                              AmbLightObj* pAmb) {
-
+void LightState::LoadLightSet(
+    int id, u32 *pDiffColorMask, u32 *pDiffAlphaMask, u32 *pSpecColorMask, u32 *pSpecAlphaMask, AmbLightObj *pAmb
+) {
     if (id < 0 || id >= NUM_LIGHT_SET) {
         if (pDiffColorMask != NULL) {
             *pDiffColorMask = 0;
@@ -1196,7 +1143,7 @@ void LightState::LoadLightSet(int id, u32* pDiffColorMask, u32* pDiffAlphaMask,
         return;
     }
 
-    LightSetData& rData = mLightSetData[id];
+    LightSetData &rData = mLightSetData[id];
 
     mCurrentMaskDiffColor = 0;
     mCurrentMaskDiffAlpha = 0;
@@ -1216,18 +1163,15 @@ void LightState::LoadLightSet(int id, u32* pDiffColorMask, u32* pDiffAlphaMask,
             continue;
         }
 
-        s8* pLoaded = std::find(
-            mLoadedLightIdx, mLoadedLightIdx + NUM_LIGHT_IN_LIGHT_SET, lightId);
+        s8 *pLoaded = std::find(mLoadedLightIdx, mLoadedLightIdx + NUM_LIGHT_IN_LIGHT_SET, lightId);
 
         GXLightID idFlag;
 
         if (pLoaded == mLoadedLightIdx + NUM_LIGHT_IN_LIGHT_SET) {
-            pLoaded = std::find(mLoadedLightIdx,
-                                mLoadedLightIdx + NUM_LIGHT_IN_LIGHT_SET, -1);
+            pLoaded = std::find(mLoadedLightIdx, mLoadedLightIdx + NUM_LIGHT_IN_LIGHT_SET, -1);
 
             if (pLoaded != mLoadedLightIdx + NUM_LIGHT_IN_LIGHT_SET) {
-                idFlag = static_cast<GXLightID>(
-                    1 << std::distance(mLoadedLightIdx, pLoaded));
+                idFlag = static_cast<GXLightID>(1 << std::distance(mLoadedLightIdx, pLoaded));
 
                 GXLoadLightObjImm(mLightObj[lightId], idFlag);
                 *pLoaded = lightId;
@@ -1235,9 +1179,8 @@ void LightState::LoadLightSet(int id, u32* pDiffColorMask, u32* pDiffAlphaMask,
                 u32 j;
 
                 for (j = 0; j < NUM_LIGHT_IN_LIGHT_SET; j++) {
-                    s8* pResult = std::find(
-                        rData.idxLight, rData.idxLight + NUM_LIGHT_IN_LIGHT_SET,
-                        mLoadedLightIdx[j]);
+                    s8 *pResult =
+                        std::find(rData.idxLight, rData.idxLight + NUM_LIGHT_IN_LIGHT_SET, mLoadedLightIdx[j]);
 
                     if (pResult == rData.idxLight + NUM_LIGHT_IN_LIGHT_SET) {
                         break;
@@ -1251,8 +1194,7 @@ void LightState::LoadLightSet(int id, u32* pDiffColorMask, u32* pDiffAlphaMask,
             }
 
         } else {
-            idFlag = static_cast<GXLightID>(
-                1 << std::distance(mLoadedLightIdx, pLoaded));
+            idFlag = static_cast<GXLightID>(1 << std::distance(mLoadedLightIdx, pLoaded));
         }
 
         if (mLightObj[lightId].IsSpecularLight()) {
@@ -1300,9 +1242,9 @@ class CameraMtxState {
 public:
     CameraMtxState();
 
-    void SetCameraProjMtx(const Camera& rCam, int id, bool view);
+    void SetCameraProjMtx(const Camera &rCam, int id, bool view);
 
-    const math::MTX34* GetInvCameraMtxPtr() const {
+    const math::MTX34 *GetInvCameraMtxPtr() const {
         if (!(mFlag & FLAG_INV_MTX_READY)) {
             math::MTX34Inv(&mInvCurrentCameraMtx, GetCameraMtxPtr());
             mFlag |= FLAG_INV_MTX_READY;
@@ -1311,10 +1253,10 @@ public:
         return &mInvCurrentCameraMtx;
     }
 
-    const math::MTX34* GetCameraMtxPtr() const {
+    const math::MTX34 *GetCameraMtxPtr() const {
         return &mCameraMtx[mViewIdx];
     }
-    const math::MTX34* GetCameraMtxPtr(int id) const {
+    const math::MTX34 *GetCameraMtxPtr(int id) const {
         if (id < NUM_CAMERA && id >= 0) {
             return &mCameraMtx[id];
         }
@@ -1322,10 +1264,10 @@ public:
         return NULL;
     }
 
-    const math::MTX44* GetProjectionMtxPtr() const {
+    const math::MTX44 *GetProjectionMtxPtr() const {
         return &mProjMtx[mViewIdx];
     }
-    const math::MTX44* GetProjectionMtxPtr(int id) const {
+    const math::MTX44 *GetProjectionMtxPtr(int id) const {
         if (id < NUM_CAMERA && id >= 0) {
             return &mProjMtx[id];
         }
@@ -1333,10 +1275,10 @@ public:
         return NULL;
     }
 
-    const math::MTX34* GetProjectionTexMtxPtr() const {
+    const math::MTX34 *GetProjectionTexMtxPtr() const {
         return &mProjTexMtx[mViewIdx];
     }
-    const math::MTX34* GetProjectionTexMtxPtr(int id) const {
+    const math::MTX34 *GetProjectionTexMtxPtr(int id) const {
         if (id < NUM_CAMERA && id >= 0) {
             return &mProjTexMtx[id];
         }
@@ -1344,7 +1286,7 @@ public:
         return NULL;
     }
 
-    const math::MTX34* GetEnvironmentTexMtxPtr() const {
+    const math::MTX34 *GetEnvironmentTexMtxPtr() const {
         return &mEnvTexMtx[mViewIdx];
     }
 
@@ -1376,7 +1318,7 @@ CameraMtxState::CameraMtxState() : mFlag(0), mViewIdx(0) {
     }
 }
 
-void CameraMtxState::SetCameraProjMtx(const Camera& rCam, int id, bool view) {
+void CameraMtxState::SetCameraProjMtx(const Camera &rCam, int id, bool view) {
     if (id >= NUM_CAMERA || id < 0) {
         return;
     }
@@ -1445,12 +1387,6 @@ Misc sMisc;
  * G3DState
  *
  ******************************************************************************/
-namespace {
-
-IndMtxOpStd IndMtxOpDefault;
-IndMtxOp* pG3DStateIndMtxOp = &IndMtxOpDefault;
-
-} // namespace
 
 void LoadResMatMisc(const ResMatMisc misc) {
     if (!misc.IsValid()) {
@@ -1529,7 +1465,7 @@ void LoadResMatIndMtxAndScale(const ResMatIndMtxAndScale ind) {
     ind.CallDisplayList(sGenMode2.GXGetNumIndStages(), sSyncGX.Get());
 }
 
-void LoadResMatIndMtxAndScale(const ResMatIndMtxAndScale ind, IndMtxOp& rOp) {
+void LoadResMatIndMtxAndScale(const ResMatIndMtxAndScale ind, IndMtxOp &rOp) {
     if (!ind.IsValid()) {
         return;
     }
@@ -1541,16 +1477,16 @@ void LoadResMatIndMtxAndScale(const ResMatIndMtxAndScale ind, IndMtxOp& rOp) {
     info.FifoSend();
 }
 
-void LoadResMatChan(const ResMatChan chan, u32 maskDiffColor, u32 maskDiffAlpha,
-                    u32 maskSpecColor, u32 maskSpecAlpha, GXColor amb,
-                    bool lightOff) {
-
+void LoadResMatChan(
+    const ResMatChan chan, u32 maskDiffColor, u32 maskDiffAlpha, u32 maskSpecColor, u32 maskSpecAlpha, GXColor amb,
+    bool lightOff
+) {
     if (!chan.IsValid()) {
         return;
     }
 
     {
-        const Chan& r = chan.ref().chan[0];
+        const Chan &r = chan.ref().chan[0];
 
         if (r.flag & Chan::FLAG_MAT_COLOR_ENABLE) {
             if (r.flag & Chan::FLAG_MAT_ALPHA_ENABLE) {
@@ -1584,13 +1520,11 @@ void LoadResMatChan(const ResMatChan chan, u32 maskDiffColor, u32 maskDiffAlpha,
 
         if (lightOff) {
             if (r.flag & Chan::FLAG_CTRL_COLOR_ENABLE) {
-                fifo::GDSetChanCtrlLightOff(GX_COLOR0, r.paramChanCtrlC,
-                                            maskDiffColor);
+                fifo::GDSetChanCtrlLightOff(GX_COLOR0, r.paramChanCtrlC, maskDiffColor);
             }
 
             if (r.flag & Chan::FLAG_CTRL_ALPHA_ENABLE) {
-                fifo::GDSetChanCtrlLightOff(GX_ALPHA0, r.paramChanCtrlA,
-                                            maskDiffAlpha);
+                fifo::GDSetChanCtrlLightOff(GX_ALPHA0, r.paramChanCtrlA, maskDiffAlpha);
             }
         } else {
             if (r.flag & Chan::FLAG_CTRL_COLOR_ENABLE) {
@@ -1605,7 +1539,7 @@ void LoadResMatChan(const ResMatChan chan, u32 maskDiffColor, u32 maskDiffAlpha,
 
     {
         if (sGenMode2.GXGetNumChans() == 2) {
-            const Chan& r = chan.ref().chan[1];
+            const Chan &r = chan.ref().chan[1];
 
             if (r.flag & Chan::FLAG_MAT_COLOR_ENABLE) {
                 if (r.flag & Chan::FLAG_MAT_ALPHA_ENABLE) {
@@ -1633,23 +1567,19 @@ void LoadResMatChan(const ResMatChan chan, u32 maskDiffColor, u32 maskDiffAlpha,
 
             if (lightOff) {
                 if (r.flag & Chan::FLAG_CTRL_COLOR_ENABLE) {
-                    fifo::GDSetChanCtrlLightOff(GX_COLOR1, r.paramChanCtrlC,
-                                                maskSpecColor);
+                    fifo::GDSetChanCtrlLightOff(GX_COLOR1, r.paramChanCtrlC, maskSpecColor);
                 }
 
                 if (r.flag & Chan::FLAG_CTRL_ALPHA_ENABLE) {
-                    fifo::GDSetChanCtrlLightOff(GX_ALPHA1, r.paramChanCtrlA,
-                                                maskSpecAlpha);
+                    fifo::GDSetChanCtrlLightOff(GX_ALPHA1, r.paramChanCtrlA, maskSpecAlpha);
                 }
             } else {
                 if (r.flag & Chan::FLAG_CTRL_COLOR_ENABLE) {
-                    fifo::GDSetChanCtrl(GX_COLOR1, r.paramChanCtrlC,
-                                        maskSpecColor);
+                    fifo::GDSetChanCtrl(GX_COLOR1, r.paramChanCtrlC, maskSpecColor);
                 }
 
                 if (r.flag & Chan::FLAG_CTRL_ALPHA_ENABLE) {
-                    fifo::GDSetChanCtrl(GX_ALPHA1, r.paramChanCtrlA,
-                                        maskSpecAlpha);
+                    fifo::GDSetChanCtrl(GX_ALPHA1, r.paramChanCtrlA, maskSpecAlpha);
                 }
             }
         } else {
@@ -1676,23 +1606,18 @@ void LoadResTexSrt(const ResTexSrt srt) {
     for (u32 i = 0; i < ResTexSrtData::NUM_OF_TEXTURE; i++) {
         if (srt.IsExist(i)) {
             bool ident = true;
-            const TexMtxEffect& rEffect = srt.ref().effect[i];
+            const TexMtxEffect &rEffect = srt.ref().effect[i];
 
             math::MTX34Identity(&mtx);
 
             if (rEffect.map_mode != 0) {
-                sScnDependentTexMtxFuncTable.Calc(rEffect.map_mode, &mtx,
-                                                  rEffect.ref_camera,
-                                                  rEffect.ref_light);
+                sScnDependentTexMtxFuncTable.Calc(rEffect.map_mode, &mtx, rEffect.ref_camera, rEffect.ref_light);
 
-                sPreTexMtxState.SetFuncType(
-                    i,
-                    sScnDependentTexMtxFuncTable.GetFuncType(rEffect.map_mode));
+                sPreTexMtxState.SetFuncType(i, sScnDependentTexMtxFuncTable.GetFuncType(rEffect.map_mode));
 
                 ident = false;
             } else {
-                sPreTexMtxState.SetFuncType(
-                    i, SCNDEPENDENT_TEXMTX_FUNCTYPE_TEXMTX_NOT_EXIST);
+                sPreTexMtxState.SetFuncType(i, SCNDEPENDENT_TEXMTX_FUNCTYPE_TEXMTX_NOT_EXIST);
             }
 
             if (!srt.IsIdentity(i)) {
@@ -1700,23 +1625,17 @@ void LoadResTexSrt(const ResTexSrt srt) {
                     if (!(rEffect.misc_flag & TexMtxEffect::FLAG_IDENT)) {
                         ident = false;
 
-                        math::MTX34Copy(&mtx, static_cast<const math::MTX34*>(
-                                                  &rEffect.effectMtx));
+                        math::MTX34Copy(&mtx, static_cast<const math::MTX34 *>(&rEffect.effectMtx));
                     }
                 } else {
-                    math::MTX34Mult(
-                        &mtx,
-                        static_cast<const math::MTX34*>(&rEffect.effectMtx),
-                        &mtx);
+                    math::MTX34Mult(&mtx, static_cast<const math::MTX34 *>(&rEffect.effectMtx), &mtx);
                 }
 
                 if (rEffect.map_mode == 0) {
-                    CalcTexMtx(&mtx, ident, srt.ref().texSrt[i],
-                               srt.GetTexSrtFlag(i), srt.GetTexMtxMode());
+                    CalcTexMtx(&mtx, ident, srt.ref().texSrt[i], srt.GetTexSrtFlag(i), srt.GetTexMtxMode());
                 } else {
                     math::MTX34 srtMtx;
-                    CalcTexMtx(&srtMtx, true, srt.ref().texSrt[i],
-                               srt.GetTexSrtFlag(i), srt.GetTexMtxMode());
+                    CalcTexMtx(&srtMtx, true, srt.ref().texSrt[i], srt.GetTexSrtFlag(i), srt.GetTexMtxMode());
 
                     std::swap(srtMtx._02, srtMtx._03);
                     std::swap(srtMtx._12, srtMtx._13);
@@ -1734,16 +1653,15 @@ void LoadResTexSrt(const ResTexSrt srt) {
                     sPostTexMtx.SetIdentity(i);
                     math::MTX34Identity(&identMtx);
 
-                    GXLoadTexMtxImm(identMtx, i * 3 + GX_PTTEXMTX0, GX_MTX_3x4);
+                    GXLoadTexMtxImm(identMtx, i * 3 + GX_DUALMTX0, GX_MTX3x4);
                 }
             } else {
                 sPostTexMtx.ResetIdentity(i);
-                GXLoadTexMtxImm(mtx, i * 3 + GX_PTTEXMTX0, GX_MTX_3x4);
+                GXLoadTexMtxImm(mtx, i * 3 + GX_DUALMTX0, GX_MTX3x4);
             }
 
         } else {
-            sPreTexMtxState.SetFuncType(
-                i, SCNDEPENDENT_TEXMTX_FUNCTYPE_TEXMTX_NOT_EXIST);
+            sPreTexMtxState.SetFuncType(i, SCNDEPENDENT_TEXMTX_FUNCTYPE_TEXMTX_NOT_EXIST);
         }
     }
 }
@@ -1755,13 +1673,10 @@ void LoadResShpPrePrimitive(const ResShp shp) {
 
     sTexCoordScale.LoadTexCoordScale(sGenMode2.GXGetNumTexGens());
     sGenMode2.LoadXF();
-    shp.CallPrePrimitiveDisplayList(sSyncGX.Get(),
-                                    sShp.IsCacheEqual(shp.ref().cache));
+    shp.CallPrePrimitiveDisplayList(sSyncGX.Get(), sShp.IsCacheEqual(shp.ref().cache));
 }
 
-void LoadResShpPrimitive(const ResShp shp, const math::MTX34* pViewPos,
-                         const math::MTX34* pViewNrm) {
-
+void LoadResShpPrimitive(const ResShp shp, const math::MTX34 *pViewPos, const math::MTX34 *pViewNrm) {
     if (!shp.IsValid()) {
         return;
     }
@@ -1803,31 +1718,31 @@ void LoadResShpPrimitive(const ResShp shp, const math::MTX34* pViewPos,
     }
 }
 
-void SetViewPosNrmMtxArray(const math::MTX34* pViewPosMtxArray,
-                           const math::MTX33* pViewNrmMtxArray,
-                           const math::MTX34* pViewEnvTexMtxArray) {
-
-    sPosNrmArrayState.SetViewPosNrmMtxArray(pViewPosMtxArray, pViewNrmMtxArray,
-                                            pViewEnvTexMtxArray);
+void SetViewPosNrmMtxArray(
+    const math::MTX34 *pViewPosMtxArray, const math::MTX33 *pViewNrmMtxArray, const math::MTX34 *pViewEnvTexMtxArray
+) {
+    sPosNrmArrayState.SetViewPosNrmMtxArray(pViewPosMtxArray, pViewNrmMtxArray, pViewEnvTexMtxArray);
 }
 
-const math::MTX33* GetViewNrmMtxPtr(u32 id) {
+const math::MTX33 *GetViewNrmMtxPtr(u32 id) {
     return sPosNrmArrayState.GetViewNrmMtxPtr(id);
 }
 
-void SetScnDependentTexMtxFunc(u32 id, ScnDependentTexMtxFuncPtr func,
-                               ScnDependentTexMtxFuncType type) {
-
+void SetScnDependentTexMtxFunc(u32 id, ScnDependentTexMtxFuncPtr func, ScnDependentTexMtxFuncType type) {
     sScnDependentTexMtxFuncTable.SetFunc(id, func, type);
 }
 
-bool GetScnDependentTexMtxFunc(u32 id, ScnDependentTexMtxFuncPtr* pFunc,
-                               ScnDependentTexMtxFuncType* pType) {
-
+bool GetScnDependentTexMtxFunc(u32 id, ScnDependentTexMtxFuncPtr *pFunc, ScnDependentTexMtxFuncType *pType) {
     return sScnDependentTexMtxFuncTable.GetFunc(id, pFunc, pType);
 }
+namespace {
 
-IndMtxOp* GetIndMtxOp() {
+IndMtxOpStd IndMtxOpDefault;
+IndMtxOp *pG3DStateIndMtxOp = &IndMtxOpDefault;
+
+} // namespace
+
+IndMtxOp *GetIndMtxOp() {
     return pG3DStateIndMtxOp;
 }
 
@@ -1839,26 +1754,24 @@ void LoadFog(int id) {
     sFogState.LoadFog(id);
 }
 
-void SetLightSetting(const LightSetting& rSetting) {
+void SetLightSetting(const LightSetting &rSetting) {
     sLightState.SetLightSetting(rSetting);
 }
 
-const LightObj* GetLightObj(int id) {
+const LightObj *GetLightObj(int id) {
     return sLightState.GetLightObj(id);
 }
 
-void LoadLightSet(int id, u32* pDiffColorMask, u32* pDiffAlphaMask,
-                  u32* pSpecColorMask, u32* pSpecAlphaMask, AmbLightObj* pAmb) {
-
-    sLightState.LoadLightSet(id, pDiffColorMask, pDiffAlphaMask, pSpecColorMask,
-                             pSpecAlphaMask, pAmb);
+void LoadLightSet(
+    int id, u32 *pDiffColorMask, u32 *pDiffAlphaMask, u32 *pSpecColorMask, u32 *pSpecAlphaMask, AmbLightObj *pAmb
+) {
+    sLightState.LoadLightSet(id, pDiffColorMask, pDiffAlphaMask, pSpecColorMask, pSpecAlphaMask, pAmb);
 }
 
-void LoadLightSet(int id, u32* pDiffMask, u32* pSpecMask, AmbLightObj* pAmb) {
+void LoadLightSet(int id, u32 *pDiffMask, u32 *pSpecMask, AmbLightObj *pAmb) {
     u32 diffAlphaMask, specAlphaMask;
 
-    sLightState.LoadLightSet(id, pDiffMask, &diffAlphaMask, pSpecMask,
-                             &specAlphaMask, pAmb);
+    sLightState.LoadLightSet(id, pDiffMask, &diffAlphaMask, pSpecMask, &specAlphaMask, pAmb);
 
     if (pDiffMask != NULL) {
         *pDiffMask |= diffAlphaMask;
@@ -1869,39 +1782,39 @@ void LoadLightSet(int id, u32* pDiffMask, u32* pSpecMask, AmbLightObj* pAmb) {
     }
 }
 
-void SetCameraProjMtx(const Camera& rCam, int id, bool view) {
+void SetCameraProjMtx(const Camera &rCam, int id, bool view) {
     sCameraMtxState.SetCameraProjMtx(rCam, id, view);
 }
 
-const math::MTX34* GetCameraMtxPtr() {
+const math::MTX34 *GetCameraMtxPtr() {
     return sCameraMtxState.GetCameraMtxPtr();
 }
 
-const math::MTX34* GetInvCameraMtxPtr() {
+const math::MTX34 *GetInvCameraMtxPtr() {
     return sCameraMtxState.GetInvCameraMtxPtr();
 }
 
-const math::MTX34* GetCameraMtxPtr(int id) {
+const math::MTX34 *GetCameraMtxPtr(int id) {
     return sCameraMtxState.GetCameraMtxPtr(id);
 }
 
-const math::MTX34* GetProjectionTexMtxPtr() {
+const math::MTX34 *GetProjectionTexMtxPtr() {
     return sCameraMtxState.GetProjectionTexMtxPtr();
 }
 
-const math::MTX34* GetProjectionTexMtxPtr(int id) {
+const math::MTX34 *GetProjectionTexMtxPtr(int id) {
     return sCameraMtxState.GetProjectionTexMtxPtr(id);
 }
 
-const math::MTX34* GetEnvironmentTexMtxPtr() {
+const math::MTX34 *GetEnvironmentTexMtxPtr() {
     return sCameraMtxState.GetEnvironmentTexMtxPtr();
 }
 
-void SetRenderModeObj(const GXRenderModeObj& rObj) {
+void SetRenderModeObj(const GXRenderModeObj &rObj) {
     sRenderMode = rObj;
 }
 
-const GXRenderModeObj* GetRenderModeObj() {
+const GXRenderModeObj *GetRenderModeObj() {
     return &sRenderMode;
 }
 
@@ -1933,7 +1846,7 @@ void Invalidate(u32 flag) {
     }
 
     if (flag & INVALIDATE_TEXMTX) {
-        // @bug Missing PreTexMtxState::Invalidate
+        sPreTexMtxState.Invalidate();
         sPostTexMtx.Invalidate();
     }
 
@@ -1966,17 +1879,15 @@ IndMtxOpStd::IndMtxOpStd() {
     math::MTX34Identity(&mIndMtx[GX_ITM_1 - 1]);
     math::MTX34Identity(&mIndMtx[GX_ITM_2 - 1]);
 
-    mIsValidMtx[GX_ITM_0 - 1] = mIsValidMtx[GX_ITM_1 - 1] =
-        mIsValidMtx[GX_ITM_2 - 1] = false;
+    mIsValidMtx[GX_ITM_0 - 1] = mIsValidMtx[GX_ITM_1 - 1] = mIsValidMtx[GX_ITM_2 - 1] = false;
 
     PADDING_0x7 = 0;
 }
 
-void IndMtxOpStd::SetNrmMapMtx(GXIndTexMtxID id, const math::VEC3* pLightVec,
-                               const math::MTX34* pNrmMtx,
-                               ResMatMiscData::IndirectMethod method) {
-
-    if (id >= GX_ITM_0 && id <= GX_ITM_2 && method != ResMatMiscData::WARP) {
+void IndMtxOpStd::SetNrmMapMtx(
+    GXIndTexMtxID id, const math::VEC3 *pLightVec, const math::MTX34 *pNrmMtx, ResMatMiscData::IndirectMethod method
+) {
+    if (id >= GX_ITM_0 && id <= GX_ITM_2 && method != ResMatMiscData::WARP && method != ResMatMiscData::FUR) {
         u32 i = id - GX_ITM_0;
         mIsValidMtx[i] = true;
 
@@ -2008,11 +1919,10 @@ void IndMtxOpStd::Reset() {
     math::MTX34Identity(&mIndMtx[GX_ITM_1 - 1]);
     math::MTX34Identity(&mIndMtx[GX_ITM_2 - 1]);
 
-    mIsValidMtx[GX_ITM_0 - 1] = mIsValidMtx[GX_ITM_1 - 1] =
-        mIsValidMtx[GX_ITM_2 - 1] = false;
+    mIsValidMtx[GX_ITM_0 - 1] = mIsValidMtx[GX_ITM_1 - 1] = mIsValidMtx[GX_ITM_2 - 1] = false;
 }
 
-void IndMtxOpStd::operator()(IndTexMtxInfo* pInfo) {
+void IndMtxOpStd::operator()(IndTexMtxInfo *pInfo) {
     if (mIsValidMtx[GX_ITM_0 - 1]) {
         pInfo->SetMtx(GX_ITM_0, mIndMtx[GX_ITM_0 - 1]);
     }

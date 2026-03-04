@@ -1,4 +1,4 @@
-#include <nw4r/ut.h>
+#include "nw4r/ut/ut_LinkList.h"
 
 namespace nw4r {
 namespace ut {
@@ -9,59 +9,58 @@ LinkListImpl::~LinkListImpl() {
 }
 
 LinkListImpl::Iterator LinkListImpl::Erase(LinkListImpl::Iterator it) {
-    Iterator clone(it);
-    return Erase(it, ++clone);
+    Iterator copy(it);
+    return Erase(it, ++copy);
 }
 
 void LinkListImpl::Clear() {
     Erase(GetBeginIter(), GetEndIter());
 }
 
-LinkListImpl::Iterator LinkListImpl::Insert(Iterator it, LinkListNode* pNode) {
-    LinkListNode* pNext = it.mNode;
-    LinkListNode* pPrev = pNext->mPrev;
+LinkListImpl::Iterator LinkListImpl::Insert(Iterator it, LinkListNode *p) {
+    LinkListNode *next = it.mNode;
+    LinkListNode *prev = next->mPrev;
 
-    // pPrev <- pNode -> pNext
-    pNode->mNext = pNext;
-    pNode->mPrev = pPrev;
-
-    // pPrev <-> pNode <-> pNext
-    pNext->mPrev = pNode;
-    pPrev->mNext = pNode;
+    // prev <- p -> next
+    p->mNext = next;
+    p->mPrev = prev;
+    // prev <-> p <-> next
+    next->mPrev = p;
+    prev->mNext = p;
 
     mSize++;
 
-    return Iterator(pNode);
+    return Iterator(p);
 }
 
-LinkListImpl::Iterator LinkListImpl::Erase(LinkListNode* pNode) {
-    LinkListNode* pNext = pNode->mNext;
-    LinkListNode* pPrev = pNode->mPrev;
+LinkListImpl::Iterator LinkListImpl::Erase(LinkListNode *p) {
+    LinkListNode *next = p->mNext;
+    LinkListNode *prev = p->mPrev;
 
     // Remove connections to node
-    pNext->mPrev = pPrev;
-    pPrev->mNext = pNext;
+    next->mPrev = prev;
+    prev->mNext = next;
 
     mSize--;
 
     // Isolate node
-    pNode->mNext = NULL;
-    pNode->mPrev = NULL;
+    p->mNext = NULL;
+    p->mPrev = NULL;
 
-    return Iterator(pNext);
+    return Iterator(next);
 }
 
+/* Not in SS */
 LinkListImpl::Iterator LinkListImpl::Erase(Iterator begin, Iterator end) {
-    LinkListNode* pIt = begin.mNode;
-    LinkListNode* pEnd = end.mNode;
+    LinkListNode *pCur = begin.mNode;
+    LinkListNode *pEnd = end.mNode;
 
-    while (pIt != pEnd) {
+    while (pCur != pEnd) {
         // Preserve next node before erasing pointers
-        LinkListNode* pNext = pIt->mNext;
-
+        LinkListNode *pNext = pCur->mNext;
         // Erase current node
-        Erase(pIt);
-        pIt = pNext;
+        Erase(pCur);
+        pCur = pNext;
     }
 
     return Iterator(pEnd);

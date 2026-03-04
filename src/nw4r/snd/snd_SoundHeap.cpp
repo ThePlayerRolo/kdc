@@ -1,5 +1,7 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_SoundHeap.h"
+
+#include "nw4r/snd/snd_DisposeCallbackManager.h"
+#include "nw4r/snd/snd_SoundThread.h"
 
 namespace nw4r {
 namespace snd {

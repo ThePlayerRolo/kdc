@@ -1,6 +1,6 @@
-#ifndef NW4R_G3D_RES_RES_ANM_H
-#define NW4R_G3D_RES_RES_ANM_H
-#include <nw4r/types_nw4r.h>
+#ifndef NW4R_G3D_RESANM_H
+#define NW4R_G3D_RESANM_H
+#include "common.h"
 
 namespace nw4r {
 namespace g3d {
@@ -25,7 +25,7 @@ struct ResKeyFrameAnmData {
 
 namespace detail {
 
-f32 GetResKeyFrameAnmResult(const ResKeyFrameAnmData* pData, f32 frame);
+f32 GetResKeyFrameAnmResult(const ResKeyFrameAnmData *pData, f32 frame);
 
 } // namespace detail
 
@@ -34,7 +34,11 @@ f32 GetResKeyFrameAnmResult(const ResKeyFrameAnmData* pData, f32 frame);
  * ResAnm
  *
  ******************************************************************************/
-enum AnmPolicy { ANM_POLICY_ONETIME, ANM_POLICY_LOOP, ANM_POLICY_MAX };
+enum AnmPolicy {
+    ANM_POLICY_ONETIME,
+    ANM_POLICY_LOOP,
+    ANM_POLICY_MAX
+};
 
 union ResAnmData {
     f32 constValue;           // at 0x0
@@ -43,19 +47,20 @@ union ResAnmData {
 
 namespace detail {
 
-inline f32 GetResAnmResult(const ResAnmData* pData, f32 frame, bool constant) {
+inline f32 GetResAnmResult(const ResAnmData *pData, f32 frame, bool constant) {
     if (constant) {
         return pData->constValue;
     }
 
-    const ResKeyFrameAnmData* pFrameData =
-        reinterpret_cast<const ResKeyFrameAnmData*>(
-            reinterpret_cast<const char*>(pData) + pData->toResKeyFrameAnmData);
+    const ResKeyFrameAnmData *pFrameData = reinterpret_cast<const ResKeyFrameAnmData *>(
+        reinterpret_cast<const char *>(pData) + pData->toResKeyFrameAnmData
+    );
 
     return GetResKeyFrameAnmResult(pFrameData, frame);
 }
 
-template <typename T> inline f32 ClipFrame(const T& rInfo, f32 frame) {
+template <typename T>
+inline f32 ClipFrame(const T &rInfo, f32 frame) {
     if (frame <= 0.0f) {
         return 0.0f;
     }
@@ -84,18 +89,16 @@ struct ResColorAnmFramesData {
 
 namespace detail {
 
-u32 GetResColorAnmResult(const ResColorAnmFramesData* pData, f32 frame);
+u32 GetResColorAnmResult(const ResColorAnmFramesData *pData, f32 frame);
 
-inline u32 GetResColorAnmResult(const ResColorAnmData* pData, f32 frame,
-                                bool constant) {
+inline u32 GetResColorAnmResult(const ResColorAnmData *pData, f32 frame, bool constant) {
     if (constant) {
         return pData->constValue;
     }
 
-    const ResColorAnmFramesData* pFrameData =
-        reinterpret_cast<const ResColorAnmFramesData*>(
-            reinterpret_cast<const char*>(pData) +
-            pData->toResColorAnmFramesData);
+    const ResColorAnmFramesData *pFrameData = reinterpret_cast<const ResColorAnmFramesData *>(
+        reinterpret_cast<const char *>(pData) + pData->toResColorAnmFramesData
+    );
 
     return GetResColorAnmResult(pFrameData, frame);
 }
@@ -116,9 +119,8 @@ struct ResBoolAnmFramesData {
 
 namespace detail {
 
-inline bool GetResBoolAnmFramesResult(const ResBoolAnmFramesData* pData,
-                                      int frame) {
-    const u32* pBits = pData->boolBits;
+inline bool GetResBoolAnmFramesResult(const ResBoolAnmFramesData *pData, int frame) {
+    const u32 *pBits = pData->boolBits;
     u32 index = static_cast<u32>(frame);
 
     u32 wordIdx = index / 32;
@@ -130,11 +132,10 @@ inline bool GetResBoolAnmFramesResult(const ResBoolAnmFramesData* pData,
     return bitWord & targetBit;
 }
 
-inline bool GetResBoolAnmResult(const ResBoolAnmData* pData, int frame) {
-    const ResBoolAnmFramesData* pFrameData =
-        reinterpret_cast<const ResBoolAnmFramesData*>(
-            reinterpret_cast<const char*>(pData) +
-            pData->toResBoolAnmFramesData);
+inline bool GetResBoolAnmResult(const ResBoolAnmData *pData, int frame) {
+    const ResBoolAnmFramesData *pFrameData = reinterpret_cast<const ResBoolAnmFramesData *>(
+        reinterpret_cast<const char *>(pData) + pData->toResBoolAnmFramesData
+    );
 
     return GetResBoolAnmFramesResult(pFrameData, frame);
 }

@@ -1,30 +1,21 @@
-#include <nw4r/ut.h>
+// Ported from https://github.com/kiwi515/ogws/blob/master/src/nw4r/ut/ut_IOStream.cpp
+
+#include "nw4r/ut.h"
 
 namespace nw4r {
 namespace ut {
 
 NW4R_UT_RTTI_DEF_BASE(IOStream);
 
-bool IOStream::ReadAsync(void* pDst, u32 size, StreamCallback pCallback,
-                         void* pCallbackArg) {
-#pragma unused(pDst)
-#pragma unused(size)
-#pragma unused(pCallback)
-#pragma unused(pCallbackArg)
+bool IOStream::ReadAsync(void *dst, u32 size, AsyncCallback callback, void *arg) {
     return false;
 }
 
-void IOStream::Write(const void* pSrc, u32 size) {
-#pragma unused(pSrc)
-#pragma unused(size)
+s32 IOStream::Write(const void *src, u32 size) {
+    return false;
 }
 
-bool IOStream::WriteAsync(const void* pSrc, u32 size, StreamCallback pCallback,
-                          void* pCallbackArg) {
-#pragma unused(pSrc)
-#pragma unused(size)
-#pragma unused(pCallback)
-#pragma unused(pCallbackArg)
+bool IOStream::WriteAsync(const void *src, u32 size, AsyncCallback callback, void *arg) {
     return false;
 }
 

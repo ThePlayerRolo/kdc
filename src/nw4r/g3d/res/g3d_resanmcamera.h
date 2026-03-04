@@ -2,12 +2,12 @@
 #define NW4R_G3D_RES_RES_ANM_CAMERA_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_resanm.h>
-#include <nw4r/g3d/res/g3d_rescommon.h>
+#include "nw4r/g3d/res/g3d_resanm.h"
+#include "nw4r/g3d/res/g3d_rescommon.h"
 
-#include <nw4r/math.h>
+#include "nw4r/math.h" // IWYU pragma: export
 
-#include <revolution/GX.h>
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -32,7 +32,10 @@ struct ResAnmCameraDataTypedef {
  *
  ******************************************************************************/
 struct CameraAnmResult : ResAnmCameraDataTypedef {
-    enum Flag { FLAG_CAMERA_TYPE_MASK = (1 << 0), FLAG_ANM_EXISTS = (1 << 1) };
+    enum Flag {
+        FLAG_CAMERA_TYPE_MASK = (1 << 0),
+        FLAG_ANM_EXISTS = (1 << 1)
+    };
 
     u32 flags;                 // at 0x0
     GXProjectionType projType; // at 0x4
@@ -114,12 +117,11 @@ struct ResAnmCameraData : ResAnmCameraDataTypedef {
     ResAnmData orthoHeight;    // at 0x58
 };
 
-class ResAnmCamera : public ResCommon<ResAnmCameraData>,
-                     public ResAnmCameraDataTypedef {
+class ResAnmCamera : public ResCommon<ResAnmCameraData>, public ResAnmCameraDataTypedef {
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResAnmCamera);
 
-    void GetAnmResult(CameraAnmResult* pResult, f32 frame) const;
+    void GetAnmResult(CameraAnmResult *pResult, f32 frame) const;
 
     u32 GetID() const {
         return ref().id;

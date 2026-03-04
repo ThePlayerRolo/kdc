@@ -1,10 +1,7 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
-
-#include <revolution/OS.h>
-#include <revolution/WENC.h>
-#include <revolution/WPAD.h>
-
+#include "nw4r/snd/snd_RemoteSpeaker.h"
+#include "common.h"
+#include "nw4r/snd/snd_RemoteSpeakerManager.h"
+#include "nw4r/ut/ut_Lock.h"
 #include <cstring>
 
 namespace nw4r {
@@ -17,11 +14,11 @@ RemoteSpeaker::RemoteSpeaker()
       mFirstEncodeFlag(false),
       mValidCallbackFlag(false),
       mCommandBusyFlag(false),
-      mForceResumeFlag(false),
+      // mForceResumeFlag(false),
       mState(STATE_INVALID),
       mUserCommand(COMMAND_NONE),
       mInternalCommand(COMMAND_NONE),
-      mWpadCallback(NULL) {
+      mWpadCallback(nullptr) {
 
     OSCreateAlarm(&mContinueAlarm);
     OSSetAlarmUserData(&mContinueAlarm, this);
@@ -33,7 +30,7 @@ RemoteSpeaker::RemoteSpeaker()
 void RemoteSpeaker::InitParam() {
     ClearParam();
 
-    mForceResumeFlag = false;
+    // mForceResumeFlag = false;
     mContinueFlag = false;
     mPlayFlag = false;
     mEnableFlag = true;
@@ -61,8 +58,8 @@ bool RemoteSpeaker::Setup(WPADCallback pCallback) {
         mValidCallbackFlag = false;
     }
 
-    mWpadCallback = pCallback;
     mUserCommand = COMMAND_SPEAKER_ON;
+    mWpadCallback = pCallback;
     mInitFlag = true;
 
     return true;
@@ -155,7 +152,7 @@ void RemoteSpeaker::UpdateStreamData(const s16* pRmtSamples) {
     bool playFlag = true;
     bool silentFlag = mEnableFlag ? IsAllSampleZero(pRmtSamples) : true;
 
-    if (silentFlag || mForceResumeFlag) {
+    if (silentFlag /*|| mForceResumeFlag*/) {
         playFlag = false;
     }
 
@@ -359,8 +356,8 @@ void RemoteSpeaker::ContinueAlarmHandler(OSAlarm* pAlarm, OSContext* pCtx) {
     ut::AutoInterruptLock lock;
     RemoteSpeaker* p = static_cast<RemoteSpeaker*>(OSGetAlarmUserData(pAlarm));
 
-    p->mForceResumeFlag = true;
-    p->mContinueFlag = false;
+    // p->mForceResumeFlag = true;
+    // p->mContinueFlag = false;
 }
 
 void RemoteSpeaker::IntervalAlarmHandler(OSAlarm* pAlarm, OSContext* pCtx) {
@@ -371,7 +368,7 @@ void RemoteSpeaker::IntervalAlarmHandler(OSAlarm* pAlarm, OSContext* pCtx) {
 
     if (p->mIntervalFlag) {
         OSCancelAlarm(&p->mContinueAlarm);
-        p->mForceResumeFlag = false;
+        // p->mForceResumeFlag = false;
         p->mContinueFlag = false;
     }
 

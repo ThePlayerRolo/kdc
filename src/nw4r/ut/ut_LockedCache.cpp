@@ -1,4 +1,6 @@
-#include <nw4r/ut.h>
+// Ported From https://github.com/kiwi515/ogws/blob/master/src/nw4r/ut/ut_LockedCache.cpp
+
+#include "nw4r/ut.h"
 
 namespace nw4r {
 namespace ut {
@@ -8,7 +10,7 @@ class LCImpl {
 public:
     class Lock_ {
     public:
-        Lock_(LCImpl& rImpl) : mMutex(rImpl.mMutex) {
+        Lock_(LCImpl &lc) : mMutex(lc.mMutex) {
             OSLockMutex(&mMutex);
         }
         ~Lock_() {
@@ -16,7 +18,7 @@ public:
         }
 
     private:
-        OSMutex& mMutex; // at 0x0
+        OSMutex &mMutex; // at 0x0
     };
 
 public:
@@ -61,8 +63,8 @@ public:
     }
 
 private:
-    bool mIsEnabled;        // at 0x0
-    mutable OSMutex mMutex; // at 0x4
+    bool mIsEnabled; // at 0x0
+    OSMutex mMutex;  // at 0x4
 };
 
 static LCImpl sLCImpl;
@@ -87,16 +89,16 @@ void Unlock() {
     sLCImpl.Unlock();
 }
 
-void LoadBlocks(void* pDst, void* pSrc, u32 blocks) {
-    LCLoadBlocks(pDst, pSrc, blocks);
+void LoadBlocks(void *dst, void *src, u32 size) {
+    LCLoadBlocks(dst, src, size);
 }
 
-void StoreBlocks(void* pDst, void* pSrc, u32 blocks) {
-    LCStoreBlocks(pDst, pSrc, blocks);
+void StoreBlocks(void *dst, void *src, u32 size) {
+    LCStoreBlocks(dst, src, size);
 }
 
-void StoreData(void* pDst, void* pSrc, u32 size) {
-    LCStoreData(pDst, pSrc, size);
+void StoreData(void *dst, void *src, u32 size) {
+    LCStoreData(dst, src, size);
 }
 
 } // namespace LC

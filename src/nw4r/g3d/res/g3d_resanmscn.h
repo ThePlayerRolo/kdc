@@ -1,14 +1,18 @@
 #ifndef NW4R_G3D_RES_RES_ANM_SCN_H
 #define NW4R_G3D_RES_RES_ANM_SCN_H
+
+/** NOTICE: Revision change from 4->5. Structures, Enums, and/or Functions may have changed and not yet done so
+ * (Zeldex72, Feb 1, 2025) */
+
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_resanm.h>
-#include <nw4r/g3d/res/g3d_resanmamblight.h>
-#include <nw4r/g3d/res/g3d_resanmcamera.h>
-#include <nw4r/g3d/res/g3d_resanmfog.h>
-#include <nw4r/g3d/res/g3d_resanmlight.h>
-#include <nw4r/g3d/res/g3d_rescommon.h>
-#include <nw4r/g3d/res/g3d_reslightset.h>
+#include "nw4r/g3d/res/g3d_resanm.h"
+#include "nw4r/g3d/res/g3d_resanmamblight.h"
+#include "nw4r/g3d/res/g3d_resanmcamera.h"
+#include "nw4r/g3d/res/g3d_resanmfog.h"
+#include "nw4r/g3d/res/g3d_resanmlight.h"
+#include "nw4r/g3d/res/g3d_rescommon.h"
+#include "nw4r/g3d/res/g3d_reslightset.h"
 
 namespace nw4r {
 namespace g3d {
@@ -35,15 +39,16 @@ struct ResAnmScnData {
     s32 toResAnmLightDataArray;    // at 0x1C
     s32 toResAnmFogDataArray;      // at 0x20
     s32 toResAnmCameraDataArray;   // at 0x24
-    s32 name;                      // at 0x28
-    s32 original_path;             // at 0x2C
-    ResAnmScnInfoData info;        // at 0x30
+    s32 toResUserData;             // at 0x28
+    s32 name;                      // at 0x2C
+    s32 original_path;             // at 0x30
+    ResAnmScnInfoData info;        // at 0x34
 };
 
 class ResAnmScn : public ResCommon<ResAnmScnData> {
 public:
-    static const u32 SIGNATURE = FOURCC('S', 'C', 'N', '0');
-    static const int REVISION = 4;
+    static const u32 SIGNATURE = 'SCN0';
+    static const int REVISION = 5;
 
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResAnmScn);
@@ -69,13 +74,20 @@ public:
     ResLightSet GetResLightSet(u32 idx) const;
     u32 GetResLightSetNumEntries() const;
 
+    ResAnmAmbLight GetResAnmAmbLight(const char *name) const;
     ResAnmAmbLight GetResAnmAmbLight(const ResName name) const;
     ResAnmAmbLight GetResAnmAmbLight(int idx) const;
     ResAnmAmbLight GetResAnmAmbLight(u32 idx) const;
 
+    ResAnmLight GetResAnmLight(const char *name) const;
     ResAnmLight GetResAnmLight(const ResName name) const;
     ResAnmLight GetResAnmLight(int idx) const;
     ResAnmLight GetResAnmLight(u32 idx) const;
+
+    ResAnmCamera GetResAnmCamera(const char *name) const;
+    ResAnmCamera GetResAnmCamera(const ResName name) const;
+    ResAnmCamera GetResAnmCamera(int idx) const;
+    ResAnmCamera GetResAnmCamera(u32 idx) const;
 
     ResLightSet GetResLightSetByRefNumber(u32 refNumber) const;
     ResAnmAmbLight GetResAnmAmbLightByRefNumber(u32 refNumber) const;
@@ -85,6 +97,22 @@ public:
 
     u16 GetResAnmFogMaxRefNumber() const {
         return ref().info.numResAnmFogData;
+    }
+
+    u16 GetResAnmLightMaxRefNumber() const {
+        return ref().info.numResAnmLightData;
+    }
+
+    u16 GetResAnmAmbLightMaxRefNumber() const {
+        return ref().info.numResAnmAmbLightData;
+    }
+
+    u16 GetResLightSetMaxRefNumber()  const {
+        return ref().info.numResLightSetData;
+    }
+
+    u16 GetSpecularLightNumber() const {
+        return ref().info.numSpecularLight;
     }
 };
 

@@ -1,8 +1,8 @@
-#ifndef NW4R_G3D_RES_RES_COMMON_H
-#define NW4R_G3D_RES_RES_COMMON_H
-#include <nw4r/types_nw4r.h>
+#ifndef NW4R_G3D_RESCOMMON_H
+#define NW4R_G3D_RESCOMMON_H
+#include "common.h"
 
-#include <revolution/GX.h>
+#include "revolution/GX.h" // IWYU pragma: export
 
 /******************************************************************************
  *
@@ -13,43 +13,39 @@
 /**
  * Define ResName pascal string for file resource groups.
  */
-#define NW4R_G3D_RESFILE_NAME_DEF(VAR, STR)                                    \
-    nw4r::g3d::ResNameData27 ResNameData_##VAR ALIGN(32) = {sizeof(STR) - 1,   \
-                                                            STR}
+#define NW4R_G3D_RESFILE_NAME_DEF(VAR, STR)                                                                            \
+    nw4r::g3d::ResNameData27 ResNameData_##VAR ALIGN_DECL(32) = {sizeof(STR) - 1, STR}
 
 /**
  * Similar to "ofs_to_obj" but accounting for the additional -4 offset.
  * Debug builds show this behavior was not achieved through a function.
  */
-#define NW4R_G3D_OFS_TO_RESNAME(BASE, OFS)                                     \
-    nw4r::g3d::ResName((char*)(BASE) + (OFS) - sizeof(u32))
+#define NW4R_G3D_OFS_TO_RESNAME(BASE, OFS) nw4r::g3d::ResName((char *)(BASE) + (OFS) - sizeof(u32))
 
 /**
  * Define common functions for resource classes.
  * @note Hides ResCommon::ref, why did they do this???
  */
-#define NW4R_G3D_RESOURCE_FUNC_DEF(T)                                          \
-    NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data)
-#define NW4R_G3D_RESOURCE_FUNC_DEF_EX(TCLS, TDATA)                             \
-    NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)
+#define NW4R_G3D_RESOURCE_FUNC_DEF(T) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data)
+#define NW4R_G3D_RESOURCE_FUNC_DEF_EX(TCLS, TDATA) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)
 
-#define NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)                           \
-    explicit TCLS(void* pData = NULL) : nw4r::g3d::ResCommon<TDATA>(pData) {}  \
-                                                                               \
-    TDATA& ref() {                                                             \
-        return *ptr();                                                         \
-    }                                                                          \
-                                                                               \
-    const TDATA& ref() const {                                                 \
-        return *ptr();                                                         \
-    }                                                                          \
-                                                                               \
-    bool operator==(const TCLS& rOther) const {                                \
-        return ptr() == rOther.ptr();                                          \
-    }                                                                          \
-                                                                               \
-    bool operator!=(const TCLS& rOther) const {                                \
-        return ptr() != rOther.ptr();                                          \
+#define NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)                                                                   \
+    explicit TCLS(void *pData = NULL) : nw4r::g3d::ResCommon<TDATA>(pData) {}                                          \
+                                                                                                                       \
+    TDATA &ref() {                                                                                                     \
+        return *ptr();                                                                                                 \
+    }                                                                                                                  \
+                                                                                                                       \
+    const TDATA &ref() const {                                                                                         \
+        return *ptr();                                                                                                 \
+    }                                                                                                                  \
+                                                                                                                       \
+    bool operator==(const TCLS &rOther) const {                                                                        \
+        return ptr() == rOther.ptr();                                                                                  \
+    }                                                                                                                  \
+                                                                                                                       \
+    bool operator!=(const TCLS &rOther) const {                                                                        \
+        return ptr() != rOther.ptr();                                                                                  \
     }
 
 namespace nw4r {
@@ -60,78 +56,84 @@ namespace g3d {
  * Common resource wrapper
  *
  ******************************************************************************/
-template <typename T> class ResCommon {
+template <typename T>
+class ResCommon {
 public:
-    explicit ResCommon(void* pData) : mpData(static_cast<T*>(pData)) {}
+    explicit ResCommon(void *pData) : mpData(static_cast<T *>(pData)) {}
 
-    explicit ResCommon(const void* pData)
-        : mpData(static_cast<const T*>(pData)) {}
+    explicit ResCommon(const void *pData) : mpData(static_cast<const T *>(pData)) {}
 
     bool IsValid() const {
         return mpData != NULL;
     }
 
-    T* ptr() {
+    T *ptr() {
         return mpData;
     }
-    const T* ptr() const {
+    const T *ptr() const {
         return mpData;
     }
 
-    T& ref() {
+    T &ref() {
         return *mpData;
     }
-    const T& ref() const {
+    const T &ref() const {
         return *mpData;
     }
 
-    template <typename TTo> TTo* ofs_to_ptr_raw(s32 ofs) {
-        return reinterpret_cast<TTo*>((char*)mpData + ofs);
+    template <typename PTR_T>
+    PTR_T *ofs_to_ptr_raw(s32 ofs) {
+        return reinterpret_cast<PTR_T *>((char *)mpData + ofs);
     }
-    template <typename TTo> const TTo* ofs_to_ptr_raw(s32 ofs) const {
-        return reinterpret_cast<const TTo*>((char*)mpData + ofs);
+    template <typename PTR_T>
+    const PTR_T *ofs_to_ptr_raw(s32 ofs) const {
+        return reinterpret_cast<const PTR_T *>((char *)mpData + ofs);
     }
 
-    template <typename TTo> TTo* ofs_to_ptr(s32 ofs) {
-        u8* pPtr = reinterpret_cast<u8*>(mpData);
+    template <typename PTR_T>
+    PTR_T *ofs_to_ptr(s32 ofs) {
+        u8 *pPtr = reinterpret_cast<u8 *>(mpData);
 
         if (ofs != 0) {
-            return reinterpret_cast<TTo*>(pPtr + ofs);
+            return reinterpret_cast<PTR_T *>(pPtr + ofs);
         }
 
         return NULL;
     }
-    template <typename TTo> const TTo* ofs_to_ptr(s32 ofs) const {
-        const u8* pPtr = reinterpret_cast<const u8*>(mpData);
+    template <typename PTR_T>
+    const PTR_T *ofs_to_ptr(s32 ofs) const {
+        const u8 *pPtr = reinterpret_cast<const u8 *>(mpData);
 
         if (ofs != 0) {
-            return reinterpret_cast<const TTo*>(pPtr + ofs);
+            return reinterpret_cast<const PTR_T *>(pPtr + ofs);
         }
 
         return NULL;
     }
 
-    template <typename TTo> TTo ofs_to_obj(s32 ofs) {
-        u8* pPtr = reinterpret_cast<u8*>(mpData);
+    template <typename OBJ_T>
+    OBJ_T ofs_to_obj(s32 ofs) {
+        u8 *pPtr = reinterpret_cast<u8 *>(mpData);
 
         if (ofs != 0) {
-            return TTo(pPtr + ofs);
+            return OBJ_T(pPtr + ofs);
         }
 
-        return TTo(NULL);
+        return OBJ_T(NULL);
     }
-    template <typename TTo> const TTo ofs_to_obj(s32 ofs) const {
-        const u8* pPtr = reinterpret_cast<const u8*>(mpData);
+    template <typename OBJ_T>
+    const OBJ_T ofs_to_obj(s32 ofs) const {
+        const u8 *pPtr = reinterpret_cast<const u8 *>(mpData);
 
         if (ofs != 0) {
-            return TTo(const_cast<u8*>(pPtr + ofs));
+            return OBJ_T(const_cast<u8 *>(pPtr + ofs));
         }
 
-        return TTo(NULL);
+        return OBJ_T(NULL);
     }
 
 private:
-    T* mpData;
+    T *mpData;
 };
 
 /**
@@ -162,13 +164,13 @@ struct ResNameData {
 
 class ResName : public ResCommon<const ResNameData> {
 public:
-    explicit ResName(const void* pData) : ResCommon(pData) {}
+    explicit ResName(const void *pData) : ResCommon(pData) {}
 
     u32 GetLength() const {
         return ref().len;
     }
 
-    const char* GetName() const {
+    const char *GetName() const {
         return ref().str;
     }
 
@@ -198,10 +200,10 @@ public:
         return ref().cmdSize;
     }
 
-    u8* GetDL() {
-        return const_cast<u8*>(ofs_to_ptr<u8>(ref().toDL));
+    u8 *GetDL() {
+        return const_cast<u8 *>(ofs_to_ptr<u8>(ref().toDL));
     }
-    const u8* GetDL() const {
+    const u8 *GetDL() const {
         return ofs_to_ptr<u8>(ref().toDL);
     }
 };
@@ -282,17 +284,19 @@ struct MtxDupParams {
 } // namespace ResByteCodeData
 
 namespace detail {
+typedef u8 CPCmd[6];
+typedef u8 BPCmd[5];
 
 /******************************************************************************
  *
  * Primitive read/write
  *
  ******************************************************************************/
-inline u8 ResRead_u8(const u8* pPtr) {
+inline u8 ResRead_u8(const u8 *pPtr) {
     return *pPtr;
 }
 
-inline u32 ResRead_u32(const u8* pPtr) {
+inline u32 ResRead_u32(const u8 *pPtr) {
     u32 value = ResRead_u8(pPtr++) << 24;
     value |= ResRead_u8(pPtr++) << 16;
     value |= ResRead_u8(pPtr++) << 8;
@@ -300,16 +304,16 @@ inline u32 ResRead_u32(const u8* pPtr) {
     return value;
 }
 
-inline void ResWrite_u8(u8* pPtr, u8 data) {
+inline void ResWrite_u8(u8 *pPtr, u8 data) {
     *pPtr = data;
 }
 
-inline void ResWrite_u16(u8* pPtr, u16 data) {
+inline void ResWrite_u16(u8 *pPtr, u16 data) {
     ResWrite_u8(pPtr++, data >> 8);
     ResWrite_u8(pPtr++, data >> 0);
 }
 
-inline void ResWrite_u32(u8* pPtr, u32 data) {
+inline void ResWrite_u32(u8 *pPtr, u32 data) {
     ResWrite_u8(pPtr++, data >> 24);
     ResWrite_u8(pPtr++, data >> 16);
     ResWrite_u8(pPtr++, data >> 8);
@@ -321,38 +325,38 @@ inline void ResWrite_u32(u8* pPtr, u32 data) {
  * GX Blitting Processor (BP)
  *
  ******************************************************************************/
-inline void ResReadBPCmd(const u8* pPtr, u32* pOut) {
+inline void ResReadBPCmd(const u8 *pPtr, u32 *pOut) {
     // Skip over FIFO command byte
     *pOut = ResRead_u32(pPtr + 1);
 }
 
-void ResWriteBPCmd(u8* pPtr, u32 reg);
-void ResWriteBPCmd(u8* pPtr, u32 reg, u32 mask);
-void ResWriteSSMask(u8* pPtr, u32 value);
+void ResWriteBPCmd(u8 *pPtr, u32 reg);
+void ResWriteBPCmd(u8 *pPtr, u32 reg, u32 mask);
+void ResWriteSSMask(u8 *pPtr, u32 value);
 
 /******************************************************************************
  *
  * GX Command Processor (CP)
  *
  ******************************************************************************/
-inline void ResReadCPCmd(const u8* pPtr, u32* pOut) {
+inline void ResReadCPCmd(const u8 *pPtr, u32 *pOut) {
     // Skip over FIFO command byte + addr byte
     *pOut = ResRead_u32(pPtr + 2);
 }
 
-void ResWriteCPCmd(u8* pPtr, u8 addr, u32 value);
+void ResWriteCPCmd(u8 *pPtr, u8 addr, u32 value);
 
 /******************************************************************************
  *
  * GX Transform Unit (XF)
  *
  ******************************************************************************/
-inline void ResReadXFCmd(const u8* pPtr, u32* pOut) {
+inline void ResReadXFCmd(const u8 *pPtr, u32 *pOut) {
     // Skip over FIFO command byte + size short + addr short
     *pOut = ResRead_u32(pPtr + 5);
 }
 
-void ResWriteXFCmd(u8* pPtr, u16 addr, u32 value);
+void ResWriteXFCmd(u8 *pPtr, u16 addr, u32 value);
 
 /******************************************************************************
  *

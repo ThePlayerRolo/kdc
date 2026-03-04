@@ -1,7 +1,6 @@
-#include <nw4r/snd.h>
+#include "nw4r/snd/snd_RemoteSpeakerManager.h"
+#include "revolution/AX/AXOut.h"
 
-#include <revolution/AX.h>
-#include <revolution/OS.h>
 
 namespace nw4r {
 namespace snd {

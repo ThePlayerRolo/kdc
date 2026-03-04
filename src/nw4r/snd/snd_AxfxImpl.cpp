@@ -1,5 +1,6 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_AxfxImpl.h"
+
+#include "nw4r/ut/ut_algorithm.h"
 
 namespace nw4r {
 namespace snd {
@@ -9,6 +10,11 @@ AxfxImpl* AxfxImpl::mCurrentFx = NULL;
 u32 AxfxImpl::mAllocatedSize = 0;
 
 bool AxfxImpl::CreateHeap(void* pBuffer, u32 size) {
+    if (pBuffer == NULL || size == 0)
+    {
+        mHeap = NULL;
+        return false;
+    }
     mHeap = MEMCreateFrmHeap(pBuffer, size);
     return mHeap != NULL;
 }
@@ -16,6 +22,7 @@ bool AxfxImpl::CreateHeap(void* pBuffer, u32 size) {
 void AxfxImpl::DestroyHeap() {
     if (mHeap != NULL) {
         MEMDestroyFrmHeap(mHeap);
+        mHeap = NULL;
     }
 }
 
@@ -23,11 +30,13 @@ void AxfxImpl::HookAlloc(AXFXAllocHook* pAllocHook, AXFXFreeHook* pFreeHook) {
     AXFXGetHooks(pAllocHook, pFreeHook);
     AXFXSetHooks(Alloc, Free);
     mCurrentFx = this;
+    mAllocatedSize = 0;
 }
 
-void AxfxImpl::RestoreAlloc(AXFXAllocHook allocHook, AXFXFreeHook freeHook) {
+u32 AxfxImpl::RestoreAlloc(AXFXAllocHook allocHook, AXFXFreeHook freeHook) {
     AXFXSetHooks(allocHook, freeHook);
     mCurrentFx = NULL;
+    return mAllocatedSize;
 }
 
 void* AxfxImpl::Alloc(u32 size) {

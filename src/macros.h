@@ -96,4 +96,5 @@
 // Give a symbol weak linkage
 #define DECL_WEAK __declspec(weak)
 
+#define DONT_INLINE __attribute__((never_inline))
 #endif

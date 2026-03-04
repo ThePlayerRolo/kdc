@@ -1,47 +1,59 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_SeqSoundHandle.h"
 
-namespace nw4r {
-namespace snd {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_SeqSoundHandle.cpp
+ */
 
-SeqSoundHandle::SeqSoundHandle(SoundHandle* pHandle) : mSound(NULL) {
-    if (pHandle == NULL) {
-        return;
-    }
+/*******************************************************************************
+ * headers
+ */
 
-    if (!pHandle->IsAttachedSound()) {
-        return;
-    }
+#include "common.h" // nullptr
 
-    detail::SeqSound* pSound =
-        ut::DynamicCast<detail::SeqSound*>(pHandle->detail_GetAttachedSound());
+#include "nw4r/snd/snd_SeqSound.h"
+#include "nw4r/snd/snd_SoundHandle.h"
+#include "nw4r/ut/ut_RuntimeTypeInfo.h"
 
-    if (pSound != NULL) {
-        mSound = pSound;
+/*******************************************************************************
+ * functions
+ */
 
-        if (mSound->IsAttachedTempGeneralHandle()) {
-            mSound->DetachTempGeneralHandle();
-        }
+namespace nw4r { namespace snd {
 
-        if (mSound->IsAttachedTempSpecialHandle()) {
-            mSound->DetachTempSpecialHandle();
-        }
+SeqSoundHandle::SeqSoundHandle(SoundHandle *handle) :
+	mSound	(nullptr)
+{
+	if (!handle)
+		return;
 
-        mSound->mTempSpecialHandle = this;
-    }
+	detail::BasicSound *basicSound = handle->detail_GetAttachedSound();
+	if (!basicSound)
+		return;
+
+	if (detail::SeqSound *sound =
+	        ut::DynamicCast<detail::SeqSound *>(basicSound))
+	{
+
+		mSound = sound;
+
+		if (mSound->IsAttachedTempSpecialHandle())
+			mSound->DetachTempSpecialHandle();
+
+		mSound->mTempSpecialHandle = this;
+	}
 }
 
-void SeqSoundHandle::DetachSound() {
-    if (IsAttachedSound()) {
-        if (mSound->mTempSpecialHandle == this) {
-            mSound->mTempSpecialHandle = NULL;
-        }
-    }
+void SeqSoundHandle::DetachSound()
+{
+	if (IsAttachedSound())
+	{
+		if (mSound->mTempSpecialHandle == this)
+			mSound->mTempSpecialHandle = nullptr;
+	}
 
-    if (mSound != NULL) {
-        mSound = NULL;
-    }
+	if (mSound)
+		mSound = nullptr;
 }
 
-} // namespace snd
-} // namespace nw4r
+}} // namespace nw4r::snd

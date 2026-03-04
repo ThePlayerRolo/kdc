@@ -2,13 +2,13 @@
 #define NW4R_G3D_RES_RES_ANM_LIGHT_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_resanm.h>
-#include <nw4r/g3d/res/g3d_rescommon.h>
+#include "nw4r/g3d/res/g3d_resanm.h"
+#include "nw4r/g3d/res/g3d_rescommon.h"
 
-#include <nw4r/math.h>
-#include <nw4r/ut.h>
+#include "nw4r/math.h" // IWYU pragma: export
+#include "nw4r/ut.h"   // IWYU pragma: export
 
-#include <revolution/GX.h>
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -115,12 +115,11 @@ struct ResAnmLightData : ResAnmLightDataTypedef {
     ResAnmData shininess;      // at 0x58
 };
 
-class ResAnmLight : public ResCommon<ResAnmLightData>,
-                    public ResAnmLightDataTypedef {
+class ResAnmLight : public ResCommon<ResAnmLightData>, public ResAnmLightDataTypedef {
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResAnmLight);
 
-    void GetAnmResult(LightAnmResult* pResult, f32 frame) const;
+    void GetAnmResult(LightAnmResult *pResult, f32 frame) const;
 
     u32 GetID() const {
         return ref().id;

@@ -2,15 +2,12 @@
 #define NW4R_G3D_RES_RES_LIGHT_SET_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/g3d_state.h>
-#include <nw4r/g3d/res/g3d_resanmscn.h>
-#include <nw4r/g3d/res/g3d_rescommon.h>
+#include "nw4r/g3d/g3d_state.h"
+// #include "nw4r/g3d/res/g3d_resanmscn.h"
+#include "nw4r/g3d/res/g3d_rescommon.h"
 
 namespace nw4r {
 namespace g3d {
-
-// Forward declarations
-class ResAnmScn;
 
 struct ResLightSetData {
     static const u32 INVALID_ID = 0xFFFF;
@@ -39,7 +36,7 @@ public:
     }
 
     ResName GetAmbLightResName() const {
-        const ResLightSetData& r = ref();
+        const ResLightSetData &r = ref();
 
         if (r.ambLightName != 0) {
             return NW4R_G3D_OFS_TO_RESNAME(&r, r.ambLightName);
@@ -52,6 +49,10 @@ public:
         return ref().ambLightId;
     }
 
+    u32 GetLightID(u32 index) const {
+        return ref().lightId[index];
+    }
+
     u32 GetNumLight() const {
         return ref().numLight;
     }
@@ -61,9 +62,9 @@ public:
     }
 
     ResName GetLightResName(u32 idx) const {
-        const ResLightSetData& r = ref();
+        const ResLightSetData &r = ref();
 
-        const s32* pNames = r.lightNames;
+        const s32 *pNames = r.lightNames;
         return NW4R_G3D_OFS_TO_RESNAME(pNames, pNames[idx]);
     }
 };

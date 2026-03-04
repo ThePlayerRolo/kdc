@@ -1,13 +1,14 @@
-#include <nw4r/g3d.h>
-#include <nw4r/ut.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
 
-#include <revolution/GX.h>
-#include <revolution/OS.h>
-#include <revolution/VI.h>
+#include "nw4r/ut.h" // IWYU pragma: export
+
+#include "revolution/GX.h" // IWYU pragma: export
+#include "revolution/OS.h" // IWYU pragma: export
+#include "revolution/VI.h"
 
 namespace {
 
-NW4R_LIB_VERSION(G3D, "Jun  8 2007", "11:16:25", "0x4199_60831");
+NW4R_LIB_VERSION(G3D, "Dec 22 2009", "02:11:33", "0x4302_158");
 
 } // namespace
 
@@ -25,32 +26,32 @@ void G3dInit(bool enableLockedCache) {
 
     InitFastCast();
 
-    GXRenderModeObj* pMode;
-    switch (VIGetTvFormat()) {
-    case VI_TVFORMAT_NTSC: {
-        pMode = &GXNtsc480IntDf;
-        break;
-    }
+    GXRenderModeObj *pMode;
+    switch ((u32)VIGetTvFormat()) {
+        case VI_TV_FMT_NTSC: {
+            pMode = &GXNtsc480IntDf;
+            break;
+        }
 
-    case VI_TVFORMAT_PAL: {
-        pMode = &GXPal528IntDf;
-        break;
-    }
+        case VI_TV_FMT_PAL: {
+            pMode = &GXPal528IntDf;
+            break;
+        }
 
-    case VI_TVFORMAT_EURGB60: {
-        pMode = &GXEurgb60Hz480IntDf;
-        break;
-    }
+        case VI_TV_FMT_EURGB60: {
+            pMode = &GXEurgb60Hz480IntDf;
+            break;
+        }
 
-    case VI_TVFORMAT_MPAL: {
-        pMode = &GXMpal480IntDf;
-        break;
-    }
+        case VI_TV_FMT_MPAL: {
+            pMode = &GXMpal480IntDf;
+            break;
+        }
 
-    default: {
-        pMode = &GXNtsc480IntDf;
-        break;
-    }
+        default: {
+            pMode = &GXNtsc480IntDf;
+            break;
+        }
     }
 
     G3DState::SetRenderModeObj(*pMode);

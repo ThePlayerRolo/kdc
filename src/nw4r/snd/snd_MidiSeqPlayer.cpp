@@ -1,25 +1,6 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+/* Only implemented to the extent necessary to match early instantiations of
+ * inline functions and data sections. */
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+#include "nw4r/snd/snd_MidiSeqPlayer.h"
 
-/**
- * Dummy class to instantiate necessary weak functions
- */
-#if !defined(NONMATCHING)
-class MidiSeqPlayer : public SeqPlayer {
-private:
-    MidiSeqPlayer();
-
-    // Dummy implementation, must prevent instantiating SeqPlayer version
-    virtual void ChannelCallback(Channel* /* pChannel */) {}
-};
-
-MidiSeqPlayer::MidiSeqPlayer() {}
-#endif
-
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+nw4r::snd::detail::MidiSeqPlayer::MidiSeqPlayer() {}

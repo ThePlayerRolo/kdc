@@ -1,12 +1,10 @@
-#include <nw4r/g3d.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
 namespace fifo {
 
-void GDSetGenMode2(u8 numTexGens, u8 numChans, u8 numTevs, u8 numInds,
-                   GXCullMode cullMode) {
-
+void GDSetGenMode2(u8 numTexGens, u8 numChans, u8 numTevs, u8 numInds, GXCullMode cullMode) {
     // clang-format off
     // @note NUMCOLORS is actually three bits
     LoadBPCmd(GX_BP_REG_SSMASK << GX_BP_OPCODE_SHIFT |
@@ -21,7 +19,7 @@ void GDSetGenMode2(u8 numTexGens, u8 numChans, u8 numTevs, u8 numInds,
     LoadBPCmd(
         numTexGens        << GX_BP_GENMODE_NUMTEX_SHIFT       |
         numChans          << GX_BP_GENMODE_NUMCOLORS_SHIFT    |
-        (numTevs - 1)     << GX_BP_GENMODE_NUMTEVSTAGES_SHIFT |
+        numTevs - 1       << GX_BP_GENMODE_NUMTEVSTAGES_SHIFT |
         cm2hw[cullMode]   << GX_BP_GENMODE_CULLMODE_SHIFT     |
         numInds           << GX_BP_GENMODE_NUMINDSTAGES_SHIFT |
         GX_BP_REG_GENMODE << GX_BP_OPCODE_SHIFT);
@@ -40,8 +38,9 @@ void GDSetCullMode(GXCullMode cullMode) {
     LoadBPCmd(cm2hw[cullMode] << GX_BP_GENMODE_CULLMODE_SHIFT);
 }
 
-void GDSetTexCoordScale2(GXTexCoordID coord, u16 scaleS, GXBool biasS,
-                         GXBool wrapS, u16 scaleT, GXBool biasT, GXBool wrapT) {
+void GDSetTexCoordScale2(
+    GXTexCoordID coord, u16 scaleS, GXBool biasS, GXBool wrapS, u16 scaleT, GXBool biasT, GXBool wrapT
+) {
     // clang-format off
     LoadBPCmd(GX_BP_REG_SSMASK << GX_BP_OPCODE_SHIFT |
         GX_BP_SU_SIZE_SCALE_MASK                     |
@@ -51,22 +50,22 @@ void GDSetTexCoordScale2(GXTexCoordID coord, u16 scaleS, GXBool biasS,
 
     // clang-format off
     LoadBPCmd(
-        (scaleS - 1) << GX_BP_SU_SIZE_SCALE_SHIFT         |
-        biasS        << GX_BP_SU_SIZE_RANGEBIAS_SHIFT     |
-        wrapS        << GX_BP_SU_SIZE_CYLINDRICWRAP_SHIFT |
-        (GX_BP_REG_SU_SSIZE0 + coord * 2) << GX_BP_OPCODE_SHIFT);
+        scaleS - 1 << GX_BP_SU_SIZE_SCALE_SHIFT         |
+        biasS      << GX_BP_SU_SIZE_RANGEBIAS_SHIFT     |
+        wrapS      << GX_BP_SU_SIZE_CYLINDRICWRAP_SHIFT |
+        GX_BP_REG_SU_SSIZE0 + coord * 2 << GX_BP_OPCODE_SHIFT);
     // clang-format on
 
     // clang-format off
     LoadBPCmd(
-        (scaleT - 1) << GX_BP_SU_SIZE_SCALE_SHIFT         |
-        biasT        << GX_BP_SU_SIZE_RANGEBIAS_SHIFT     |
-        wrapT        << GX_BP_SU_SIZE_CYLINDRICWRAP_SHIFT |
-        (GX_BP_REG_SU_TSIZE0 + coord * 2) << GX_BP_OPCODE_SHIFT);
+        scaleT - 1 << GX_BP_SU_SIZE_SCALE_SHIFT         |
+        biasT      << GX_BP_SU_SIZE_RANGEBIAS_SHIFT     |
+        wrapT      << GX_BP_SU_SIZE_CYLINDRICWRAP_SHIFT |
+        GX_BP_REG_SU_TSIZE0 + coord * 2 << GX_BP_OPCODE_SHIFT);
     // clang-format on
 }
 
-void GDSetIndTexMtx(u32 id, const math::MTX34& rMtx) {
+void GDSetIndTexMtx(u32 id, const math::MTX34 &rMtx) {
     f32 m00, m01, m02, m10, m11, m12;
     f32 a00, a01, a02, a10, a11, a12;
 
@@ -86,9 +85,7 @@ void GDSetIndTexMtx(u32 id, const math::MTX34& rMtx) {
     a11 = math::FAbs(m11);
     a12 = math::FAbs(m12);
 
-    if (a00 >= 1.0f || a01 >= 1.0f || a02 >= 1.0f || a10 >= 1.0f ||
-        a11 >= 1.0f || a12 >= 1.0f) {
-
+    if (a00 >= 1.0f || a01 >= 1.0f || a02 >= 1.0f || a10 >= 1.0f || a11 >= 1.0f || a12 >= 1.0f) {
         do {
             if (scaleExp >= 46) {
                 break;
@@ -109,12 +106,9 @@ void GDSetIndTexMtx(u32 id, const math::MTX34& rMtx) {
             a10 /= 2.0f;
             a11 /= 2.0f;
             a12 /= 2.0f;
-        } while (a00 >= 1.0f || a01 >= 1.0f || a02 >= 1.0f || a10 >= 1.0f ||
-                 a11 >= 1.0f || a12 >= 1.0f);
+        } while (a00 >= 1.0f || a01 >= 1.0f || a02 >= 1.0f || a10 >= 1.0f || a11 >= 1.0f || a12 >= 1.0f);
 
-    } else if (a00 < 0.5f && a01 < 0.5f && a02 < 0.5f && a10 < 0.5f &&
-               a11 < 0.5f && a12 < 0.5f) {
-
+    } else if (a00 < 0.5f && a01 < 0.5f && a02 < 0.5f && a10 < 0.5f && a11 < 0.5f && a12 < 0.5f) {
         do {
             scaleExp--;
 
@@ -131,8 +125,12 @@ void GDSetIndTexMtx(u32 id, const math::MTX34& rMtx) {
             a10 *= 2.0f;
             a11 *= 2.0f;
             a12 *= 2.0f;
-        } while (a00 < 0.5f && a01 < 0.5f && a02 < 0.5f && a10 < 0.5f &&
-                 a11 < 0.5f && a12 < 0.5f && scaleExp > -17);
+
+            if (!(a00 < 0.5f) || !(a01 < 0.5f) || !(a02 < 0.5f) || !(a10 < 0.5f) || !(a11 < 0.5f) || !(a12 < 0.5f)) {
+                break;
+            }
+
+        } while (scaleExp > -17);
     }
 
     // Hardware stores as -17
@@ -143,33 +141,29 @@ void GDSetIndTexMtx(u32 id, const math::MTX34& rMtx) {
         static_cast<u32>((static_cast<int>(1024.0f * m00) & GX_BP_INDMTXA_M00_LMASK) << GX_BP_INDMTXA_M00_SHIFT) |
         static_cast<u32>((static_cast<int>(1024.0f * m10) & GX_BP_INDMTXA_M10_LMASK) << GX_BP_INDMTXA_M10_SHIFT) |
         static_cast<u32>((scaleExp >> 0 & GX_BP_INDMTXA_EXP_LMASK) << GX_BP_INDMTXA_EXP_SHIFT)                   |
-        static_cast<u32>((id + GX_BP_REG_INDMTX0A) << GX_BP_OPCODE_SHIFT));
+        static_cast<u32>(id + GX_BP_REG_INDMTX0A << GX_BP_OPCODE_SHIFT));
 
     LoadBPCmd(
         static_cast<u32>((static_cast<int>(1024.0f * m01) & GX_BP_INDMTXB_M01_LMASK) << GX_BP_INDMTXB_M01_SHIFT) |
         static_cast<u32>((static_cast<int>(1024.0f * m11) & GX_BP_INDMTXB_M11_LMASK) << GX_BP_INDMTXB_M11_SHIFT) |
         static_cast<u32>((scaleExp >> 2 & GX_BP_INDMTXB_EXP_LMASK) << GX_BP_INDMTXB_EXP_SHIFT)                   |
-        static_cast<u32>((id + GX_BP_REG_INDMTX0B) << GX_BP_OPCODE_SHIFT));
+        static_cast<u32>((id + GX_BP_REG_INDMTX0B << GX_BP_OPCODE_SHIFT)));
 
     LoadBPCmd(
         static_cast<u32>((static_cast<int>(1024.0f * m02) & GX_BP_INDMTXC_M02_LMASK) << GX_BP_INDMTXC_M02_SHIFT) |
         static_cast<u32>((static_cast<int>(1024.0f * m12) & GX_BP_INDMTXC_M12_LMASK) << GX_BP_INDMTXC_M12_SHIFT) |
         static_cast<u32>((scaleExp >> 4 & GX_BP_INDMTXC_EXP_LMASK) << GX_BP_INDMTXC_EXP_SHIFT)                   |
-        static_cast<u32>((id + GX_BP_REG_INDMTX0C) << GX_BP_OPCODE_SHIFT));
+        static_cast<u32>(id + GX_BP_REG_INDMTX0C << GX_BP_OPCODE_SHIFT));
     // clang-format on
 }
 
 void GDResetCurrentMtx() {
-    u32 regA = GX_PNMTX0 << GX_CP_MATRIXINDEXA_POSNRM_SHIFT |
-               GX_IDENTITY << GX_CP_MATRIXINDEXA_TEX0_SHIFT |
-               GX_IDENTITY << GX_CP_MATRIXINDEXA_TEX1_SHIFT |
-               GX_IDENTITY << GX_CP_MATRIXINDEXA_TEX2_SHIFT |
+    u32 regA = GX_PNMTX0 << GX_CP_MATRIXINDEXA_POSNRM_SHIFT | GX_IDENTITY << GX_CP_MATRIXINDEXA_TEX0_SHIFT |
+               GX_IDENTITY << GX_CP_MATRIXINDEXA_TEX1_SHIFT | GX_IDENTITY << GX_CP_MATRIXINDEXA_TEX2_SHIFT |
                GX_IDENTITY << GX_CP_MATRIXINDEXA_TEX3_SHIFT;
 
-    u32 regB = GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX4_SHIFT |
-               GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX5_SHIFT |
-               GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX6_SHIFT |
-               GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX7_SHIFT;
+    u32 regB = GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX4_SHIFT | GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX5_SHIFT |
+               GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX6_SHIFT | GX_IDENTITY << GX_CP_MATRIXINDEXB_TEX7_SHIFT;
 
     LoadCPCmd(GX_CP_REG_MATRIXINDEXA, regA);
     LoadCPCmd(GX_CP_REG_MATRIXINDEXB, regB);
@@ -179,25 +173,21 @@ void GDResetCurrentMtx() {
     GXCmd1u32(regB);
 }
 
-void GDSetCurrentMtx(const u32* pIdArray) {
-    u32 regA = pIdArray[0] << GX_CP_MATRIXINDEXA_TEX0_SHIFT |
-               pIdArray[1] << GX_CP_MATRIXINDEXA_TEX1_SHIFT |
-               pIdArray[2] << GX_CP_MATRIXINDEXA_TEX2_SHIFT |
-               pIdArray[3] << GX_CP_MATRIXINDEXA_TEX3_SHIFT;
+void GDSetCurrentMtx(const u32 *pIdArray) {
+    u32 regA = pIdArray[0] << GX_CP_MATRIXINDEXA_TEX0_SHIFT | pIdArray[1] << GX_CP_MATRIXINDEXA_TEX1_SHIFT |
+               pIdArray[2] << GX_CP_MATRIXINDEXA_TEX2_SHIFT | pIdArray[3] << GX_CP_MATRIXINDEXA_TEX3_SHIFT;
 
-    u32 regB = pIdArray[4] << GX_CP_MATRIXINDEXB_TEX4_SHIFT |
-               pIdArray[5] << GX_CP_MATRIXINDEXB_TEX5_SHIFT |
-               pIdArray[6] << GX_CP_MATRIXINDEXB_TEX6_SHIFT |
-               pIdArray[7] << GX_CP_MATRIXINDEXB_TEX7_SHIFT;
+    u32 regB = pIdArray[4] << GX_CP_MATRIXINDEXB_TEX4_SHIFT | pIdArray[5] << GX_CP_MATRIXINDEXB_TEX5_SHIFT |
+               pIdArray[6] << GX_CP_MATRIXINDEXB_TEX6_SHIFT | pIdArray[7] << GX_CP_MATRIXINDEXB_TEX7_SHIFT;
 
     LoadXFCmdHdr(GX_XF_REG_MATRIXINDEX0, 2);
     GXCmd1u32(regA);
     GXCmd1u32(regB);
 }
 
-void GDLoadTexMtxImm3x3(const math::MTX33& rMtx, u32 id) {
+void GDLoadTexMtxImm3x3(const math::MTX33 &rMtx, u32 id) {
     math::MTX34 mtx;
-    const math::MTX33* pMtx = &rMtx;
+    const math::MTX33 *pMtx = &rMtx;
 
     mtx._00 = pMtx->_00;
     mtx._01 = pMtx->_01;
@@ -214,7 +204,7 @@ void GDLoadTexMtxImm3x3(const math::MTX33& rMtx, u32 id) {
     mtx._22 = pMtx->_22;
     mtx._23 = 0.0f;
 
-    GXLoadTexMtxImm(mtx, id, GX_MTX_3x4);
+    GXLoadTexMtxImm(mtx, id, GX_MTX3x4);
 }
 
 } // namespace fifo

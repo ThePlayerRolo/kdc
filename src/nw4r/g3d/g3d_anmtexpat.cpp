@@ -1,7 +1,8 @@
-#include <nw4r/g3d.h>
-#include <nw4r/ut.h>
+#include "nw4r/g3d.h" // IWYU pragma: export
 
-#include <revolution/GX.h>
+#include "nw4r/ut.h" // IWYU pragma: export
+
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -16,12 +17,8 @@ NW4R_G3D_RTTI_DEF(AnmObjTexPatRes);
  * AnmObjTexPat
  *
  ******************************************************************************/
-AnmObjTexPat::AnmObjTexPat(MEMAllocator* pAllocator, u16* pBindingBuf,
-                           int numBinding)
-    : AnmObj(pAllocator, NULL),
-      mNumBinding(numBinding),
-      mpBinding(pBindingBuf) {
-
+AnmObjTexPat::AnmObjTexPat(MEMAllocator *pAllocator, u16 *pBindingBuf, int numBinding)
+    : AnmObj(pAllocator, NULL), mNumBinding(numBinding), mpBinding(pBindingBuf) {
     Release();
 }
 
@@ -41,14 +38,14 @@ void AnmObjTexPat::Release() {
     SetAnmFlag(FLAG_ANM_BOUND, false);
 }
 
-AnmObjTexPatRes* AnmObjTexPat::Attach(int idx, AnmObjTexPatRes* pRes) {
+AnmObjTexPatRes *AnmObjTexPat::Attach(int idx, AnmObjTexPatRes *pRes) {
 #pragma unused(idx)
 #pragma unused(pRes)
 
     return NULL;
 }
 
-AnmObjTexPatRes* AnmObjTexPat::Detach(int idx) {
+AnmObjTexPatRes *AnmObjTexPat::Detach(int idx) {
 #pragma unused(idx)
 
     return NULL;
@@ -61,14 +58,12 @@ void AnmObjTexPat::DetachAll() {}
  * AnmObjTexPatNode
  *
  ******************************************************************************/
-AnmObjTexPatNode::AnmObjTexPatNode(MEMAllocator* pAllocator, u16* pBindingBuf,
-                                   int numBinding,
-                                   AnmObjTexPatRes** ppChildrenBuf,
-                                   int numChildren)
+AnmObjTexPatNode::AnmObjTexPatNode(
+    MEMAllocator *pAllocator, u16 *pBindingBuf, int numBinding, AnmObjTexPatRes **ppChildrenBuf, int numChildren
+)
     : AnmObjTexPat(pAllocator, pBindingBuf, numBinding),
       mChildrenArraySize(numChildren),
       mpChildrenArray(ppChildrenBuf) {
-
     for (int i = 0; i < mChildrenArraySize; i++) {
         mpChildrenArray[i] = NULL;
     }
@@ -78,8 +73,8 @@ AnmObjTexPatNode::~AnmObjTexPatNode() {
     DetachAll();
 }
 
-AnmObjTexPatRes* AnmObjTexPatNode::Attach(int idx, AnmObjTexPatRes* pRes) {
-    AnmObjTexPatRes* pOld = Detach(idx);
+AnmObjTexPatRes *AnmObjTexPatNode::Attach(int idx, AnmObjTexPatRes *pRes) {
+    AnmObjTexPatRes *pOld = Detach(idx);
     bool hasAnm = false;
 
     for (u32 i = 0; i < mNumBinding; i++) {
@@ -100,8 +95,8 @@ AnmObjTexPatRes* AnmObjTexPatNode::Attach(int idx, AnmObjTexPatRes* pRes) {
     return pOld;
 }
 
-AnmObjTexPatRes* AnmObjTexPatNode::Detach(int idx) {
-    AnmObjTexPatRes* pOld = mpChildrenArray[idx];
+AnmObjTexPatRes *AnmObjTexPatNode::Detach(int idx) {
+    AnmObjTexPatRes *pOld = mpChildrenArray[idx];
 
     if (pOld != NULL) {
         pOld->G3dProc(G3DPROC_DETACH_PARENT, 0, this);
@@ -112,7 +107,7 @@ AnmObjTexPatRes* AnmObjTexPatNode::Detach(int idx) {
             u16 binding = BINDING_UNDEFINED;
 
             for (int j = 0; j < mChildrenArraySize; j++) {
-                AnmObjTexPatRes* pChild = mpChildrenArray[j];
+                AnmObjTexPatRes *pChild = mpChildrenArray[j];
 
                 if (pChild == NULL || !pChild->TestDefined(i)) {
                     continue;
@@ -188,7 +183,7 @@ bool AnmObjTexPatNode::Bind(const ResMdl mdl) {
     bool success = false;
 
     for (int i = 0; i < mChildrenArraySize; i++) {
-        AnmObjTexPatRes* pChild = mpChildrenArray[i];
+        AnmObjTexPatRes *pChild = mpChildrenArray[i];
         if (pChild == NULL) {
             continue;
         }
@@ -217,30 +212,30 @@ void AnmObjTexPatNode::Release() {
     AnmObjTexPat::Release();
 }
 
-void AnmObjTexPatNode::G3dProc(u32 task, u32 param, void* pInfo) {
+void AnmObjTexPatNode::G3dProc(u32 task, u32 param, void *pInfo) {
 #pragma unused(param)
 
     switch (task) {
-    case G3DPROC_CHILD_DETACHED: {
-        for (int i = 0; i < mChildrenArraySize; i++) {
-            if (mpChildrenArray[i] == pInfo) {
-                Detach(i);
-                return;
+        case G3DPROC_CHILD_DETACHED: {
+            for (int i = 0; i < mChildrenArraySize; i++) {
+                if (mpChildrenArray[i] == pInfo) {
+                    Detach(i);
+                    return;
+                }
             }
+
+            break;
         }
 
-        break;
-    }
+        case G3DPROC_DETACH_PARENT: {
+            SetParent(NULL);
+            break;
+        }
 
-    case G3DPROC_DETACH_PARENT: {
-        SetParent(NULL);
-        break;
-    }
-
-    case G3DPROC_ATTACH_PARENT: {
-        SetParent(static_cast<G3dObj*>(pInfo));
-        break;
-    }
+        case G3DPROC_ATTACH_PARENT: {
+            SetParent(static_cast<G3dObj *>(pInfo));
+            break;
+        }
     }
 }
 
@@ -249,9 +244,8 @@ void AnmObjTexPatNode::G3dProc(u32 task, u32 param, void* pInfo) {
  * AnmObjTexPatOverride
  *
  ******************************************************************************/
-AnmObjTexPatOverride* AnmObjTexPatOverride::Construct(MEMAllocator* pAllocator,
-                                                      u32* pSize, ResMdl mdl,
-                                                      int numChildren) {
+AnmObjTexPatOverride *
+AnmObjTexPatOverride::Construct(MEMAllocator *pAllocator, u32 *pSize, ResMdl mdl, int numChildren) {
     if (!mdl.IsValid()) {
         return NULL;
     }
@@ -261,7 +255,7 @@ AnmObjTexPatOverride* AnmObjTexPatOverride::Construct(MEMAllocator* pAllocator,
 
     u32 objSize = sizeof(AnmObjTexPatOverride);
     u32 bindSize = bindNum * sizeof(u16);
-    u32 childrenSize = numChildren * sizeof(AnmObjTexPatRes*);
+    u32 childrenSize = numChildren * sizeof(AnmObjTexPatRes *);
 
     u32 bindOfs = align4(objSize);
     u32 childrenOfs = align4(bindOfs + bindSize);
@@ -275,7 +269,7 @@ AnmObjTexPatOverride* AnmObjTexPatOverride::Construct(MEMAllocator* pAllocator,
         return NULL;
     }
 
-    u8* pBuffer = reinterpret_cast<u8*>(Alloc(pAllocator, size));
+    u8 *pBuffer = reinterpret_cast<u8 *>(Alloc(pAllocator, size));
     if (pBuffer == NULL) {
         return NULL;
     }
@@ -290,16 +284,15 @@ AnmObjTexPatOverride* AnmObjTexPatOverride::Construct(MEMAllocator* pAllocator,
     // clang-format on
 }
 
-const TexPatAnmResult* AnmObjTexPatOverride::GetResult(TexPatAnmResult* pResult,
-                                                       u32 idx) {
+const TexPatAnmResult *AnmObjTexPatOverride::GetResult(TexPatAnmResult *pResult, u32 idx) {
     for (int i = mChildrenArraySize - 1; i >= 0; i--) {
-        AnmObjTexPatRes* pChild = mpChildrenArray[i];
+        AnmObjTexPatRes *pChild = mpChildrenArray[i];
 
         if (pChild == NULL || !pChild->TestExistence(idx)) {
             continue;
         }
 
-        const TexPatAnmResult* pChildResult = pChild->GetResult(pResult, idx);
+        const TexPatAnmResult *pChildResult = pChild->GetResult(pResult, idx);
 
         if (pChildResult->bTexExist != 0 || pChildResult->bPlttExist) {
             return pChildResult;
@@ -316,9 +309,8 @@ const TexPatAnmResult* AnmObjTexPatOverride::GetResult(TexPatAnmResult* pResult,
  * AnmObjTexPatRes
  *
  ******************************************************************************/
-AnmObjTexPatRes* AnmObjTexPatRes::Construct(MEMAllocator* pAllocator,
-                                            u32* pSize, ResAnmTexPat pat,
-                                            ResMdl mdl, bool cache) {
+AnmObjTexPatRes *
+AnmObjTexPatRes::Construct(MEMAllocator *pAllocator, u32 *pSize, ResAnmTexPat pat, ResMdl mdl, bool cache) {
     if (!pat.IsValid() || !mdl.IsValid()) {
         return NULL;
     }
@@ -341,30 +333,25 @@ AnmObjTexPatRes* AnmObjTexPatRes::Construct(MEMAllocator* pAllocator,
         return NULL;
     }
 
-    u8* pBuffer = reinterpret_cast<u8*>(Alloc(pAllocator, size));
+    u8 *pBuffer = reinterpret_cast<u8 *>(Alloc(pAllocator, size));
     if (pBuffer == NULL) {
         return NULL;
     }
 
-    TexPatAnmResult* pCacheBuf = cache ? reinterpret_cast<TexPatAnmResult*>(
-                                             pBuffer + sizeof(AnmObjTexPatRes))
-                                       : NULL;
+    TexPatAnmResult *pCacheBuf = cache ? reinterpret_cast<TexPatAnmResult *>(pBuffer + sizeof(AnmObjTexPatRes)) : NULL;
 
-    u16* pBindingBuf =
-        reinterpret_cast<u16*>(cacheSize + (pBuffer + sizeof(AnmObjTexPatRes)));
+    u16 *pBindingBuf = reinterpret_cast<u16 *>(cacheSize + (pBuffer + sizeof(AnmObjTexPatRes)));
 
-    return new (pBuffer)
-        AnmObjTexPatRes(pAllocator, pat, pBindingBuf, bindNum, pCacheBuf);
+    return new (pBuffer) AnmObjTexPatRes(pAllocator, pat, pBindingBuf, bindNum, pCacheBuf);
 }
 
-AnmObjTexPatRes::AnmObjTexPatRes(MEMAllocator* pAllocator, ResAnmTexPat pat,
-                                 u16* pBindingBuf, int numBinding,
-                                 TexPatAnmResult* pCacheBuf)
+AnmObjTexPatRes::AnmObjTexPatRes(
+    MEMAllocator *pAllocator, ResAnmTexPat pat, u16 *pBindingBuf, int numBinding, TexPatAnmResult *pCacheBuf
+)
     : AnmObjTexPat(pAllocator, pBindingBuf, numBinding),
       FrameCtrl(0.0f, pat.GetNumFrame(), GetAnmPlayPolicy(pat.GetAnmPolicy())),
       mRes(pat),
       mpResultCache(pCacheBuf) {
-
     if (mpResultCache != NULL) {
         UpdateCache();
     }
@@ -384,6 +371,9 @@ f32 AnmObjTexPatRes::GetFrame() const {
 
 void AnmObjTexPatRes::SetUpdateRate(f32 rate) {
     SetRate(rate);
+    if (rate == 0.f && mpResultCache != NULL) {
+        UpdateCache();
+    }
 }
 
 f32 AnmObjTexPatRes::GetUpdateRate() const {
@@ -391,10 +381,12 @@ f32 AnmObjTexPatRes::GetUpdateRate() const {
 }
 
 void AnmObjTexPatRes::UpdateFrame() {
-    UpdateFrm();
+    if (GetRate() != 0.f) {
+        UpdateFrm();
 
-    if (mpResultCache != NULL) {
-        UpdateCache();
+        if (mpResultCache != NULL) {
+            UpdateCache();
+        }
     }
 }
 
@@ -403,7 +395,7 @@ bool AnmObjTexPatRes::Bind(const ResMdl mdl) {
     bool success = false;
 
     for (u16 i = 0; i < numAnim; i++) {
-        const ResAnmTexPatMatData* pData = mRes.GetMatAnm(i);
+        const ResAnmTexPatMatData *pData = mRes.GetMatAnm(i);
 
         // Seek back from name string to start of ResName
         ResName name(ut::AddOffsetToPtr(pData, pData->name - 4));
@@ -421,8 +413,7 @@ bool AnmObjTexPatRes::Bind(const ResMdl mdl) {
     return success;
 }
 
-const TexPatAnmResult* AnmObjTexPatRes::GetResult(TexPatAnmResult* pResult,
-                                                  u32 i) {
+const TexPatAnmResult *AnmObjTexPatRes::GetResult(TexPatAnmResult *pResult, u32 i) {
     u32 id = mpBinding[i];
 
     if (id & (BINDING_UNDEFINED | BINDING_INVALID)) {
@@ -452,24 +443,24 @@ void AnmObjTexPatRes::UpdateCache() {
     }
 }
 
-void AnmObjTexPatRes::G3dProc(u32 task, u32 param, void* pInfo) {
+void AnmObjTexPatRes::G3dProc(u32 task, u32 param, void *pInfo) {
 #pragma unused(param)
 
     switch (task) {
-    case G3DPROC_UPDATEFRAME: {
-        UpdateFrame();
-        break;
-    }
+        case G3DPROC_UPDATEFRAME: {
+            UpdateFrame();
+            break;
+        }
 
-    case G3DPROC_DETACH_PARENT: {
-        SetParent(NULL);
-        break;
-    }
+        case G3DPROC_DETACH_PARENT: {
+            SetParent(NULL);
+            break;
+        }
 
-    case G3DPROC_ATTACH_PARENT: {
-        SetParent(static_cast<G3dObj*>(pInfo));
-        break;
-    }
+        case G3DPROC_ATTACH_PARENT: {
+            SetParent(static_cast<G3dObj *>(pInfo));
+            break;
+        }
     }
 }
 
@@ -478,8 +469,7 @@ void AnmObjTexPatRes::G3dProc(u32 task, u32 param, void* pInfo) {
  * ApplyTexPatAnmResult
  *
  ******************************************************************************/
-void ApplyTexPatAnmResult(ResTexObj texObj, ResTlutObj tlutObj,
-                          const TexPatAnmResult* pResult) {
+void ApplyTexPatAnmResult(ResTexObj texObj, ResTlutObj tlutObj, const TexPatAnmResult *pResult) {
     u32 texExist = pResult->bTexExist;
     u32 i;
 
@@ -489,41 +479,34 @@ void ApplyTexPatAnmResult(ResTexObj texObj, ResTlutObj tlutObj,
         }
 
         ResTex tex = pResult->tex[i];
-        GXTexObj* pGXObj = texObj.GetTexObj(static_cast<GXTexMapID>(i));
+        GXTexObj *pGXObj = texObj.GetTexObj(static_cast<GXTexMapID>(i));
 
         GXTexFilter minFilt, magFilt;
         f32 minLod, maxLod, lodBias;
         GXBool biasClamp, edgeLod, mipmap;
         GXAnisotropy maxAniso;
 
-        void* pTexData;
+        void *pTexData;
         u16 width, height;
         GXTexFmt fmt;
         GXCITexFmt cifmt;
 
-        GXGetTexObjLODAll(pGXObj, &minFilt, &magFilt, &minLod, &maxLod,
-                          &lodBias, &biasClamp, &edgeLod, &maxAniso);
+        GXGetTexObjLODAll(pGXObj, &minFilt, &magFilt, &minLod, &maxLod, &lodBias, &biasClamp, &edgeLod, &maxAniso);
 
         GXTexWrapMode wrapS = GXGetTexObjWrapS(pGXObj);
         GXTexWrapMode wrapT = GXGetTexObjWrapT(pGXObj);
 
         if (tex.IsCIFmt()) {
-            tex.GetTexObjCIParam(&pTexData, &width, &height, &cifmt, &minLod,
-                                 &maxLod, &mipmap);
+            tex.GetTexObjCIParam(&pTexData, &width, &height, &cifmt, &minLod, &maxLod, &mipmap);
 
-            GXInitTexObjCI(pGXObj, pTexData, width, height,
-                           static_cast<GXTexFmt>(cifmt), wrapS, wrapT, mipmap,
-                           static_cast<GXTlut>(i));
+            GXInitTexObjCI(pGXObj, pTexData, width, height, cifmt, wrapS, wrapT, mipmap, static_cast<GXTlut>(i));
         } else {
-            tex.GetTexObjParam(&pTexData, &width, &height, &fmt, &minLod,
-                               &maxLod, &mipmap);
+            tex.GetTexObjParam(&pTexData, &width, &height, &fmt, &minLod, &maxLod, &mipmap);
 
-            GXInitTexObj(pGXObj, pTexData, width, height, fmt, wrapS, wrapT,
-                         mipmap);
+            GXInitTexObj(pGXObj, pTexData, width, height, fmt, wrapS, wrapT, mipmap);
         }
 
-        GXInitTexObjLOD(pGXObj, minFilt, magFilt, minLod, maxLod, lodBias,
-                        biasClamp, edgeLod, maxAniso);
+        GXInitTexObjLOD(pGXObj, minFilt, magFilt, minLod, maxLod, lodBias, biasClamp, edgeLod, maxAniso);
     }
 
     u32 plttExist = pResult->bPlttExist;
@@ -535,10 +518,10 @@ void ApplyTexPatAnmResult(ResTexObj texObj, ResTlutObj tlutObj,
 
         ResPltt pltt = pResult->pltt[i];
 
-        void* pLUT = pltt.GetPlttData();
+        void *pLUT = pltt.GetPlttData();
         GXTlutFmt fmt = pltt.GetFmt();
         u16 numEntries = pltt.GetNumEntries();
-        GXTlutObj* pGXObj = tlutObj.GetTlut(static_cast<GXTlut>(i));
+        GXTlutObj *pGXObj = tlutObj.GetTlut(static_cast<GXTlut>(i));
 
         GXInitTlutObj(pGXObj, pLUT, fmt, numEntries);
     }

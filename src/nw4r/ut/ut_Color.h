@@ -1,13 +1,15 @@
 #ifndef NW4R_UT_COLOR_H
 #define NW4R_UT_COLOR_H
-#include <nw4r/types_nw4r.h>
 
-#include <revolution/GX.h>
+#include "nw4r/types_nw4r.h"
+#include "revolution/GX/GXTypes.h"
+
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace ut {
 
-struct Color : public GXColor {
+class Color : public GXColor {
 public:
     Color() {
         *this = WHITE;
@@ -18,10 +20,9 @@ public:
     Color(int red, int green, int blue, int alpha) {
         Set(red, green, blue, alpha);
     }
-    Color(const GXColor& rColor) {
-        *this = rColor;
+    Color(const GXColor &clr) {
+        *this = clr;
     }
-
     ~Color() {}
 
     void Set(int red, int green, int blue, int alpha) {
@@ -31,27 +32,28 @@ public:
         a = alpha;
     }
 
-    Color& operator=(u32 color) {
+    Color &operator=(u32 color) {
         ToU32ref() = color;
         return *this;
     }
-    Color& operator=(const GXColor& rColor) {
-        *this = *reinterpret_cast<const u32*>(&rColor);
+
+    Color &operator=(const GXColor &c) {
+        *this = *reinterpret_cast<const u32 *>(&c);
         return *this;
     }
 
-    Color operator|(u32 color) const {
+    Color operator|(u32 color) {
         return Color(ToU32() | color);
     }
-    Color operator&(u32 color) const {
+    Color operator&(u32 color) {
         return Color(ToU32() & color);
     }
 
-    u32& ToU32ref() {
-        return *reinterpret_cast<u32*>(this);
+    u32 &ToU32ref() {
+        return *reinterpret_cast<u32 *>(this);
     }
-    const u32& ToU32ref() const {
-        return *reinterpret_cast<const u32*>(this);
+    const u32 &ToU32ref() const {
+        return *reinterpret_cast<const u32 *>(this);
     }
 
     u32 ToU32() const {
@@ -60,6 +62,15 @@ public:
 
     operator u32() const {
         return ToU32ref();
+    }
+
+    operator GXColorS10() const {
+        GXColorS10 c;
+        c.r = r;
+        c.g = g;
+        c.b = b;
+        c.a = a;
+        return c;
     }
 
     // clang-format off
@@ -74,11 +85,8 @@ public:
     static const u32 BLACK = 0x000000FF;
     static const u32 GRAY  = 0x808080FF;
     static const u32 WHITE = 0xFFFFFFFF;
-
-    static const u32 ELEMENT_MIN = 0x00000000;
-    static const u32 ELEMENT_MAX = 0xFFFFFFFF;
     // clang-format on
-};
+} ALIGN_DECL(4);
 
 } // namespace ut
 } // namespace nw4r

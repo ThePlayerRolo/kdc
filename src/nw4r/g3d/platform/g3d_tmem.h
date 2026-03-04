@@ -6,7 +6,7 @@ namespace nw4r {
 namespace g3d {
 namespace tmem {
 
-// TODO(kiwi) Naming
+// TODO: Naming
 enum TMemLayout {
     TMEM_LAYOUT_NONE,
     TMEM_LAYOUT_1,

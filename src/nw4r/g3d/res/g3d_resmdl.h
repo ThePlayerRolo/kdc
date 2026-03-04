@@ -1,15 +1,19 @@
 #ifndef NW4R_G3D_RES_RES_MDL_H
 #define NW4R_G3D_RES_RES_MDL_H
+
+/** NOTICE: Revision change from 9->11. Structures, Enums, and/or Functions may have changed and not yet done so
+ * (Zeldex72, Feb 1, 2025) */
+
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_rescommon.h>
-#include <nw4r/g3d/res/g3d_resdict.h>
-#include <nw4r/g3d/res/g3d_resmat.h>
-#include <nw4r/g3d/res/g3d_resnode.h>
-#include <nw4r/g3d/res/g3d_resshp.h>
-#include <nw4r/g3d/res/g3d_resvtx.h>
+#include "nw4r/g3d/res/g3d_rescommon.h"
+#include "nw4r/g3d/res/g3d_resdict.h"
+#include "nw4r/g3d/res/g3d_resmat.h"
+#include "nw4r/g3d/res/g3d_resnode.h"
+#include "nw4r/g3d/res/g3d_resshp.h"
+#include "nw4r/g3d/res/g3d_resvtx.h"
 
-#include <nw4r/math.h>
+#include "nw4r/math.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -61,8 +65,7 @@ struct ResMdlInfoData : ResMdlInfoDataTypedef {
     math::_VEC3 volume_max;     // at 0x34
 };
 
-class ResMdlInfo : public ResCommon<ResMdlInfoData>,
-                   public ResMdlInfoDataTypedef {
+class ResMdlInfo : public ResCommon<ResMdlInfoData>, public ResMdlInfoDataTypedef {
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResMdlInfo);
 
@@ -79,17 +82,17 @@ public:
     }
 
     u32 GetNumPosNrmMtx() const {
-        const ResMtxIDToNodeIDData* pData =
-            reinterpret_cast<const ResMtxIDToNodeIDData*>(
-                reinterpret_cast<const u8*>(&ref()) + ref().toMtxIDToNodeID);
+        const ResMtxIDToNodeIDData *pData = reinterpret_cast<const ResMtxIDToNodeIDData *>(
+            reinterpret_cast<const u8 *>(&ref()) + ref().toMtxIDToNodeID
+        );
 
         return pData->numMtxID;
     }
 
     s32 GetNodeIDFromMtxID(u32 id) const {
-        const s32* pArray = reinterpret_cast<const s32*>(
-            reinterpret_cast<const u8*>(&ref()) + ref().toMtxIDToNodeID +
-            sizeof(ResMtxIDToNodeIDData));
+        const s32 *pArray = reinterpret_cast<const s32 *>(
+            reinterpret_cast<const u8 *>(&ref()) + ref().toMtxIDToNodeID + sizeof(ResMtxIDToNodeIDData)
+        );
 
         return pArray[id];
     }
@@ -110,19 +113,22 @@ struct ResMdlData {
     s32 toResVtxNrmDic;                // at 0x1C
     s32 toResVtxClrDic;                // at 0x20
     s32 toResVtxTexCoordDic;           // at 0x24
-    s32 toResMatDic;                   // at 0x28
-    s32 toResTevDic;                   // at 0x2C
-    s32 toResShpDic;                   // at 0x30
-    s32 toResTexNameToTexPlttInfoDic;  // at 0x34
-    s32 toResPlttNameToTexPlttInfoDic; // at 0x38
-    s32 name;                          // at 0x3C
-    ResMdlInfoData info;               // at 0x40
+    s32 toResVtxFurVecDic;             // at 0x28
+    s32 toResVtxFurPosDic;             // at 0x2C
+    s32 toResMatDic;                   // at 0x30
+    s32 toResTevDic;                   // at 0x34
+    s32 toResShpDic;                   // at 0x38
+    s32 toResTexNameToTexPlttInfoDic;  // at 0x3C
+    s32 toResPlttNameToTexPlttInfoDic; // at 0x40
+    s32 toResUserData;                 // at 0x44
+    s32 name;                          // at 0x48
+    ResMdlInfoData info;               // at 0x4C
 };
 
 class ResMdl : public ResCommon<ResMdlData> {
 public:
-    static const u32 SIGNATURE = FOURCC('M', 'D', 'L', '0');
-    static const int REVISION = 9;
+    static const u32 SIGNATURE = 'MDL0';
+    static const int REVISION = 11;
 
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResMdl);
@@ -133,6 +139,7 @@ public:
     bool Bind(const ResFile file);
     void Release();
 
+    bool IsOpaque(u32 mat) const;
     u32 GetRevision() const {
         return ref().revision;
     }
@@ -141,9 +148,14 @@ public:
         return GetRevision() == REVISION;
     }
 
-    const u8* GetResByteCode(const char* pName) const;
+    const char *GetName() const {
+        return ofs_to_ptr<const char>(ref().name);
+    }
 
-    ResNode GetResNode(const char* pName) const;
+    const u8 *GetResByteCode(const char *pName) const;
+    u32 GetResByteCodeNumEntries() const;
+
+    ResNode GetResNode(const char *pName) const;
     ResNode GetResNode(const ResName name) const;
     ResNode GetResNode(int idx) const;
     ResNode GetResNode(u32 idx) const;
@@ -167,25 +179,51 @@ public:
     ResVtxTexCoord GetResVtxTexCoord(int idx) const;
     u32 GetResVtxTexCoordNumEntries() const;
 
-    ResMat GetResMat(const char* pName) const;
+    ResVtxFurPos GetResVtxFurPos(int idx) const;
+    u32 GetResVtxFurPosNumEntries() const;
+
+    ResVtxFurVec GetResVtxFurVec(int idx) const;
+    u32 GetResVtxFurVecNumEntries() const;
+
+    ResMat GetResMat(const char *pName) const;
     ResMat GetResMat(const ResName name) const;
     ResMat GetResMat(int idx) const;
     ResMat GetResMat(u32 idx) const;
     u32 GetResMatNumEntries() const;
 
-    ResShp GetResShp(const char* pName) const;
+    ResShp GetResShp(const char *pName) const;
     ResShp GetResShp(int idx) const;
     ResShp GetResShp(u32 idx) const;
     u32 GetResShpNumEntries() const;
 
-    ResTexPlttInfo GetResTexPlttInfoOffsetFromTexName(int idx) const;
+    ResTexPlttInfoOffset GetResTexPlttInfoOffsetFromTexName(int idx) const;
     u32 GetResTexPlttInfoOffsetFromTexNameNumEntries() const;
 
     ResMdlInfo GetResMdlInfo() {
         return ResMdlInfo(&ref().info);
     }
     ResMdlInfo GetResMdlInfo() const {
-        return ResMdlInfo(const_cast<ResMdlInfoData*>(&ref().info));
+        return ResMdlInfo(const_cast<ResMdlInfoData *>(&ref().info));
+    }
+
+    class DrawEnumerator {
+        const u8 *drawOpa;
+        const u8 *drawXlu;
+        bool bOpa;
+
+    public:
+        DrawEnumerator(const u8 *pDrawOpa, const u8 *pDrawXlu);
+
+        bool IsValid() const;
+        void MoveNext();
+        u32 GetMatID() const;
+        u32 GetShpID() const;
+        u32 GetNodeID() const;
+    };
+
+    // Not sure, but d_player_mdl has these strings at the end of .data (inlines) and in reverse order (in the same inline)
+    DrawEnumerator ConstructDrawEnumerator() const {
+        return DrawEnumerator(GetResByteCode("DrawOpa"), GetResByteCode("DrawXlu"));
     }
 };
 

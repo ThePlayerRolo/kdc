@@ -1,154 +1,359 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_StrmFile.h"
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_StrmFile.cpp
+ */
 
-bool StrmFileReader::IsValidFileHeader(const void* pStrmBin) {
-    const ut::BinaryFileHeader* pFileHeader =
-        static_cast<const ut::BinaryFileHeader*>(pStrmBin);
+/*******************************************************************************
+ * headers
+ */
 
-    if (pFileHeader->signature != SIGNATURE) {
-        return false;
-    }
+#include "common.h"
 
-    if (pFileHeader->version < NW4R_VERSION(1, 0)) {
-        return false;
-    }
+#include "nw4r/snd/snd_adpcm.h"
+#include "nw4r/snd/snd_global.h"
+#include "nw4r/snd/snd_Util.h"
+#include "nw4r/snd/snd_WaveFile.h"
 
-    if (pFileHeader->version > VERSION) {
-        return false;
-    }
+#include "nw4r/ut/ut_binaryFileFormat.h"
+#include "nw4r/ut/ut_FileStream.h"
+#include "nw4r/ut/ut_algorithm.h"
 
-    return true;
+#include "nw4r/NW4RAssert.hpp"
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd { namespace detail {
+
+bool StrmFileReader::IsValidFileHeader(void const *strmData)
+{
+	NW4RAssertPointerNonnull_Line(42, strmData);
+
+	ut::BinaryFileHeader const *fileHeader =
+		static_cast<ut::BinaryFileHeader const *>(strmData);
+
+	NW4RAssertMessage_Line(
+		51, fileHeader->signature == StrmFile::SIGNATURE_FILE,
+		"invalid file signature. strm data is not available.");
+
+	if (fileHeader->signature != StrmFile::SIGNATURE_FILE)
+		return false;
+
+	NW4RAssertMessage_Line(59, fileHeader->version >= NW4R_FILE_VERSION(1, 0),
+	            "strm file is not supported version.\n"
+	            "  please reconvert file using new version tools.\n");
+
+	if (fileHeader->version < NW4R_FILE_VERSION(1, 0))
+		return false;
+
+	NW4RAssertMessage_Line(65, fileHeader->version <= SUPPORTED_FILE_VERSION,
+	            "strm file is not supported version.\n"
+	            "  please reconvert file using new version tools.\n");
+
+	if (fileHeader->version > SUPPORTED_FILE_VERSION)
+		return false;
+
+	return true;
 }
 
-StrmFileReader::StrmFileReader() : mHeader(NULL), mHeadBlock(NULL) {}
-
-void StrmFileReader::Setup(const void* pStrmBin) {
-    if (!IsValidFileHeader(pStrmBin)) {
-        return;
-    }
-
-    mHeader = static_cast<const StrmFile::Header*>(pStrmBin);
-
-    mHeadBlock = static_cast<const StrmFile::HeadBlock*>(
-        ut::AddOffsetToPtr(mHeader, mHeader->headBlockOffset));
-
-    (void)Util::GetDataRefAddress0(
-        mHeadBlock->refDataHeader,
-        &mHeadBlock->refDataHeader); // debug leftover
+StrmFileReader::StrmFileReader() :
+	mHeader		(nullptr),
+	mHeadBlock	(nullptr)
+{
 }
 
-bool StrmFileReader::ReadStrmInfo(StrmInfo* pStrmInfo) const {
-    const StrmFile::StrmDataInfo* pStrmData = Util::GetDataRefAddress0(
-        mHeadBlock->refDataHeader, &mHeadBlock->refDataHeader);
+void StrmFileReader::Setup(void const *strmData)
+{
+	NW4RAssertPointerNonnull_Line(97, strmData);
 
-    pStrmInfo->format = pStrmData->format;
-    pStrmInfo->loopFlag = pStrmData->loopFlag;
-    pStrmInfo->numChannels = pStrmData->numChannels;
-    pStrmInfo->sampleRate =
-        (pStrmData->sampleRate24 << 16) + pStrmData->sampleRate;
-    pStrmInfo->blockHeaderOffset = pStrmData->blockHeaderOffset;
-    pStrmInfo->loopStart = pStrmData->loopStart;
-    pStrmInfo->loopEnd = pStrmData->loopEnd;
-    pStrmInfo->dataOffset = pStrmData->dataOffset;
-    pStrmInfo->numBlocks = pStrmData->numBlocks;
-    pStrmInfo->blockSize = pStrmData->blockSize;
-    pStrmInfo->blockSamples = pStrmData->blockSamples;
-    pStrmInfo->lastBlockSize = pStrmData->lastBlockSize;
-    pStrmInfo->lastBlockSamples = pStrmData->lastBlockSamples;
-    pStrmInfo->lastBlockPaddedSize = pStrmData->lastBlockPaddedSize;
-    pStrmInfo->adpcmDataInterval = pStrmData->adpcmDataInterval;
-    pStrmInfo->adpcmDataSize = pStrmData->adpcmDataSize;
+	if (!IsValidFileHeader(strmData))
+		return;
 
-    return true;
+	mHeader		= static_cast<StrmFile::Header const *>(strmData);
+	mHeadBlock	= static_cast<StrmFile::HeadBlock const *>(
+		ut::AddOffsetToPtr(mHeader, mHeader->headBlockOffset));
+
+	NW4RAssert_Line(106, mHeadBlock->blockHeader.kind
+	                         == StrmFile::SIGNATURE_HEAD_BLOCK);
+
+	StrmFile::StrmDataInfo const *info = Util::GetDataRefAddress0(
+		mHeadBlock->refDataHeader, &mHeadBlock->refDataHeader);
+
+	// definitely could have just used align assert here
+	NW4RAssert_Line(113, info->blockSize % 32 == 0);
 }
 
-bool StrmFileReader::ReadAdpcmInfo(AdpcmInfo* pAdpcmInfo, int channels) const {
-    const StrmFile::StrmDataInfo* pStrmData = Util::GetDataRefAddress0(
-        mHeadBlock->refDataHeader, &mHeadBlock->refDataHeader);
+int StrmFileReader::GetTrackCount() const
+{
+	NW4RAssertPointerNonnull_Line(142, mHeader);
 
-    if (pStrmData->format != WaveFile::FORMAT_ADPCM) {
-        return false;
-    }
+	StrmFile::TrackTable const *trackTable = Util::GetDataRefAddress0(
+		mHeadBlock->refTrackTable, &mHeadBlock->refDataHeader);
 
-    const StrmFile::ChannelTable* pChannelTable = Util::GetDataRefAddress0(
-        mHeadBlock->refChannelTable, &mHeadBlock->refDataHeader);
-
-    if (channels >= pChannelTable->channelCount) {
-        return false;
-    }
-
-    const StrmFile::ChannelInfo* pChannelInfo = Util::GetDataRefAddress0(
-        pChannelTable->refChannelHeader[channels], &mHeadBlock->refDataHeader);
-
-    const AdpcmInfo* pSrcInfo = Util::GetDataRefAddress0(
-        pChannelInfo->refAdpcmInfo, &mHeadBlock->refDataHeader);
-
-    *pAdpcmInfo = *pSrcInfo;
-    return true;
+	return trackTable->trackCount;
 }
 
-bool StrmFileLoader::LoadFileHeader(void* pStrmBin, u32 size) {
-    u8 headerArea[HEADER_ALIGNED_SIZE + 32];
-    u32 bytesRead;
+int StrmFileReader::GetChannelCount() const
+{
+	NW4RAssertPointerNonnull_Line(163, mHeader);
 
-    mStream.Seek(0, ut::FileStream::SEEK_ORIGIN_BEG);
-    bytesRead = mStream.Read(ut::RoundUp(headerArea, 32), HEADER_ALIGNED_SIZE);
-    if (bytesRead != HEADER_ALIGNED_SIZE) {
-        return false;
-    }
+	StrmFile::ChannelTable const *channelTable = Util::GetDataRefAddress0(
+		mHeadBlock->refChannelTable, &mHeadBlock->refDataHeader);
 
-    StrmFile::Header* pHeader =
-        static_cast<StrmFile::Header*>(ut::RoundUp(headerArea, 32));
-
-    StrmFileReader reader;
-    if (!reader.IsValidFileHeader(pHeader)) {
-        return false;
-    }
-
-    if (pHeader->adpcBlockOffset > size) {
-        return false;
-    }
-
-    u32 loadSize = pHeader->headBlockOffset + pHeader->headBlockSize;
-
-    mStream.Seek(0, ut::FileStream::SEEK_ORIGIN_BEG);
-    bytesRead = mStream.Read(pStrmBin, loadSize);
-    if (bytesRead != loadSize) {
-        return false;
-    }
-
-    mReader.Setup(pStrmBin);
-    return true;
+	return channelTable->channelCount;
 }
 
-bool StrmFileLoader::ReadAdpcBlockData(u16* pYN1, u16* pYN2, int block,
-                                       int channels) {
-    if (!mReader.IsAvailable()) {
-        return false;
-    }
+bool StrmFileReader::ReadStrmInfo(StrmInfo *strmInfo) const
+{
+	NW4RAssertPointerNonnull_Line(184, mHeader);
 
-    s32 offset = mReader.GetAdpcBlockOffset() +
-                 block * channels * (2 * sizeof(u16)) +
-                 sizeof(ut::BinaryBlockHeader);
+	StrmFile::StrmDataInfo const *info = Util::GetDataRefAddress0(
+		mHeadBlock->refDataHeader, &mHeadBlock->refDataHeader);
 
-    mStream.Seek(offset, ut::FileStream::SEEK_ORIGIN_BEG);
+	NW4RAssertAligned_Line(192, info->blockHeaderOffset, 32);
+	NW4RAssertAligned_Line(193, info->blockSize, 32);
+	NW4RAssertAligned_Line(194, info->lastBlockPaddedSize, 32);
 
-    u16 buffer[StrmPlayer::StrmHeader::STRM_CHANNEL_MAX * 2] ALIGN(32);
-    // @bug Read size not validated
-    mStream.Read(buffer, sizeof(buffer));
+	// clang-format off
+	strmInfo->sampleFormat			= GetSampleFormatFromStrmFileFormat(info->format);
+	strmInfo->loopFlag				= info->loopFlag;
+	strmInfo->numChannels			= info->numChannels;
+	strmInfo->sampleRate			= (info->sampleRate24 << 16) + info->sampleRate;
+	strmInfo->blockHeaderOffset		= info->blockHeaderOffset;
+	strmInfo->loopStart				= info->loopStart;
+	strmInfo->loopEnd				= info->loopEnd;
+	strmInfo->dataOffset			= info->dataOffset;
+	strmInfo->numBlocks				= info->numBlocks;
+	strmInfo->blockSize				= info->blockSize;
+	strmInfo->blockSamples			= info->blockSamples;
+	strmInfo->lastBlockSize			= info->lastBlockSize;
+	strmInfo->lastBlockSamples		= info->lastBlockSamples;
+	strmInfo->lastBlockPaddedSize	= info->lastBlockPaddedSize;
+	strmInfo->adpcmDataInterval		= info->adpcmDataInterval;
+	strmInfo->adpcmDataSize			= info->adpcmDataSize;
+	// clang-format on
 
-    for (int i = 0; i < channels; i++) {
-        pYN1[i] = buffer[i * 2];
-        pYN2[i] = buffer[i * 2 + 1];
-    }
-
-    return true;
+	return true;
 }
 
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+bool StrmFileReader::ReadStrmTrackInfo(StrmTrackInfo *trackInfo,
+                                       int trackIndex) const
+{
+	NW4RAssertPointerNonnull_Line(218, mHeader);
+
+	StrmFile::TrackTable const *trackTable = Util::GetDataRefAddress0(
+		mHeadBlock->refTrackTable, &mHeadBlock->refDataHeader);
+	if (trackIndex >= trackTable->trackCount)
+		return false;
+
+	switch (trackTable->trackDataType)
+	{
+	case 0:
+	{
+		StrmFile::TrackInfo const *src = Util::GetDataRefAddress0(
+			trackTable->refTrackHeader[trackIndex], &mHeadBlock->refDataHeader);
+		if (!src)
+			return false;
+
+		trackInfo->volume		= 127;
+		trackInfo->pan			= 64;
+		trackInfo->channelCount	= src->channelCount;
+
+		int count = ut::Min(trackInfo->channelCount, 32);
+
+		for (int i = 0; i < count; i++)
+			trackInfo->channelIndexTable[i] = src->channelIndexTable[i];
+	}
+		break;
+
+	case 1:
+	{
+		StrmFile::TrackInfoEx const *src = Util::GetDataRefAddress1(
+			trackTable->refTrackHeader[trackIndex], &mHeadBlock->refDataHeader);
+		if (!src)
+			return false;
+
+		trackInfo->volume		= src->volume;
+		trackInfo->pan			= src->pan;
+		trackInfo->channelCount	= src->channelCount;
+
+		int count = ut::Min(trackInfo->channelCount, 32);
+
+		for (int i = 0; i < count; i++)
+			trackInfo->channelIndexTable[i] = src->channelIndexTable[i];
+	}
+		break;
+
+	default:
+		NW4RPanic_Line(268);
+		// return false here for NDEBUG?
+		break;
+	}
+
+	return true;
+}
+
+bool StrmFileReader::ReadAdpcmInfo(AdpcmParam *adpcmParam,
+                                   AdpcmLoopParam *adpcmLoopParam,
+                                   int channelIndex) const
+{
+	NW4RAssertPointerNonnull_Line(289, mHeader);
+	NW4RAssertPointerNonnull_Line(290, adpcmParam);
+	NW4RAssertPointerNonnull_Line(291, adpcmLoopParam);
+
+	StrmFile::StrmDataInfo const *info = Util::GetDataRefAddress0(
+		mHeadBlock->refDataHeader, &mHeadBlock->refDataHeader);
+	if (info->format != 2)
+		return false;
+
+	StrmFile::ChannelTable const *channelTable = Util::GetDataRefAddress0(
+		mHeadBlock->refChannelTable, &mHeadBlock->refDataHeader);
+	if (channelIndex >= channelTable->channelCount)
+		return false;
+
+	StrmFile::ChannelInfo const *channelInfo =
+		Util::GetDataRefAddress0(channelTable->refChannelHeader[channelIndex],
+	                               &mHeadBlock->refDataHeader);
+
+	StrmFile::AdpcmParamSet const *src = Util::GetDataRefAddress0(
+		channelInfo->refAdpcmInfo, &mHeadBlock->refDataHeader);
+
+	*adpcmParam		= src->adpcmParam;
+	*adpcmLoopParam	= src->adpcmLoopParam;
+
+	return true;
+}
+
+SampleFormat StrmFileReader::GetSampleFormatFromStrmFileFormat(u8 format)
+{
+	switch (format)
+	{
+	case 2:
+		return SAMPLE_FORMAT_DSP_ADPCM;
+
+	case 1:
+		return SAMPLE_FORMAT_PCM_S16;
+
+	case 0:
+		return SAMPLE_FORMAT_PCM_S8;
+
+	default:
+		NW4RPanicMessage_Line(333, "Unknown strm data format %d", format);
+		return SAMPLE_FORMAT_DSP_ADPCM;
+	}
+}
+
+bool StrmFileLoader::LoadFileHeader(void *buffer, u32 size)
+{
+	byte_t buffer2[32 + ROUND_UP(sizeof(StrmFile::Header), 0x20)];
+
+	mStream.Seek(0, ut::FileStream::SEEK_ORIGIN_SET);
+
+	s32 readSize = mStream.Read(ut::RoundUp(buffer2, 32),
+	                            ROUND_UP(sizeof(StrmFile::Header), 0x20));
+	if (readSize != ROUND_UP(sizeof(StrmFile::Header), 0x20))
+		return false;
+
+	StrmFile::Header *header =
+		static_cast<StrmFile::Header *>(ut::RoundUp(buffer2, 32));
+
+	StrmFileReader reader;
+	if (!reader.IsValidFileHeader(header))
+		return false;
+
+	if (header->adpcBlockOffset > size)
+		return false;
+
+	u32 loadSize = header->headBlockOffset + header->headBlockSize;
+
+	mStream.Seek(0, ut::FileStream::SEEK_ORIGIN_SET);
+
+	readSize = mStream.Read(buffer, loadSize);
+	if (readSize != loadSize)
+		return false;
+
+	mReader.Setup(buffer);
+
+	return true;
+}
+
+int StrmFileLoader::GetTrackCount() const
+{
+	if (!mReader.IsAvailable())
+		return 0;
+
+	return mReader.GetTrackCount();
+}
+
+int StrmFileLoader::GetChannelCount() const
+{
+	if (!mReader.IsAvailable())
+		return 0;
+
+	return mReader.GetChannelCount();
+}
+
+bool StrmFileLoader::ReadStrmInfo(StrmFileReader::StrmInfo *strmInfo) const
+{
+	if (!mReader.IsAvailable())
+		return false;
+
+	mReader.ReadStrmInfo(strmInfo);
+	return true;
+}
+
+bool StrmFileLoader::ReadStrmTrackInfo(StrmFileReader::StrmTrackInfo *trackInfo,
+                                       int trackIndex) const
+{
+	if (!mReader.IsAvailable())
+		return false;
+
+	mReader.ReadStrmTrackInfo(trackInfo, trackIndex);
+	return true;
+}
+
+bool StrmFileLoader::ReadAdpcmInfo(AdpcmParam *adpcmParam,
+                                   AdpcmLoopParam *adpcmLoopParam,
+                                   int channelIndex) const
+{
+	if (!mReader.IsAvailable())
+		return false;
+
+	mReader.ReadAdpcmInfo(adpcmParam, adpcmLoopParam, channelIndex);
+	return true;
+}
+
+bool StrmFileLoader::ReadAdpcBlockData(u16 *yn1, u16 *yn2, int blockIndex,
+                                       int channelCount)
+{
+	if (!mReader.IsAvailable())
+		return false;
+
+	s32 readOffset = mReader.GetAdpcBlockOffset()
+	               + blockIndex * channelCount * (sizeof(u16) * 2)
+	               + sizeof(ut::BinaryBlockHeader);
+
+	mStream.Seek(readOffset, ut::FileStream::SEEK_ORIGIN_SET);
+
+	u32 readDataSize = channelCount * (sizeof(u16) * 2);
+	NW4RAssert_Line(499, readDataSize <= 32);
+
+	ALIGN_DECL(32) u16 buffer[2 * 8];
+
+	int readSize = mStream.Read(buffer, sizeof buffer);
+	if (readSize != 32u)
+		return false;
+
+	for (int i = 0; i < channelCount; i++)
+	{
+		yn1[i] = buffer[i * 2];
+		yn2[i] = buffer[i * 2 + 1];
+	}
+
+	return true;
+}
+
+}}} // namespace nw4r::snd::detail

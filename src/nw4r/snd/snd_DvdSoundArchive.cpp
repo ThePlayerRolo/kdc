@@ -1,9 +1,9 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+/* Only implemented to the extent necessary to match data sections. */
 
-#include <revolution/DVD.h>
-
+#include "nw4r/snd/snd_DvdSoundArchive.h"
+#include "nw4r/ut/ut_DvdLockedFileStream.h"
 #include <cstring>
+#include <new>
 
 namespace nw4r {
 namespace snd {
@@ -56,8 +56,10 @@ bool DvdSoundArchive::Open(const char* pPath) {
 
     char extRoot[FILE_PATH_MAX];
     for (int i = std::strlen(pPath) - 1; i >= 0; i--) {
-        if (pPath[i] == '/' || pPath[i] == '\\') {
-            // @bug Long path can overflow extRoot buffer
+        if ((pPath[i] == '/' || pPath[i] == '\\')) {
+            if (i >= FILE_PATH_MAX + 1) {
+                return false;
+            }
             std::strncpy(extRoot, pPath, i);
             extRoot[i] = '\0';
 
@@ -70,8 +72,10 @@ bool DvdSoundArchive::Open(const char* pPath) {
 }
 
 void DvdSoundArchive::Close() {
-    DVDClose(&mFileInfo);
-    mOpen = false;
+    if (mOpen) {
+        DVDClose(&mFileInfo);
+        mOpen = false;
+    }
     Shutdown();
 }
 
@@ -115,7 +119,7 @@ bool DvdSoundArchive::LoadFileHeader() {
     u8 headerArea[detail::SoundArchiveFile::HEADER_AREA_SIZE];
 
     static const u32 headerAlignSize =
-        ut::RoundUp(sizeof(detail::SoundArchiveFile::Header), 32);
+        ROUND_UP(sizeof(detail::SoundArchiveFile::Header), 32);
 
     void* pFile = ut::RoundUp<u8>(headerArea, 32);
 
@@ -173,21 +177,15 @@ bool DvdSoundArchive::LoadLabelStringData(void* pBuffer, u32 size) {
 DvdSoundArchive::DvdFileStream::DvdFileStream(const DVDFileInfo* pFileInfo,
                                               u32 offset, u32 size)
     : DvdLockedFileStream(pFileInfo, false), mOffset(offset), mSize(size) {
-    if (mSize == 0) {
-        mSize = ut::DvdFileStream::GetSize();
-    }
 
-    ut::DvdFileStream::Seek(mOffset, SEEK_ORIGIN_BEG);
+    ut::DvdFileStream::Seek(mOffset, SEEKORG_BEG);
 }
 
 DvdSoundArchive::DvdFileStream::DvdFileStream(s32 entrynum, u32 offset,
                                               u32 size)
     : DvdLockedFileStream(entrynum), mOffset(offset), mSize(size) {
-    if (mSize == 0) {
-        mSize = ut::DvdFileStream::GetSize();
-    }
 
-    ut::DvdFileStream::Seek(mOffset, SEEK_ORIGIN_BEG);
+    ut::DvdFileStream::Seek(mOffset, SEEKORG_BEG);
 }
 
 s32 DvdSoundArchive::DvdFileStream::Read(void* pDst, u32 size) {
@@ -203,17 +201,17 @@ s32 DvdSoundArchive::DvdFileStream::Read(void* pDst, u32 size) {
 
 void DvdSoundArchive::DvdFileStream::Seek(s32 offset, u32 origin) {
     switch (origin) {
-    case SEEK_ORIGIN_BEG: {
+    case SEEKORG_BEG: {
         offset += mOffset;
         break;
     }
 
-    case SEEK_ORIGIN_CUR: {
+    case SEEKORG_CUR: {
         offset += ut::DvdFileStream::Tell();
         break;
     }
 
-    case SEEK_ORIGIN_END: {
+    case SEEKORG_END: {
         offset = mOffset + mSize - offset;
         break;
     }
@@ -229,8 +227,7 @@ void DvdSoundArchive::DvdFileStream::Seek(s32 offset, u32 origin) {
         offset = mOffset + mSize;
     }
 
-    ut::DvdFileStream::Seek(offset, SEEK_ORIGIN_BEG);
+    ut::DvdFileStream::Seek(offset, SEEKORG_BEG);
 }
 
-} // namespace snd
-} // namespace nw4r
+}}

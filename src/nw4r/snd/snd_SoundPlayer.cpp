@@ -1,413 +1,323 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_SoundPlayer.h"
 
-#include <cstring>
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_SoundPlayer.cpp
+ */
 
-namespace nw4r {
-namespace snd {
+/*******************************************************************************
+ * headers
+ */
 
-SoundPlayer::SoundPlayer()
-    : mPlayableCount(1), mPlayableLimit(1), mUsePlayerHeap(false) {
-    InitParam();
+#include <climits> // INT_MAX
+
+#include <decomp.h>
+#include "common.h" // nullptr
+
+#include "nw4r/snd/snd_BasicSound.h"
+#include "nw4r/snd/snd_global.h" // AUX_BUS_NUM
+#include "nw4r/snd/snd_PlayerHeap.h"
+#include "nw4r/snd/snd_SoundThread.h"
+
+#include "nw4r/ut/ut_algorithm.h" // ut::Clamp
+
+#include <nw4r/NW4RAssert.hpp>
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd {
+
+SoundPlayer::SoundPlayer() :
+	mPlayableCount		(1),
+	mPlayableLimit		(INT_MAX),
+	mVolume				(1.0f),
+	mLpfFreq			(0.0f),
+	mOutputLineFlag		(OUTPUT_LINE_MAIN),
+	mMainOutVolume		(1.0f),
+	mBiquadType			(0),
+	mBiquadValue		(0.0f),
+	mMainSend			(0.0f)
+{
+	for (int i = 0; i < 4; i++)
+		mRemoteOutVolume[i] = 1.0f;
+
+	for (int i = 0; i < AUX_BUS_NUM; i++)
+		mFxSend[i] = 0.0f;
+
 }
 
-SoundPlayer::~SoundPlayer() {
-    StopAllSound(0);
+SoundPlayer::~SoundPlayer()
+{
+	StopAllSound(0);
 }
 
-void SoundPlayer::InitParam() {
-    OSInitMutex(&mMutex);
+void SoundPlayer::Update()
+{
+	detail::SoundThread::AutoLock lock;
 
-    mOutputLineFlag = OUTPUT_LINE_MAIN;
-    mVolume = 1.0f;
-    mOutputLineFlagEnable = false;
+	NW4R_RANGE_FOR_NO_AUTO_INC(itr, mSoundList)
+	{
+		decltype(itr) curItr = itr++;
 
-    mMainOutVolume = 1.0f;
-    for (int i = 0; i < WPAD_MAX_CONTROLLERS; i++) {
-        mRemoteOutVolume[i] = 1.0f;
-    }
+		curItr->Update();
+	}
+
+	detail_SortPriorityList();
 }
 
-void SoundPlayer::Update() {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
+void SoundPlayer::StopAllSound(int fadeFrames)
+{
+	detail::SoundThread::AutoLock lock;
 
-    NW4R_UT_LINKLIST_FOREACH_SAFE (it, mSoundList, { it->Update(); })
+	NW4R_RANGE_FOR_NO_AUTO_INC(itr, mSoundList)
+	{
+		decltype(itr) curItr = itr++;
 
-    detail_SortPriorityList();
+		curItr->Stop(fadeFrames);
+	}
 }
 
-void SoundPlayer::StopAllSound(int frames) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
+void SoundPlayer::PauseAllSound(bool flag, int fadeFrames)
+{
+	detail::SoundThread::AutoLock lock;
 
-    NW4R_UT_LINKLIST_FOREACH_SAFE (it, mSoundList, { it->Stop(frames); })
+	NW4R_RANGE_FOR_NO_AUTO_INC(itr, mSoundList)
+	{
+		decltype(itr) curItr = itr++;
+
+		curItr->Pause(flag, fadeFrames);
+	}
 }
 
-void SoundPlayer::PauseAllSound(bool flag, int frames) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
+void SoundPlayer::SetVolume(f32 volume)
+{
+	if (volume < 0.0f)
+		volume = 0.0f;
 
-    NW4R_UT_LINKLIST_FOREACH_SAFE (it, mSoundList,
-                                   { it->Pause(flag, frames); })
+	mVolume = volume;
 }
 
-void SoundPlayer::SetVolume(f32 volume) {
-    mVolume = ut::Clamp(volume, 0.0f, 1.0f);
+void SoundPlayer::SetLpfFreq(f32 freq)
+{
+	mLpfFreq = freq;
 }
 
-int SoundPlayer::detail_GetOutputLine() const {
-    return mOutputLineFlag;
+f32 SoundPlayer::GetRemoteOutVolume(int remote) const
+{
+	return mRemoteOutVolume[remote];
 }
 
-bool SoundPlayer::detail_IsEnabledOutputLine() const {
-    return mOutputLineFlagEnable;
+void SoundPlayer::SetFxSend(AuxBus bus, f32 send)
+{
+	mFxSend[bus] = send;
 }
 
-f32 SoundPlayer::detail_GetRemoteOutVolume(int idx) const {
-    return mRemoteOutVolume[idx];
+#if 0
+// SoundPlayer::SetVolume ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14397)
+/* also __FILE__ because this is the first assert in the file so it needs to
+ * reference that first as well
+ */
+DECOMP_FORCE(__FILE__);
+DECOMP_FORCE(NW4RAssert_String(volume >= 0.0f));
+
+// SoundPlayer::SetFxSend ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14405)
+DECOMP_FORCE(NW4RAssertHeaderClampedLValue_String(bus));
+#endif
+
+void SoundPlayer::RemoveSoundList(detail::BasicSound *sound)
+{
+	detail::SoundThread::AutoLock lock;
+
+	mSoundList.Erase(sound);
+	sound->DetachSoundPlayer(this);
 }
 
-void SoundPlayer::detail_InsertSoundList(detail::BasicSound* pSound) {
-    mSoundList.PushBack(pSound);
-    pSound->SetSoundPlayer(this);
+void SoundPlayer::InsertPriorityList(detail::BasicSound *sound)
+{
+	detail::SoundThread::AutoLock lock;
+
+	decltype(mPriorityList.GetBeginIter()) itr = mPriorityList.GetBeginIter();
+	for (; itr != mPriorityList.GetEndIter(); ++itr)
+	{
+		if (sound->CalcCurrentPlayerPriority()
+		    < itr->CalcCurrentPlayerPriority())
+		{
+			break;
+		}
+	}
+
+	mPriorityList.Insert(itr, sound);
 }
 
-void SoundPlayer::detail_RemoveSoundList(detail::BasicSound* pSound) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
+void SoundPlayer::RemovePriorityList(detail::BasicSound *sound)
+{
+	detail::SoundThread::AutoLock lock;
 
-    mSoundList.Erase(pSound);
-    pSound->SetSoundPlayer(NULL);
+	mPriorityList.Erase(sound);
 }
 
-void SoundPlayer::detail_InsertPriorityList(detail::BasicSound* pSound) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-
-    detail::BasicSoundPlayerPrioList::Iterator it =
-        mPriorityList.GetBeginIter();
-
-    for (; it != mPriorityList.GetEndIter(); ++it) {
-        if (pSound->CalcCurrentPlayerPriority() <
-            it->CalcCurrentPlayerPriority()) {
-            break;
-        }
-    }
-
-    mPriorityList.Insert(it, pSound);
+void SoundPlayer::detail_SortPriorityList(detail::BasicSound *sound)
+{
+	RemovePriorityList(sound);
+	InsertPriorityList(sound);
 }
 
-void SoundPlayer::detail_RemovePriorityList(detail::BasicSound* pSound) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-    mPriorityList.Erase(pSound);
+void SoundPlayer::detail_SortPriorityList()
+{
+	detail::SoundThread::AutoLock lock;
+
+	if (mPriorityList.GetSize() < 2)
+		return;
+
+	static detail::BasicSound::SoundPlayerPriorityLinkList
+		tmplist[detail::BasicSound::PRIORITY_MAX + 1];
+
+	while (!mPriorityList.IsEmpty())
+	{
+		detail::BasicSound &front = mPriorityList.GetFront();
+		mPriorityList.PopFront();
+		tmplist[front.CalcCurrentPlayerPriority()].PushBack(&front);
+	}
+
+	for (int i = 0; i < (int)ARRAY_LENGTH(tmplist); i++)
+	{
+		while (!tmplist[i].IsEmpty())
+		{
+			detail::BasicSound &front = tmplist[i].GetFront();
+
+			tmplist[i].PopFront();
+			mPriorityList.PushBack(&front);
+		}
+	}
 }
 
-void SoundPlayer::detail_SortPriorityList() {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
+bool SoundPlayer::detail_AppendSound(detail::BasicSound *sound)
+{
+	NW4RAssertPointerNonnull_Line(402, sound);
 
-    detail::BasicSoundPlayerPrioList
-        listsByPrio[detail::BasicSound::PRIORITY_MAX + 1];
+	detail::SoundThread::AutoLock lock;
 
-    while (!mPriorityList.IsEmpty()) {
-        detail::BasicSound& rSound = mPriorityList.GetFront();
-        mPriorityList.PopFront();
-        listsByPrio[rSound.CalcCurrentPlayerPriority()].PushBack(&rSound);
-    }
+	int allocPriority = sound->CalcCurrentPlayerPriority();
 
-    for (int i = 0; i < detail::BasicSound::PRIORITY_MAX + 1; i++) {
-        while (!listsByPrio[i].IsEmpty()) {
-            detail::BasicSound& rSound = listsByPrio[i].GetFront();
-            listsByPrio[i].PopFront();
-            mPriorityList.PushBack(&rSound);
-        }
-    }
+	if (GetPlayableSoundCount() == 0)
+		return false;
+
+	while (GetPlayingSoundCount() >= GetPlayableSoundCount())
+	{
+		detail::BasicSound *dropSound = GetLowestPrioritySound();
+		if (!dropSound)
+			return false;
+
+		if (allocPriority < dropSound->CalcCurrentPlayerPriority())
+			return false;
+
+		dropSound->Shutdown();
+	}
+
+	mSoundList.PushBack(sound);
+	InsertPriorityList(sound);
+	sound->AttachSoundPlayer(this);
+
+	return true;
 }
 
-detail::SeqSound* SoundPlayer::detail_AllocSeqSound(
-    int priority, int startPriority,
-    detail::BasicSound::AmbientArgInfo* pArgInfo,
-    detail::ExternalSoundPlayer* pExtPlayer, u32 id,
-    detail::SoundInstanceManager<detail::SeqSound>* pManager) {
-
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-
-    if (pManager == NULL) {
-        return NULL;
-    }
-
-    int priorityReduction = CalcPriorityReduction(pArgInfo, id);
-
-    startPriority = ut::Clamp(startPriority + priorityReduction, 0,
-                              detail::BasicSound::PRIORITY_MAX);
-
-    if (!CheckPlayableSoundCount(startPriority, pExtPlayer)) {
-        return NULL;
-    }
-
-    detail::SeqSound* pSound = pManager->Alloc(startPriority);
-    if (pSound == NULL) {
-        return NULL;
-    }
-
-    detail_AllocPlayerHeap(pSound);
-
-    if (pArgInfo != NULL) {
-        InitAmbientArg(pSound, pArgInfo);
-    }
-
-    pSound->SetPriority(priority);
-    pSound->GetAmbientParam().priority = priorityReduction;
-
-    detail_InsertSoundList(pSound);
-
-    if (pExtPlayer != NULL) {
-        pExtPlayer->InsertSoundList(pSound);
-    }
-
-    detail_InsertPriorityList(pSound);
-
-    return pSound;
+void SoundPlayer::detail_RemoveSound(detail::BasicSound *sound)
+{
+	RemovePriorityList(sound);
+	RemoveSoundList(sound);
 }
 
-detail::StrmSound* SoundPlayer::detail_AllocStrmSound(
-    int priority, int startPriority,
-    detail::BasicSound::AmbientArgInfo* pArgInfo,
-    detail::ExternalSoundPlayer* pExtPlayer, u32 id,
-    detail::SoundInstanceManager<detail::StrmSound>* pManager) {
+void SoundPlayer::SetPlayableSoundCount(int count)
+{
+	NW4RAssert_Line(453, count >= 0);
 
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
+	detail::SoundThread::AutoLock lock;
 
-    if (pManager == NULL) {
-        return NULL;
-    }
+	NW4RCheckMessage_Line(458, count <= mPlayableLimit,
+	                      "playable sound count is over limit.");
 
-    int priorityReduction = CalcPriorityReduction(pArgInfo, id);
+	mPlayableCount = ut::Clamp(count, 0, mPlayableLimit);
 
-    startPriority = ut::Clamp(startPriority + priorityReduction, 0,
-                              detail::BasicSound::PRIORITY_MAX);
+	while (GetPlayingSoundCount() > GetPlayableSoundCount())
+	{
+		detail::BasicSound *dropSound = GetLowestPrioritySound();
+		NW4RAssertPointerNonnull_Line(467, dropSound);
 
-    if (!CheckPlayableSoundCount(startPriority, pExtPlayer)) {
-        return NULL;
-    }
-
-    detail::StrmSound* pSound = pManager->Alloc(startPriority);
-    if (pSound == NULL) {
-        return NULL;
-    }
-
-    detail_AllocPlayerHeap(pSound);
-
-    if (pArgInfo != NULL) {
-        InitAmbientArg(pSound, pArgInfo);
-    }
-
-    pSound->SetPriority(priority);
-    pSound->GetAmbientParam().priority = priorityReduction;
-
-    detail_InsertSoundList(pSound);
-
-    if (pExtPlayer != NULL) {
-        pExtPlayer->InsertSoundList(pSound);
-    }
-
-    detail_InsertPriorityList(pSound);
-
-    return pSound;
+		dropSound->Shutdown();
+	}
 }
 
-detail::WaveSound* SoundPlayer::detail_AllocWaveSound(
-    int priority, int startPriority,
-    detail::BasicSound::AmbientArgInfo* pArgInfo,
-    detail::ExternalSoundPlayer* pExtPlayer, u32 id,
-    detail::SoundInstanceManager<detail::WaveSound>* pManager) {
+void SoundPlayer::detail_SetPlayableSoundLimit(int limit)
+{
+	NW4RAssert_Line(483, limit >= 0);
 
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-
-    if (pManager == NULL) {
-        return NULL;
-    }
-
-    int priorityReduction = CalcPriorityReduction(pArgInfo, id);
-
-    startPriority = ut::Clamp(startPriority + priorityReduction, 0,
-                              detail::BasicSound::PRIORITY_MAX);
-
-    if (!CheckPlayableSoundCount(startPriority, pExtPlayer)) {
-        return NULL;
-    }
-
-    detail::WaveSound* pSound = pManager->Alloc(startPriority);
-    if (pSound == NULL) {
-        return NULL;
-    }
-
-    detail_AllocPlayerHeap(pSound);
-
-    if (pArgInfo != NULL) {
-        InitAmbientArg(pSound, pArgInfo);
-    }
-
-    pSound->SetPriority(priority);
-    pSound->GetAmbientParam().priority = priorityReduction;
-
-    detail_InsertSoundList(pSound);
-
-    if (pExtPlayer != NULL) {
-        pExtPlayer->InsertSoundList(pSound);
-    }
-
-    detail_InsertPriorityList(pSound);
-
-    return pSound;
+	mPlayableLimit = limit;
 }
 
-int SoundPlayer::CalcPriorityReduction(
-    detail::BasicSound::AmbientArgInfo* pArgInfo, u32 id) {
+bool SoundPlayer::detail_CanPlaySound(int startPriority)
+{
+	detail::SoundThread::AutoLock lock;
 
-    int priority = 0;
+	if (GetPlayableSoundCount() == 0)
+		return false;
 
-    if (pArgInfo != NULL) {
-        SoundParam param;
+	if (GetPlayingSoundCount() >= GetPlayableSoundCount())
+	{
+		detail::BasicSound *dropSound = GetLowestPrioritySound();
+		if (!dropSound)
+			return false;
 
-        pArgInfo->paramUpdateCallback->detail_Update(
-            &param, id, NULL, pArgInfo->arg,
-            detail::BasicSound::AmbientParamUpdateCallback::
-                PARAM_UPDATE_PRIORITY);
+		if (startPriority < dropSound->CalcCurrentPlayerPriority())
+			return false;
+	}
 
-        priority = param.priority;
-    }
-
-    return priority;
+	return true;
 }
 
-void SoundPlayer::InitAmbientArg(detail::BasicSound* pSound,
-                                 detail::BasicSound::AmbientArgInfo* pArgInfo) {
+void SoundPlayer::detail_AppendPlayerHeap(detail::PlayerHeap *heap)
+{
+	NW4RAssertPointerNonnull_Line(524, heap);
 
-    if (pArgInfo == NULL) {
-        return;
-    }
+	detail::SoundThread::AutoLock lock;
 
-    void* pExtArg = pArgInfo->argAllocaterCallback->detail_AllocAmbientArg(
-        pArgInfo->argSize);
-
-    if (pExtArg == NULL) {
-        return;
-    }
-
-    std::memcpy(pExtArg, pArgInfo->arg, pArgInfo->argSize);
-
-    pSound->SetAmbientParamCallback(pArgInfo->paramUpdateCallback,
-                                    pArgInfo->argUpdateCallback,
-                                    pArgInfo->argAllocaterCallback, pExtArg);
+	heap->AttachSoundPlayer(this);
+	mHeapList.PushBack(heap);
 }
 
-void SoundPlayer::SetPlayableSoundCount(int count) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
+detail::PlayerHeap *SoundPlayer::detail_AllocPlayerHeap(detail::BasicSound *sound)
+{
+	NW4RAssertPointerNonnull_Line(557, sound);
 
-    mPlayableCount = count;
+	detail::SoundThread::AutoLock lock;
 
-    if (mUsePlayerHeap) {
-        count = ut::Clamp<u16>(count, 0, mPlayableLimit);
-        mPlayableCount = count;
-    }
+	if (mHeapList.IsEmpty())
+		return nullptr;
 
-    while (GetPlayingSoundCount() > GetPlayableSoundCount()) {
-        detail::BasicSound* pDropSound = detail_GetLowestPrioritySound();
-        pDropSound->Shutdown();
-    }
+	detail::PlayerHeap &playerHeap = mHeapList.GetFront();
+	mHeapList.PopFront();
+
+	playerHeap.AttachSound(sound);
+	sound->AttachPlayerHeap(&playerHeap);
+	playerHeap.Clear();
+
+	return &playerHeap;
 }
 
-void SoundPlayer::detail_SetPlayableSoundLimit(int limit) {
-    mPlayableLimit = limit;
+void SoundPlayer::detail_FreePlayerHeap(detail::BasicSound *sound)
+{
+	NW4RAssertPointerNonnull_Line(587, sound);
+
+	detail::SoundThread::AutoLock lock;
+
+	detail::PlayerHeap *heap = sound->GetPlayerHeap();
+	if (!heap)
+		return;
+
+	heap->DetachSound(sound);
+	sound->DetachPlayerHeap(heap);
+	mHeapList.PushBack(heap);
 }
 
-bool SoundPlayer::CheckPlayableSoundCount(
-    int startPriority, detail::ExternalSoundPlayer* pExtPlayer) {
-
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-
-    if (GetPlayableSoundCount() == 0) {
-        return false;
-    }
-
-    while (GetPlayingSoundCount() >= GetPlayableSoundCount()) {
-        detail::BasicSound* pDropSound = detail_GetLowestPrioritySound();
-
-        if (pDropSound == NULL) {
-            return false;
-        }
-
-        if (startPriority < pDropSound->CalcCurrentPlayerPriority()) {
-            return false;
-        }
-
-        pDropSound->Shutdown();
-    }
-
-    if (pExtPlayer != NULL) {
-        if (pExtPlayer->GetPlayableSoundCount() == 0) {
-            return false;
-        }
-
-        while (pExtPlayer->GetPlayingSoundCount() >=
-               pExtPlayer->GetPlayableSoundCount()) {
-
-            detail::BasicSound* pDropSound =
-                pExtPlayer->GetLowestPrioritySound();
-
-            if (pDropSound == NULL) {
-                return false;
-            }
-
-            if (startPriority < pDropSound->CalcCurrentPlayerPriority()) {
-                return false;
-            }
-
-            pDropSound->Shutdown();
-        }
-    }
-
-    return true;
-}
-
-void SoundPlayer::detail_AppendPlayerHeap(detail::PlayerHeap* pHeap) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-
-    pHeap->SetSoundPlayer(this);
-    mHeapList.PushBack(pHeap);
-
-    mUsePlayerHeap = true;
-}
-
-detail::PlayerHeap*
-SoundPlayer::detail_AllocPlayerHeap(detail::BasicSound* pSound) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-
-    if (mHeapList.IsEmpty()) {
-        return NULL;
-    }
-
-    detail::PlayerHeap& rHeap = mHeapList.GetFront();
-    mHeapList.PopFront();
-
-    rHeap.SetSound(pSound);
-    pSound->SetPlayerHeap(&rHeap);
-    rHeap.Clear();
-
-    return &rHeap;
-}
-
-void SoundPlayer::detail_FreePlayerHeap(detail::BasicSound* pSound) {
-    ut::detail::AutoLock<OSMutex> lock(mMutex);
-
-    detail::PlayerHeap* pHeap = pSound->GetPlayerHeap();
-
-    if (pHeap != NULL) {
-        mHeapList.PushBack(pHeap);
-    }
-
-    if (pHeap != NULL) {
-        pHeap->SetSound(NULL);
-    }
-
-    pSound->SetPlayerHeap(NULL);
-}
-
-} // namespace snd
-} // namespace nw4r
+}} // namespace nw4r::snd

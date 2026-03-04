@@ -1,861 +1,1356 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_SoundArchivePlayer.h"
 
-namespace nw4r {
-namespace snd {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_SoundArchivePlayer.cpp
+ */
 
-SoundArchivePlayer::SoundArchivePlayer()
-    : mSoundArchive(NULL),
-      mGroupTable(NULL),
-      mFileManager(NULL),
-      mSeqCallback(*this),
-      mWsdCallback(*this),
-      mSoundPlayerCount(0),
-      mSoundPlayers(NULL),
-      mMmlSeqTrackAllocator(&mMmlParser),
-      mSetupBufferAddress(NULL),
-      mSetupBufferSize(0) {
+/*******************************************************************************
+ * headers
+ */
 
-    detail::DisposeCallbackManager::GetInstance().RegisterDisposeCallback(this);
+#include <new>
+
+#include <decomp.h>
+#include "common.h"
+
+#include "nw4r/snd/snd_Bank.h"
+#include "nw4r/snd/snd_BasicSound.h"
+#include "nw4r/snd/snd_SoundArchiveLoader.h"
+#include "nw4r/snd/snd_debug.h"
+#include "nw4r/snd/snd_DisposeCallbackManager.h"
+#include "nw4r/snd/snd_ExternalSoundPlayer.h"
+#include "nw4r/snd/snd_MmlParser.h"
+#include "nw4r/snd/snd_MmlSeqTrack.h"
+#include "nw4r/snd/snd_MmlSeqTrackAllocator.h"
+#include "nw4r/snd/snd_PlayerHeap.h"
+#include "nw4r/snd/snd_SeqFile.h"
+#include "nw4r/snd/snd_SeqPlayer.h"
+#include "nw4r/snd/snd_SeqSound.h"
+#include "nw4r/snd/snd_SoundActor.h"
+#include "nw4r/snd/snd_SoundArchive.h"
+#include "nw4r/snd/snd_SoundHandle.h"
+#include "nw4r/snd/snd_SoundInstanceManager.h"
+#include "nw4r/snd/snd_SoundPlayer.h"
+#include "nw4r/snd/snd_SoundStartable.h"
+#include "nw4r/snd/snd_SoundSystem.h"
+#include "nw4r/snd/snd_SoundThread.h"
+#include "nw4r/snd/snd_StrmChannel.h"
+#include "nw4r/snd/snd_StrmPlayer.h"
+#include "nw4r/snd/snd_StrmSound.h"
+#include "nw4r/snd/snd_WaveFile.h"
+#include "nw4r/snd/snd_WaveSound.h"
+#include "nw4r/snd/snd_WsdFile.h"
+#include "nw4r/snd/snd_WsdPlayer.h"
+
+#include "nw4r/ut/ut_FileStream.h"
+#include "nw4r/ut/ut_algorithm.h"
+
+#include "nw4r/NW4RAssert.hpp"
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd {
+
+SoundArchivePlayer::SoundArchivePlayer() :
+	mSoundArchive			(nullptr),
+	mGroupTable				(nullptr),
+	mFileTable				(nullptr),
+	mFileManager			(nullptr),
+	mSeqCallback			(*this),
+	mWsdCallback			(*this),
+	mSeqUserprocCallback	(nullptr),
+	mSeqUserprocCallbackArg	(nullptr),
+	mSoundPlayerCount		(0),
+	mSoundPlayers			(nullptr),
+	mMmlSeqTrackAllocator	(&mMmlParser),
+	mSetupBufferAddress		(nullptr),
+	mSetupBufferSize		(0)
+{
+	detail::DisposeCallbackManager::GetInstance().RegisterDisposeCallback(this);
 }
 
-SoundArchivePlayer::~SoundArchivePlayer() {
-    detail::DisposeCallbackManager::GetInstance().UnregisterDisposeCallback(
-        this);
+SoundArchivePlayer::~SoundArchivePlayer()
+{
+	detail::DisposeCallbackManager::GetInstance().UnregisterDisposeCallback(this);
 }
 
-bool SoundArchivePlayer::IsAvailable() const {
-    if (mSoundArchive == NULL) {
-        return false;
-    }
+bool SoundArchivePlayer::IsAvailable() const
+{
+	if (mSoundArchive == nullptr)
+		return false;
 
-    return mSoundArchive->IsAvailable();
+	return mSoundArchive->IsAvailable();
 }
 
-bool SoundArchivePlayer::Setup(const SoundArchive* pArchive, void* pMramBuffer,
-                               u32 mramBufferSize, void* pStrmBuffer,
-                               u32 strmBufferSize) {
-    if (!SetupMram(pArchive, pMramBuffer, mramBufferSize)) {
-        return false;
-    }
+bool SoundArchivePlayer::Setup(SoundArchive const *arc, void *buffer, u32 size,
+                               void *strmBuffer, u32 strmBufferSize)
+{
+	NW4RAssert_Line(131, SoundSystem::IsInitializedSoundSystem());
+	if (!SoundSystem::IsInitializedSoundSystem())
+		return false;
 
-    if (!SetupStrmBuffer(pArchive, pStrmBuffer, strmBufferSize)) {
-        return false;
-    }
+	NW4RAssertPointerNonnull_Line(137, arc);
+	NW4RAssertPointerNonnull_Line(138, buffer);
+	if (strmBufferSize)
+		NW4RAssertPointerNonnull_Line(140, strmBuffer);
 
-    mSeqTrackAllocator = &mMmlSeqTrackAllocator;
-    return true;
+	NW4RAssert_Line(142, strmBufferSize >= GetRequiredStrmBufferSize( arc ));
+
+	if (!SetupMram(arc, buffer, size))
+		return false;
+
+	if (!SetupStrmBuffer(arc, strmBuffer, strmBufferSize))
+		return false;
+
+	mSeqTrackAllocator = &mMmlSeqTrackAllocator;
+
+	return true;
 }
 
-void SoundArchivePlayer::Shutdown() {
-    mSoundArchive = NULL;
-    mGroupTable = NULL;
-    mFileManager = NULL;
-    mSeqTrackAllocator = NULL;
+void SoundArchivePlayer::Shutdown()
+{
+	mSoundArchive		= nullptr;
+	mGroupTable			= nullptr;
+	mFileTable			= nullptr;
+	mFileManager		= nullptr;
+	mSeqTrackAllocator	= nullptr;
 
-    for (int i = 0; i < mSoundPlayerCount; i++) {
-        mSoundPlayers[i].~SoundPlayer();
-    }
+	for (u32 playerId = 0; playerId < mSoundPlayerCount; playerId++)
+		mSoundPlayers[playerId].~SoundPlayer();
 
-    mSoundPlayerCount = 0;
-    mSoundPlayers = NULL;
+	mSoundPlayerCount	= 0;
+	mSoundPlayers		= nullptr;
 
-    mSeqSoundInstanceManager.Destroy(mSetupBufferAddress, mSetupBufferSize);
-    mStrmSoundInstanceManager.Destroy(mSetupBufferAddress, mSetupBufferSize);
-    mWaveSoundInstanceManager.Destroy(mSetupBufferAddress, mSetupBufferSize);
-    mMmlSeqTrackAllocator.Destroy(mSetupBufferAddress, mSetupBufferSize);
+	mStrmBufferPool.Shutdown();
 
-    mStrmBufferPool.Shutdown();
-    mSetupBufferAddress = NULL;
-    mSetupBufferSize = 0;
+	if (mSetupBufferAddress)
+	{
+		mSeqSoundInstanceManager.Destroy(mSetupBufferAddress, mSetupBufferSize);
+		mStrmSoundInstanceManager.Destroy(mSetupBufferAddress,
+		                                  mSetupBufferSize);
+		mWaveSoundInstanceManager.Destroy(mSetupBufferAddress,
+		                                  mSetupBufferSize);
+		mMmlSeqTrackAllocator.Destroy(mSetupBufferAddress, mSetupBufferSize);
+
+		mSetupBufferAddress	= nullptr;
+		mSetupBufferSize	= 0;
+	}
 }
 
-u32 SoundArchivePlayer::GetRequiredMemSize(const SoundArchive* pArchive) {
-    u32 size = 0;
+u32 SoundArchivePlayer::GetRequiredMemSize(SoundArchive const *arc)
+{
+	NW4RAssertPointerNonnull_Line(210, arc);
 
-    u32 playerCount = pArchive->GetPlayerCount();
-    size += ut::RoundUp(playerCount * sizeof(SoundPlayer), 4);
+	u32 size = 0;
 
-    for (u32 i = 0; i < playerCount; i++) {
-        SoundArchive::PlayerInfo info;
-        if (!pArchive->ReadPlayerInfo(i, &info)) {
-            continue;
-        }
+	u32 playerCount = arc->GetPlayerCount();
+	size += ut::RoundUp(sizeof(SoundPlayer) * playerCount, 4);
 
-        for (int j = 0; j < info.playableSoundCount; j++) {
-            if (info.heapSize == 0) {
-                continue;
-            }
+	for (u32 playerId = 0; playerId < playerCount; playerId++)
+	{
+		SoundArchive::PlayerInfo playerInfo;
+		if (!arc->ReadPlayerInfo(playerId, &playerInfo))
+			continue;
 
-            size += ut::RoundUp(info.heapSize + sizeof(detail::PlayerHeap), 4);
-        }
-    }
+		for (int i = 0; i < playerInfo.playableSoundCount; i++)
+		{
+			if (playerInfo.heapSize == 0)
+				continue;
 
-    // clang-format off
-    size += ut::RoundUp(
-        pArchive->GetGroupCount() * sizeof(Group) + (sizeof(GroupTable) - sizeof(Group)), 4);
-    // clang-format on
+			size += ut::RoundUp(sizeof(detail::PlayerHeap), 4);
+			size = ut::RoundUp(size, 32);
+			size += ut::RoundUp(playerInfo.heapSize, 4);
+		}
+	}
 
-    SoundArchive::SoundArchivePlayerInfo info;
-    if (pArchive->ReadSoundArchivePlayerInfo(&info)) {
-        // clang-format off
-        size += ut::RoundUp(info.seqSoundCount  * sizeof(detail::SeqSound),    4);
-        size += ut::RoundUp(info.strmSoundCount * sizeof(detail::StrmSound),   4);
-        size += ut::RoundUp(info.waveSoundCount * sizeof(detail::WaveSound),   4);
-        size += ut::RoundUp(info.seqTrackCount  * sizeof(detail::MmlSeqTrack), 4);
-        // clang-format on
-    }
+	size += ut::RoundUp(sizeof(u32) + arc->GetGroupCount() * 8, 4);
 
-    return size;
+	SoundArchive::SoundArchivePlayerInfo soundArchivePlayerInfo;
+	if (arc->ReadSoundArchivePlayerInfo(&soundArchivePlayerInfo))
+	{
+		size += ut::RoundUp(soundArchivePlayerInfo.seqSoundCount
+		                        * sizeof(detail::SeqSound),
+		                    4);
+		size += ut::RoundUp(soundArchivePlayerInfo.strmSoundCount
+		                        * sizeof(detail::StrmSound),
+		                    4);
+		size += ut::RoundUp(soundArchivePlayerInfo.waveSoundCount
+		                        * sizeof(detail::WaveSound),
+		                    4);
+		size += ut::RoundUp(soundArchivePlayerInfo.seqTrackCount
+		                        * sizeof(detail::MmlSeqTrack),
+		                    4);
+	}
+
+	size += ut::RoundUp(sizeof(u32) + arc->detail_GetFileCount() * 8, 4);
+
+	return size;
 }
 
-u32 SoundArchivePlayer::GetRequiredStrmBufferSize(
-    const SoundArchive* pArchive) {
-    int strmChannels = 0;
+u32 SoundArchivePlayer::GetRequiredStrmBufferSize(SoundArchive const *arc)
+{
+	NW4RAssertPointerNonnull_Line(272, arc);
 
-    SoundArchive::SoundArchivePlayerInfo info;
-    if (pArchive->ReadSoundArchivePlayerInfo(&info)) {
-        strmChannels = info.strmChannelCount;
-    }
+	int strmChannelCount = 0;
 
-    // TODO(kiwi) How is this calculated?
-    return strmChannels * 0xA000;
+	SoundArchive::SoundArchivePlayerInfo soundArchivePlayerInfo;
+	if (arc->ReadSoundArchivePlayerInfo(&soundArchivePlayerInfo))
+		strmChannelCount = soundArchivePlayerInfo.strmChannelCount;
+
+	// TODO (from ogws): How is this calculated?
+	// is this the size of one strmChannel? (whatever that is?)
+	u32 memSize = strmChannelCount * 0xa000;
+	return memSize;
 }
 
-bool SoundArchivePlayer::SetupMram(const SoundArchive* pArchive, void* pBuffer,
-                                   u32 bufferSize) {
-    void* pEndPtr = static_cast<u8*>(pBuffer) + bufferSize;
-    void* pPtr = pBuffer;
+bool SoundArchivePlayer::SetupMram(SoundArchive const *arc, void *buffer,
+                                   u32 size)
+{
+	NW4RAssertPointerNonnull_Line(304, arc);
+	NW4RAssertPointerNonnull_Line(305, buffer);
+	NW4RAssertAligned_Line(306, buffer, 4);
+	NW4RAssert_Line(307, size >= GetRequiredMemSize( arc ));
 
-    if (!SetupSoundPlayer(pArchive, &pPtr, pEndPtr)) {
-        return false;
-    }
+	void *endp = static_cast<byte_t *>(buffer) + size;
+	void *buf = buffer;
 
-    if (!CreateGroupAddressTable(pArchive, &pPtr, pEndPtr)) {
-        return false;
-    }
+	if (!SetupSoundPlayer(arc, &buf, endp))
+		return false;
+	if (!CreateGroupAddressTable(arc, &buf, endp))
+		return false;
+	if (!CreateFileAddressTable(arc, &buf, endp))
+		return false;
 
-    SoundArchive::SoundArchivePlayerInfo info;
-    if (pArchive->ReadSoundArchivePlayerInfo(&info)) {
-        if (!SetupSeqSound(pArchive, info.seqSoundCount, &pPtr, pEndPtr)) {
-            return false;
-        }
+	SoundArchive::SoundArchivePlayerInfo soundArchivePlayerInfo;
+	if (arc->ReadSoundArchivePlayerInfo(&soundArchivePlayerInfo))
+	{
+		if (!SetupSeqSound(arc, soundArchivePlayerInfo.seqSoundCount, &buf,
+		                   endp))
+		{
+			return false;
+		}
 
-        if (!SetupStrmSound(pArchive, info.strmSoundCount, &pPtr, pEndPtr)) {
-            return false;
-        }
+		if (!SetupStrmSound(arc, soundArchivePlayerInfo.strmSoundCount, &buf,
+		                   endp))
+		{
+			return false;
+		}
 
-        if (!SetupWaveSound(pArchive, info.waveSoundCount, &pPtr, pEndPtr)) {
-            return false;
-        }
+		if (!SetupWaveSound(arc, soundArchivePlayerInfo.waveSoundCount, &buf,
+		                   endp))
+		{
+			return false;
+		}
 
-        if (!SetupSeqTrack(pArchive, info.seqTrackCount, &pPtr, pEndPtr)) {
-            return false;
-        }
-    }
+		if (!SetupSeqTrack(arc, soundArchivePlayerInfo.seqTrackCount, &buf,
+		                   endp))
+		{
+			return false;
+		}
+	}
 
-    mSoundArchive = pArchive;
-    mSetupBufferAddress = pBuffer;
-    mSetupBufferSize = bufferSize;
+	NW4RAssert_Line(351, static_cast<char*>(buf) - static_cast<char*>(buffer)
+	                         == GetRequiredMemSize( arc ));
 
-    return true;
+	mSoundArchive		= arc;
+	mSetupBufferAddress	= buffer;
+	mSetupBufferSize	= size;
+
+	return true;
 }
 
-detail::PlayerHeap* SoundArchivePlayer::CreatePlayerHeap(void* pBuffer,
-                                                         u32 bufferSize) {
-    detail::PlayerHeap* pHeap = new (pBuffer) detail::PlayerHeap();
+detail::PlayerHeap *SoundArchivePlayer::CreatePlayerHeap(void **buffer,
+                                                         void *endp,
+                                                         u32 heapSize)
+{
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, 32), 4);
+	if (ut::ComparePtr(ep, endp) > 0)
+		return nullptr;
 
-    pBuffer = ut::AddOffsetToPtr(pBuffer, sizeof(detail::PlayerHeap));
+	void *buf = *buffer;
+	*buffer = ep;
 
-    if (!pHeap->Create(pBuffer, bufferSize)) {
-        return NULL;
-    }
+	detail::PlayerHeap *playerHeap = new (buf) detail::PlayerHeap;
+	*buffer = ut::RoundUp(*buffer, 32);
 
-    return pHeap;
+	ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, heapSize), 4);
+	if (ut::ComparePtr(ep, endp) > 0)
+		return nullptr;
+
+	buf = *buffer;
+	*buffer = ep;
+
+	bool result = playerHeap->Create(buf, heapSize);
+	if (!result)
+		return nullptr;
+
+	return playerHeap;
 }
 
-bool SoundArchivePlayer::SetupSoundPlayer(const SoundArchive* pArchive,
-                                          void** ppBuffer, void* pEnd) {
-    u32 playerCount = pArchive->GetPlayerCount();
-    u32 requireSize = playerCount * sizeof(SoundPlayer);
+bool SoundArchivePlayer::SetupSoundPlayer(SoundArchive const *arc,
+                                          void **buffer, void *endp)
+{
+	u32 playerCount = arc->GetPlayerCount();
+	u32 requireSize = sizeof(SoundPlayer) * playerCount;
 
-    void* pPlayerEnd =
-        ut::RoundUp(ut::AddOffsetToPtr(*ppBuffer, requireSize), 4);
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, requireSize), 4);
 
-    if (ut::ComparePtr(pPlayerEnd, pEnd) > 0) {
-        return false;
-    }
+	if (ut::ComparePtr(ep, endp) > 0)
+		return false;
 
-    void* pPlayerBuffer = *ppBuffer;
-    *ppBuffer = pPlayerEnd;
+	void *buf = *buffer;
+	*buffer = ep;
 
-    mSoundPlayers = static_cast<SoundPlayer*>(pPlayerBuffer);
-    mSoundPlayerCount = playerCount;
+	mSoundPlayers = static_cast<SoundPlayer *>(buf);
+	mSoundPlayerCount = playerCount;
 
-    u8* pPtr = static_cast<u8*>(pPlayerBuffer);
+	byte_t *ptr = static_cast<byte_t *>(buf);
 
-    for (u32 i = 0; i < playerCount; i++, pPtr += sizeof(SoundPlayer)) {
-        SoundPlayer* pPlayer = new (pPtr) SoundPlayer();
+	for (u32 playerId = 0; playerId < playerCount;
+	     playerId++, ptr += sizeof(SoundPlayer))
+	{
+		SoundPlayer *player = new (ptr) SoundPlayer;
 
-        SoundArchive::PlayerInfo info;
-        if (!pArchive->ReadPlayerInfo(i, &info)) {
-            continue;
-        }
+		SoundArchive::PlayerInfo playerInfo;
+		if (!arc->ReadPlayerInfo(playerId, &playerInfo))
+			continue;
 
-        pPlayer->SetPlayableSoundCount(info.playableSoundCount);
-        pPlayer->detail_SetPlayableSoundLimit(info.playableSoundCount);
+		player->SetPlayableSoundCount(playerInfo.playableSoundCount);
 
-        if (info.heapSize == 0) {
-            continue;
-        }
+		if (!playerInfo.heapSize)
+			continue;
 
-        for (int j = 0; j < info.playableSoundCount; j++) {
-            u32 requireSize = sizeof(detail::PlayerHeap) + info.heapSize;
+		for (int i = 0; i < playerInfo.playableSoundCount; i++)
+		{
+			detail::PlayerHeap *playerHeap =
+				CreatePlayerHeap(buffer, endp, playerInfo.heapSize);
 
-            void* pHeapEnd =
-                ut::RoundUp(ut::AddOffsetToPtr(*ppBuffer, requireSize), 4);
+			NW4RCheckMessage_Line(
+				442, playerHeap,
+				"failed to create player heap. ( player id = %d )", playerId);
+			if (!playerHeap)
+				return false;
 
-            if (ut::ComparePtr(pHeapEnd, pEnd) > 0) {
-                return false;
-            }
+			player->detail_AppendPlayerHeap(playerHeap);
+		}
 
-            void* pHeapBuffer = *ppBuffer;
-            *ppBuffer = pHeapEnd;
+		player->detail_SetPlayableSoundLimit(playerInfo.playableSoundCount);
+	}
 
-            detail::PlayerHeap* pHeap =
-                CreatePlayerHeap(pHeapBuffer, info.heapSize);
-
-            if (pHeap == NULL) {
-                return false;
-            }
-
-            pPlayer->detail_AppendPlayerHeap(pHeap);
-        }
-    }
-
-    return true;
+	return true;
 }
 
-bool SoundArchivePlayer::CreateGroupAddressTable(const SoundArchive* pArchive,
-                                                 void** ppBuffer, void* pEnd) {
-    // clang-format off
-    u32 requireSize = 
-        pArchive->GetGroupCount() * sizeof(Group) + (sizeof(GroupTable) - sizeof(Group));
-    // clang-format on
+bool SoundArchivePlayer::CreateGroupAddressTable(SoundArchive const *arc,
+                                                 void **buffer, void *endp)
+{
+	u32 requireSize = sizeof(u32) + sizeof(GroupAddress) * arc->GetGroupCount();
 
-    void* pTableEnd =
-        ut::RoundUp(ut::AddOffsetToPtr(*ppBuffer, requireSize), 4);
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, requireSize), 4);
 
-    if (ut::ComparePtr(pTableEnd, pEnd) > 0) {
-        return false;
-    }
+	if (ut::ComparePtr(ep, endp) > 0)
+		return false;
 
-    mGroupTable = static_cast<GroupTable*>(*ppBuffer);
-    *ppBuffer = pTableEnd;
+	mGroupTable = static_cast<GroupAddressTable *>(*buffer);
+	*buffer = ep;
 
-    mGroupTable->count = pArchive->GetGroupCount();
+	mGroupTable->count = arc->GetGroupCount();
 
-    for (int i = 0; i < mGroupTable->count; i++) {
-        mGroupTable->items[i].address = NULL;
-        mGroupTable->items[i].waveDataAddress = NULL;
-    }
+	for (int i = 0; i < mGroupTable->count; i++)
+	{
+		mGroupTable->item[i].address			= nullptr;
+		mGroupTable->item[i].waveDataAddress	= nullptr;
+	}
 
-    return true;
+	return true;
 }
 
-bool SoundArchivePlayer::SetupSeqSound(const SoundArchive* pArchive, int sounds,
-                                       void** ppBuffer, void* pEnd) {
-#pragma unused(pArchive)
+bool SoundArchivePlayer::CreateFileAddressTable(SoundArchive const *arc,
+                                                void **buffer, void *endp)
+{
+	u32 requireSize =
+		sizeof(u32) + sizeof(FileAddress) * arc->detail_GetFileCount();
 
-    u32 requireSize = sounds * sizeof(detail::SeqSound);
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, requireSize), 4);
 
-    void* pSoundEnd =
-        ut::RoundUp(ut::AddOffsetToPtr(*ppBuffer, requireSize), 4);
+	if (ut::ComparePtr(ep, endp) > 0)
+		return false;
 
-    if (ut::ComparePtr(pSoundEnd, pEnd) > 0) {
-        return false;
-    }
+	mFileTable = static_cast<FileAddressTable *>(*buffer);
+	*buffer = ep;
 
-    mSeqSoundInstanceManager.Create(*ppBuffer, requireSize);
-    *ppBuffer = pSoundEnd;
+	mFileTable->count = arc->detail_GetFileCount();
 
-    return true;
+	for (int i = 0; i < mFileTable->count; i++)
+	{
+		mFileTable->item[i].address			= nullptr;
+		mFileTable->item[i].waveDataAddress	= nullptr;
+	}
+
+	return true;
 }
 
-bool SoundArchivePlayer::SetupWaveSound(const SoundArchive* pArchive,
-                                        int sounds, void** ppBuffer,
-                                        void* pEnd) {
-#pragma unused(pArchive)
+bool SoundArchivePlayer::SetupSeqSound(SoundArchive const *arc ATTR_UNUSED,
+                                       int numSounds, void **buffer, void *endp)
+{
+	u32 requireSize = sizeof(detail::SeqSound) * numSounds;
 
-    u32 requireSize = sounds * sizeof(detail::WaveSound);
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, requireSize), 4);
 
-    void* pSoundEnd =
-        ut::RoundUp(ut::AddOffsetToPtr(*ppBuffer, requireSize), 4);
+	if (ut::ComparePtr(ep, endp) > 0)
+		return false;
 
-    if (ut::ComparePtr(pSoundEnd, pEnd) > 0) {
-        return false;
-    }
+	u32 createNum ATTR_MAYBE_UNUSED =
+		mSeqSoundInstanceManager.Create(*buffer, requireSize);
 
-    mWaveSoundInstanceManager.Create(*ppBuffer, requireSize);
-    *ppBuffer = pSoundEnd;
+	NW4RAssert_Line(536, createNum == numSounds);
 
-    return true;
+	*buffer = ep;
+
+	return true;
 }
 
-bool SoundArchivePlayer::SetupStrmSound(const SoundArchive* pArchive,
-                                        int sounds, void** ppBuffer,
-                                        void* pEnd) {
-#pragma unused(pArchive)
+bool SoundArchivePlayer::SetupWaveSound(SoundArchive const *arc ATTR_UNUSED,
+                                        int numSounds, void **buffer,
+                                        void *endp)
+{
+	u32 requireSize = sizeof(detail::WaveSound) * numSounds;
 
-    u32 requireSize = sounds * sizeof(detail::StrmSound);
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, requireSize), 4);
 
-    void* pSoundEnd =
-        ut::RoundUp(ut::AddOffsetToPtr(*ppBuffer, requireSize), 4);
+	if (ut::ComparePtr(ep, endp) > 0)
+		return false;
 
-    if (ut::ComparePtr(pSoundEnd, pEnd) > 0) {
-        return false;
-    }
+	u32 createNum ATTR_MAYBE_UNUSED =
+		mWaveSoundInstanceManager.Create(*buffer, requireSize);
 
-    mStrmSoundInstanceManager.Create(*ppBuffer, requireSize);
-    *ppBuffer = pSoundEnd;
+	NW4RAssert_Line(568, createNum == numSounds);
 
-    return true;
+	*buffer = ep;
+
+	return true;
 }
 
-bool SoundArchivePlayer::SetupSeqTrack(const SoundArchive* pArchive, int tracks,
-                                       void** ppBuffer, void* pEnd) {
-#pragma unused(pArchive)
+bool SoundArchivePlayer::SetupStrmSound(SoundArchive const *arc ATTR_UNUSED,
+                                        int numSounds, void **buffer,
+                                        void *endp)
+{
+	u32 requireSize = sizeof(detail::StrmSound) * numSounds;
 
-    u32 requireSize = tracks * sizeof(detail::MmlSeqTrack);
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, requireSize), 4);
 
-    void* pTrackEnd =
-        ut::RoundUp(ut::AddOffsetToPtr(*ppBuffer, requireSize), 4);
+	if (ut::ComparePtr(ep, endp) > 0)
+		return false;
 
-    if (ut::ComparePtr(pTrackEnd, pEnd) > 0) {
-        return false;
-    }
+	u32 createNum ATTR_MAYBE_UNUSED =
+		mStrmSoundInstanceManager.Create(*buffer, requireSize);
 
-    mMmlSeqTrackAllocator.Create(*ppBuffer, requireSize);
-    *ppBuffer = pTrackEnd;
+	NW4RAssert_Line(600, createNum == numSounds);
 
-    return true;
+	*buffer = ep;
+
+	return true;
 }
 
-bool SoundArchivePlayer::SetupStrmBuffer(const SoundArchive* pArchive,
-                                         void* pBuffer, u32 bufferSize) {
-    if (bufferSize < GetRequiredStrmBufferSize(pArchive)) {
-        return false;
-    }
+bool SoundArchivePlayer::SetupSeqTrack(SoundArchive const *arc ATTR_UNUSED,
+                                       int numTracks, void **buffer, void *endp)
+{
+	// TODO: why is this sizeof(MmlSeqTrack) instead of sizeof(SeqTrack)?
+	u32 requireSize = sizeof(detail::MmlSeqTrack) * numTracks;
 
-    int strmChannels = 0;
+	void *ep = ut::RoundUp(ut::AddOffsetToPtr(*buffer, requireSize), 4);
 
-    SoundArchive::SoundArchivePlayerInfo info;
-    if (pArchive->ReadSoundArchivePlayerInfo(&info)) {
-        strmChannels = info.strmChannelCount;
-    }
+	if (ut::ComparePtr(ep, endp) > 0)
+		return false;
 
-    mStrmBufferPool.Setup(pBuffer, bufferSize, strmChannels);
-    return true;
+	u32 createNum ATTR_MAYBE_UNUSED =
+		mMmlSeqTrackAllocator.Create(*buffer, requireSize);
+
+	NW4RAssert_Line(632, createNum == numTracks);
+
+	*buffer = ep;
+
+	return true;
 }
 
-void SoundArchivePlayer::Update() {
-    for (u32 i = 0; i < mSoundPlayerCount; i++) {
-        GetSoundPlayer(i).Update();
-    }
+bool SoundArchivePlayer::SetupStrmBuffer(SoundArchive const *arc, void *buffer,
+                                         u32 size)
+{
+	if (size < GetRequiredStrmBufferSize(arc))
+		return false;
 
-    mSeqSoundInstanceManager.SortPriorityList();
-    mStrmSoundInstanceManager.SortPriorityList();
-    mWaveSoundInstanceManager.SortPriorityList();
+	int strmChannelCount = 0;
+
+	SoundArchive::SoundArchivePlayerInfo soundArchivePlayerInfo;
+	if (arc->ReadSoundArchivePlayerInfo(&soundArchivePlayerInfo))
+		strmChannelCount = soundArchivePlayerInfo.strmChannelCount;
+
+	mStrmBufferPool.Setup(buffer, size, strmChannelCount);
+
+	return true;
 }
 
-const SoundArchive& SoundArchivePlayer::GetSoundArchive() const {
-    return *mSoundArchive;
+void SoundArchivePlayer::Update()
+{
+	for (u32 playerId = 0; playerId < mSoundPlayerCount; playerId++)
+		GetSoundPlayer(playerId).Update();
+
+	mSeqSoundInstanceManager.SortPriorityList();
+	mStrmSoundInstanceManager.SortPriorityList();
+	mWaveSoundInstanceManager.SortPriorityList();
 }
 
-SoundPlayer& SoundArchivePlayer::GetSoundPlayer(u32 idx) {
-    return mSoundPlayers[idx];
+SoundArchive const &SoundArchivePlayer::GetSoundArchive() const
+{
+	NW4RAssertMessage_Line(691, mSoundArchive, "Setup is not completed.");
+
+	return *mSoundArchive;
 }
 
-const void* SoundArchivePlayer::detail_GetFileAddress(u32 id) const {
-    const void* pAddr = mSoundArchive->detail_GetFileAddress(id);
-    if (pAddr != NULL) {
-        return pAddr;
-    }
+SoundPlayer &SoundArchivePlayer::GetSoundPlayer(u32 playerId)
+{
+	// specifically not the source variant
+	NW4RAssertHeaderClampedLValue_Line(697, playerId, 0, mSoundPlayerCount);
 
-    if (mFileManager != NULL) {
-        const void* pAddr = mFileManager->GetFileAddress(id);
-        if (pAddr != NULL) {
-            return pAddr;
-        }
-    }
-
-    SoundArchive::FileInfo file;
-    if (!mSoundArchive->detail_ReadFileInfo(id, &file)) {
-        return NULL;
-    }
-
-    for (unsigned int i = 0; i < file.filePosCount; i++) {
-        SoundArchive::FilePos pos;
-        if (!mSoundArchive->detail_ReadFilePos(id, i, &pos)) {
-            continue;
-        }
-
-        const void* pGroup = GetGroupAddress(pos.groupId);
-        if (pGroup == NULL) {
-            continue;
-        }
-
-        SoundArchive::GroupItemInfo item;
-        if (mSoundArchive->detail_ReadGroupItemInfo(pos.groupId, pos.index,
-                                                    &item)) {
-            return static_cast<const u8*>(pGroup) + item.offset;
-        }
-    }
-
-    return NULL;
+	return mSoundPlayers[playerId];
 }
 
-const void* SoundArchivePlayer::detail_GetFileWaveDataAddress(u32 id) const {
-    const void* pAddr = mSoundArchive->detail_GetWaveDataFileAddress(id);
-    if (pAddr != NULL) {
-        return pAddr;
-    }
+#if 0
+/* SoundArchivePlayer::GetSoundPlayer(char const *)
+ * ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14216)
+ */
+DECOMP_FORCE(NW4RAssertPointerNonnull_String(mSoundArchive));
+#endif
 
-    if (mFileManager != NULL) {
-        const void* pAddr = mFileManager->GetFileWaveDataAddress(id);
-        if (pAddr != NULL) {
-            return pAddr;
-        }
-    }
+void const *SoundArchivePlayer::detail_GetFileAddress(u32 fileId) const
+{
+	if (mFileManager)
+	{
+		if (void const *addr = mFileManager->GetFileAddress(fileId))
+			return addr;
+	}
 
-    SoundArchive::FileInfo file;
-    if (!mSoundArchive->detail_ReadFileInfo(id, &file)) {
-        return NULL;
-    }
+	if (void const *addr = mSoundArchive->detail_GetFileAddress(fileId))
+		return addr;
 
-    for (unsigned int i = 0; i < file.filePosCount; i++) {
-        SoundArchive::FilePos pos;
-        if (!mSoundArchive->detail_ReadFilePos(id, i, &pos)) {
-            continue;
-        }
+	if (void const *fileData = GetFileAddress(fileId))
+		return fileData;
 
-        const void* pGroup = GetGroupWaveDataAddress(pos.groupId);
-        if (pGroup == NULL) {
-            continue;
-        }
+	SoundArchive::FileInfo fileInfo;
+	if (!mSoundArchive->detail_ReadFileInfo(fileId, &fileInfo))
+		return nullptr;
 
-        SoundArchive::GroupItemInfo item;
-        if (mSoundArchive->detail_ReadGroupItemInfo(pos.groupId, pos.index,
-                                                    &item)) {
-            return static_cast<const u8*>(pGroup) + item.waveDataOffset;
-        }
-    }
+	for (unsigned i = 0; i < fileInfo.filePosCount; i++)
+	{
+		SoundArchive::FilePos filePos;
+		if (!mSoundArchive->detail_ReadFilePos(fileId, i, &filePos))
+			continue;
 
-    return NULL;
+		void const *groupData = GetGroupAddress(filePos.groupId);
+		if (!groupData)
+			continue;
+
+		SoundArchive::GroupItemInfo itemInfo;
+		if (!mSoundArchive->detail_ReadGroupItemInfo(filePos.groupId,
+		                                             filePos.index, &itemInfo))
+		{
+			continue;
+		}
+
+		return static_cast<byte_t const *>(groupData) + itemInfo.offset;
+	}
+
+	return nullptr;
 }
 
-const void* SoundArchivePlayer::GetGroupAddress(u32 id) const {
-    if (mGroupTable == NULL) {
-        return NULL;
-    }
+void const *SoundArchivePlayer::detail_GetFileWaveDataAddress(u32 fileId) const
+{
+	if (mFileManager)
+	{
+		if (void const *addr = mFileManager->GetFileWaveDataAddress(fileId))
+			return addr;
+	}
 
-    if (id >= mGroupTable->count) {
-        return NULL;
-    }
+	if (void const *addr = mSoundArchive->detail_GetWaveDataFileAddress(fileId))
+		return addr;
 
-    return mGroupTable->items[id].address;
+	if (void const *fileData = GetFileWaveDataAddress(fileId))
+		return fileData;
+
+	SoundArchive::FileInfo fileInfo;
+	if (!mSoundArchive->detail_ReadFileInfo(fileId, &fileInfo))
+		return nullptr;
+
+	for (unsigned i = 0; i < fileInfo.filePosCount; i++)
+	{
+		SoundArchive::FilePos filePos;
+		if (!mSoundArchive->detail_ReadFilePos(fileId, i, &filePos))
+			continue;
+
+		void const *groupData = GetGroupWaveDataAddress(filePos.groupId);
+		if (!groupData)
+			continue;
+
+		SoundArchive::GroupItemInfo itemInfo;
+		if (!mSoundArchive->detail_ReadGroupItemInfo(filePos.groupId,
+		                                             filePos.index, &itemInfo))
+		{
+			continue;
+		}
+
+		return static_cast<byte_t const *>(groupData) + itemInfo.waveDataOffset;
+	}
+
+	return nullptr;
 }
 
-void SoundArchivePlayer::SetGroupAddress(u32 id, const void* pAddr) {
-    if (mGroupTable == NULL) {
-        return;
-    }
+void const *SoundArchivePlayer::GetGroupAddress(u32 groupId) const
+{
+	if (!mGroupTable)
+	{
+		NW4RCheckMessage_Line(840, mGroupTable,
+		                      "Failed to SoundArchivePlayer::GetGroupAddress "
+		                      "because group table is not allocated.\n");
 
-    // @bug Index not validated
-    mGroupTable->items[id].address = pAddr;
+		return nullptr;
+	}
+
+	if (groupId >= mGroupTable->count)
+		return nullptr;
+
+	return mGroupTable->item[groupId].address;
 }
 
-const void* SoundArchivePlayer::GetGroupWaveDataAddress(u32 id) const {
-    if (mGroupTable == NULL) {
-        return NULL;
-    }
+#if 0
+// SoundArchivePlayer::SetGroupAddress ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14220)
+DECOMP_FORCE("Failed to SoundArchivePlayer::SetGroupAddress because group "
+             "table is not allocated.\n");
+#endif
 
-    if (id >= mGroupTable->count) {
-        return NULL;
-    }
+void SoundArchivePlayer::SetGroupAddress(u32 id, const void* pAddr)
+{
+	if (mGroupTable == NULL)
+		return;
 
-    return mGroupTable->items[id].waveDataAddress;
+	mGroupTable->item[id].address = pAddr;
 }
 
-void SoundArchivePlayer::SetGroupWaveDataAddress(u32 id, const void* pAddr) {
-    if (mGroupTable == NULL) {
-        return;
-    }
+void const *SoundArchivePlayer::GetGroupWaveDataAddress(u32 groupId) const
+{
+	if (!mGroupTable)
+	{
+		NW4RCheckMessage_Line(
+			891, mGroupTable,
+			"Failed to SoundArchivePlayer::GetGroupWaveDataAddress "
+			"because group table is not allocated.\n");
 
-    // @bug Index not validated
-    mGroupTable->items[id].waveDataAddress = pAddr;
+		return nullptr;
+	}
+
+	if (groupId >= mGroupTable->count)
+		return nullptr;
+
+	return mGroupTable->item[groupId].waveDataAddress;
+}
+
+void SoundArchivePlayer::SetGroupWaveDataAddress(u32 id, const void* pAddr)
+{
+	if (mGroupTable == NULL)
+		return;
+
+	mGroupTable->item[id].waveDataAddress = pAddr;
+}
+
+#if 0
+/* SoundArchivePlayer::SetGroupWaveDataAddress
+ * ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14222)
+ */
+DECOMP_FORCE(NW4RAssertHeaderClampedLValue_String(groupId));
+DECOMP_FORCE("Failed to SoundArchivePlayer::SetGroupWaveDataAddress because "
+             "group table is not allocated.\n");
+
+// SoundArchivePlayer::SetFileAddress ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14224)
+DECOMP_FORCE("Failed to SoundArchivePlayer::SetFileAddress because file table "
+             "is not allocated.\n");
+
+/* SoundArchivePlayer::SetFileWaveDataAddress
+ * ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14226)
+ */
+DECOMP_FORCE(NW4RAssertHeaderClampedLValue_String(fileId));
+DECOMP_FORCE("Failed to SoundArchivePlayer::SetFileWaveDataAddress because "
+             "file table is not allocated.\n");
+#endif
+
+void const *SoundArchivePlayer::GetFileAddress(u32 fileId) const
+{
+	if (!mFileTable)
+	{
+		NW4RCheckMessage_Line(942, mFileTable,
+		                      "Failed to SoundArchivePlayer::GetFileAddress "
+		                      "because file table is not allocated.\n");
+
+		return nullptr;
+	}
+
+	if (fileId >= mFileTable->count)
+		return nullptr;
+
+	return mFileTable->item[fileId].address;
+}
+
+void const *SoundArchivePlayer::GetFileWaveDataAddress(u32 fileId) const
+{
+	if (!mFileTable)
+	{
+		NW4RCheckMessage_Line(
+			993, mFileTable,
+			"Failed to SoundArchivePlayer::GetFileWaveDataAddress "
+			"because file table is not allocated.\n");
+
+		return nullptr;
+	}
+
+	if (fileId >= mFileTable->count)
+		return nullptr;
+
+	return mFileTable->item[fileId].waveDataAddress;
 }
 
 SoundStartable::StartResult SoundArchivePlayer::detail_SetupSound(
-    SoundHandle* pHandle, u32 id, detail::BasicSound::AmbientArgInfo* pArgInfo,
-    detail::ExternalSoundPlayer* pExtPlayer, bool hold,
-    const StartInfo* pStartInfo) {
+	SoundHandle *handle, u32 soundId, bool holdFlag,
+	SoundStartable::StartInfo const *startInfo)
+{
+	return detail_SetupSoundImpl(handle, soundId, nullptr, nullptr, holdFlag,
+	                             startInfo);
+}
 
-    if (!IsAvailable()) {
-        return SoundStartable::START_ERR_NOT_AVAILABLE;
-    }
+template <class Sound>
+Sound *SoundArchivePlayer::AllocSound(
+	detail::SoundInstanceManager<Sound> *manager, u32 soundId,
+	int priority, int ambientPriority,
+	detail::BasicSound::AmbientInfo *ambientArgInfo)
+{
+	NW4RAssertPointerNonnull_Line(1050, manager);
 
-    if (pHandle->IsAttachedSound()) {
-        pHandle->DetachSound();
-    }
+	Sound *sound = manager->Alloc(priority, ambientPriority);
+	if (!sound)
+		return nullptr;
 
-    SoundArchive::SoundInfo sndInfo;
-    if (!mSoundArchive->ReadSoundInfo(id, &sndInfo)) {
-        return SoundStartable::START_ERR_INVALID_SOUNDID;
-    }
+	sound->SetId(soundId);
 
-    u32 playerId = sndInfo.playerId;
-    int playerPriority = sndInfo.playerPriority;
+	if (ambientArgInfo)
+		sound->SetAmbientInfo(*ambientArgInfo);
 
-    SoundStartable::StartInfo::StartOffsetType startType =
-        SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC;
+	return sound;
+}
 
-    int startOffset = 0;
+SoundStartable::StartResult SoundArchivePlayer::detail_SetupSoundImpl(
+	SoundHandle *handle, u32 soundId,
+	detail::BasicSound::AmbientInfo *ambientArgInfo, SoundActor *actor,
+	bool holdFlag, SoundStartable::StartInfo const *startInfo)
+{
+	NW4RAssertPointerNonnull_Line(1108, handle);
 
-    if (pStartInfo != NULL) {
-        if (pStartInfo->enableFlag &
-            SoundStartable::StartInfo::ENABLE_START_OFFSET) {
-            startType = pStartInfo->startOffsetType;
-            startOffset = pStartInfo->startOffset;
-        }
+	if (!IsAvailable())
+		return START_ERR_NOT_AVAILABLE;
 
-        if (pStartInfo->enableFlag &
-            SoundStartable::StartInfo::ENABLE_PLAYER_ID) {
-            playerId = pStartInfo->playerId;
-        }
+	if (handle->IsAttachedSound())
+		handle->DetachSound();
 
-        if (pStartInfo->enableFlag &
-            SoundStartable::StartInfo::ENABLE_PLAYER_PRIORITY) {
-            playerPriority = pStartInfo->playerPriority;
-        }
-    }
+	SoundArchive::SoundInfo soundInfo;
+	if (!mSoundArchive->ReadSoundInfo(soundId, &soundInfo))
+		return START_ERR_INVALID_SOUNDID;
 
-    int playerPriorityStart = hold ? playerPriority - 1 : playerPriority;
+	SoundStartable::StartInfo::StartOffsetType startOffsetType =
+		SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC;
 
-    SoundPlayer& rPlayer = GetSoundPlayer(playerId);
-    detail::BasicSound* pSound = NULL;
+	int startOffset = 0;
+	int playerPriority = soundInfo.playerPriority;
+	u32 playerId = soundInfo.playerId;
+	int actorPlayerId = soundInfo.actorPlayerId;
+	void const *externalSeqDataAddress = nullptr;
+	char const *externalSeqStartLabel = nullptr;
 
-    switch (mSoundArchive->GetSoundType(id)) {
-    case SOUND_TYPE_SEQ: {
-        SoundArchive::SeqSoundInfo seqInfo;
-        if (!mSoundArchive->detail_ReadSeqSoundInfo(id, &seqInfo)) {
-            return SoundStartable::START_ERR_INVALID_SOUNDID;
-        }
+	if (startInfo)
+	{
+		if (startInfo->enableFlag
+		    & SoundStartable::StartInfo::ENABLE_START_OFFSET)
+		{
+			startOffsetType = startInfo->startOffsetType;
+			startOffset = startInfo->startOffset;
+		}
 
-        detail::SeqSound* pSeqSound = rPlayer.detail_AllocSeqSound(
-            playerPriority, playerPriorityStart, pArgInfo, pExtPlayer, id,
-            &mSeqSoundInstanceManager);
+		if (startInfo->enableFlag
+		    & SoundStartable::StartInfo::ENABLE_PLAYER_PRIORITY)
+		{
+			playerPriority = startInfo->playerPriority;
+		}
 
-        if (pSeqSound == NULL) {
-            return SoundStartable::START_ERR_LOW_PRIORITY;
-        }
+		if (startInfo->enableFlag & SoundStartable::StartInfo::ENABLE_PLAYER_ID)
+			playerId = startInfo->playerId;
 
-        pSeqSound->SetId(id);
+		if (startInfo->enableFlag
+		    & SoundStartable::StartInfo::ENABLE_ACTOR_PLAYER_ID)
+		{
+			actorPlayerId = startInfo->actorPlayerId;
+		}
 
-        SoundStartable::StartResult result = PrepareSeqImpl(
-            pSeqSound, &sndInfo, &seqInfo, startType, startOffset, 1);
+		if (startInfo->enableFlag
+		    & SoundStartable::StartInfo::ENABLE_SEQ_SOUND_INFO)
+		{
+			externalSeqDataAddress = startInfo->seqSoundInfo.seqDataAddress;
+			externalSeqStartLabel = startInfo->seqSoundInfo.startLocationLabel;
+		}
+	}
 
-        if (result != SoundStartable::START_SUCCESS) {
-            pSeqSound->Shutdown();
-            return result;
-        }
+	int priority = playerPriority;
+	if (holdFlag)
+		priority--;
 
-        pSound = pSeqSound;
-        break;
-    }
+	int ambientPriority = 0;
+	if (ambientArgInfo)
+	{
+		ambientPriority =
+			detail::BasicSound::GetAmbientPriority(*ambientArgInfo, soundId);
+	}
 
-    case SOUND_TYPE_STRM: {
-        SoundArchive::StrmSoundInfo strmInfo;
-        if (!mSoundArchive->detail_ReadStrmSoundInfo(id, &strmInfo)) {
-            return SoundStartable::START_ERR_INVALID_SOUNDID;
-        }
+	int allocPriority = priority + ambientPriority;
+	allocPriority = ut::Clamp(allocPriority, 0, 127);
 
-        detail::StrmSound* pStrmSound = rPlayer.detail_AllocStrmSound(
-            playerPriority, playerPriorityStart, pArgInfo, pExtPlayer, id,
-            &mStrmSoundInstanceManager);
+	detail::ExternalSoundPlayer *extPlayer = nullptr;
+	if (actor)
+	{
+		extPlayer = actor->detail_GetActorPlayer(actorPlayerId);
+		if (!extPlayer)
+		{
+			// this feels like a macro since it has the name in the string
+			NW4RWarningMessage_Line(1181,
+			                        "actorPlayerId(%d) is out of range. (0-%d)",
+			                        actorPlayerId, 3);
 
-        if (pStrmSound == NULL) {
-            return SoundStartable::START_ERR_LOW_PRIORITY;
-        }
+			return START_ERR_INVALID_PARAMETER;
+		}
+	}
 
-        pStrmSound->SetId(id);
+	detail::SoundThread::AutoLock lock;
 
-        SoundStartable::StartResult result = PrepareStrmImpl(
-            pStrmSound, &sndInfo, &strmInfo, startType, startOffset, 1);
+	SoundPlayer &player = GetSoundPlayer(playerId);
+	if (!player.detail_CanPlaySound(allocPriority))
+		return START_ERR_LOW_PRIORITY;
 
-        if (result != SoundStartable::START_SUCCESS) {
-            pStrmSound->Shutdown();
-            return result;
-        }
+	if (extPlayer)
+	{
+		if (!extPlayer->detail_CanPlaySound(allocPriority))
+			return START_ERR_LOW_PRIORITY;
+	}
 
-        pSound = pStrmSound;
-        break;
-    }
+	detail::BasicSound *sound = nullptr;
+	detail::SeqSound *seqSound = nullptr;
+	detail::StrmSound *strmSound = nullptr;
+	detail::WaveSound *waveSound = nullptr;
 
-    case SOUND_TYPE_WAVE: {
-        SoundArchive::WaveSoundInfo waveInfo;
-        if (!mSoundArchive->detail_ReadWaveSoundInfo(id, &waveInfo)) {
-            return SoundStartable::START_ERR_INVALID_SOUNDID;
-        }
+	switch (mSoundArchive->GetSoundType(soundId))
+	{
+	case SoundArchive::SOUND_TYPE_SEQ:
+		seqSound = AllocSound(&mSeqSoundInstanceManager, soundId, priority,
+		                        ambientPriority, ambientArgInfo);
+		if (!seqSound)
+		{
+			NW4RCheckMessage_Line(
+				1220,
+				!detail::Debug_GetWarningFlag(
+					DEBUG_WARNING_NOT_ENOUGH_SEQSOUND),
+				"Failed to start sound (id:%d) for not enough SeqSound "
+				"instance.",
+				soundId);
 
-        detail::WaveSound* pWaveSound = rPlayer.detail_AllocWaveSound(
-            playerPriority, playerPriorityStart, pArgInfo, pExtPlayer, id,
-            &mWaveSoundInstanceManager);
+			return START_ERR_NOT_ENOUGH_INSTANCE;
+		}
 
-        if (pWaveSound == NULL) {
-            return SoundStartable::START_ERR_LOW_PRIORITY;
-        }
+		sound = seqSound;
+		break;
 
-        pWaveSound->SetId(id);
+	case SoundArchive::SOUND_TYPE_STRM:
+		strmSound = AllocSound(&mStrmSoundInstanceManager, soundId, priority,
+		                        ambientPriority, ambientArgInfo);
+		if (!strmSound)
+		{
+			NW4RCheckMessage_Line(
+				1240,
+				!detail::Debug_GetWarningFlag(
+					DEBUG_WARNING_NOT_ENOUGH_STRMSOUND),
+				"Failed to start sound (id:%d) for not enough StrmSound "
+				"instance.",
+				soundId);
 
-        SoundStartable::StartResult result = PrepareWaveSoundImpl(
-            pWaveSound, &sndInfo, &waveInfo, startType, startOffset, 1);
+			return START_ERR_NOT_ENOUGH_INSTANCE;
+		}
 
-        if (result != SoundStartable::START_SUCCESS) {
-            pWaveSound->Shutdown();
-            return result;
-        }
+		sound = strmSound;
+		break;
 
-        pSound = pWaveSound;
-        break;
-    }
+	case SoundArchive::SOUND_TYPE_WAVE:
+		waveSound = AllocSound(&mWaveSoundInstanceManager, soundId, priority,
+		                        ambientPriority, ambientArgInfo);
+		if (!waveSound)
+		{
+			NW4RCheckMessage_Line(
+				1260,
+				!detail::Debug_GetWarningFlag(
+					DEBUG_WARNING_NOT_ENOUGH_WAVESOUND),
+				"Failed to start sound (id:%d) for not enough WaveSound "
+				"instance.",
+				soundId);
 
-    default: {
-        return SoundStartable::START_ERR_INVALID_SOUNDID;
-    }
-    }
+			return START_ERR_NOT_ENOUGH_INSTANCE;
+		}
 
-    pHandle->detail_AttachSound(pSound);
-    return SoundStartable::START_SUCCESS;
+		sound = waveSound;
+		break;
+
+	default:
+		return START_ERR_INVALID_SOUNDID;
+	}
+
+	if (!player.detail_AppendSound(sound))
+	{
+		sound->Shutdown();
+
+		return START_ERR_UNKNOWN;
+	}
+
+	switch (mSoundArchive->GetSoundType(soundId))
+	{
+	case SoundArchive::SOUND_TYPE_SEQ:
+	{
+		NW4RAssertPointerNonnull_Line(1282, seqSound);
+
+		player.detail_AllocPlayerHeap(seqSound);
+
+		SoundArchive::SeqSoundInfo info;
+		if (!mSoundArchive->ReadSeqSoundInfo(soundId, &info))
+		{
+			seqSound->Shutdown();
+			return START_ERR_INVALID_SOUNDID;
+		}
+
+		SoundStartable::StartResult result = PrepareSeqImpl(
+			seqSound, &soundInfo, &info, startOffsetType,
+			startOffset, externalSeqDataAddress, externalSeqStartLabel);
+
+		if (result == SoundStartable::START_SUCCESS)
+			break;
+
+		seqSound->Shutdown();
+		return result;
+	}
+
+	case SoundArchive::SOUND_TYPE_STRM:
+	{
+		NW4RAssertPointerNonnull_Line(1314, strmSound);
+
+		SoundArchive::StrmSoundInfo info;
+		if (!mSoundArchive->detail_ReadStrmSoundInfo(soundId, &info))
+		{
+			strmSound->Shutdown();
+			return START_ERR_INVALID_SOUNDID;
+		}
+
+		SoundStartable::StartResult result = PrepareStrmImpl(
+			strmSound, &soundInfo, &info, startOffsetType,
+			startOffset);
+
+		if (result == SoundStartable::START_SUCCESS)
+			break;
+
+		strmSound->Shutdown();
+		return result;
+	}
+
+	case SoundArchive::SOUND_TYPE_WAVE:
+	{
+		NW4RAssertPointerNonnull_Line(1341, waveSound);
+
+		SoundArchive::WaveSoundInfo info;
+		if (!mSoundArchive->detail_ReadWaveSoundInfo(soundId, &info))
+		{
+			waveSound->Shutdown();
+			return START_ERR_INVALID_SOUNDID;
+		}
+
+		SoundStartable::StartResult result = PrepareWaveSoundImpl(
+			waveSound, &soundInfo, &info, startOffsetType,
+			startOffset);
+
+		if (result == SoundStartable::START_SUCCESS)
+			break;
+
+		waveSound->Shutdown();
+		return result;
+	}
+
+	default:
+		NW4RPanic_Line(1367);
+
+		sound->Shutdown();
+		return START_ERR_INVALID_SOUNDID;
+	}
+
+	if (extPlayer)
+	{
+		if (!extPlayer->AppendSound(sound))
+		{
+			sound->Shutdown();
+			return START_ERR_UNKNOWN;
+		}
+	}
+
+	if (actor)
+		sound->AttachSoundActor(actor);
+
+	if (holdFlag)
+		sound->SetPlayerPriority(playerPriority);
+
+	handle->detail_AttachSound(sound);
+
+	return START_SUCCESS;
 }
 
 SoundStartable::StartResult SoundArchivePlayer::PrepareSeqImpl(
-    detail::SeqSound* pSound, const SoundArchive::SoundInfo* pSndInfo,
-    const SoundArchive::SeqSoundInfo* pSeqInfo,
-    SoundStartable::StartInfo::StartOffsetType startType, int startOffset,
-    int voices) {
+	detail::SeqSound *sound, SoundArchive::SoundInfo const *commonInfo,
+	SoundArchive::SeqSoundInfo const *info,
+	SoundStartable::StartInfo::StartOffsetType startOffsetType, int startOffset,
+	void const *externalSeqDataAddress, char const *externalSeqStartLabel)
+{
+	NW4RAssertPointerNonnull_Line(1422, info);
 
-    const void* pSeqBin = detail_GetFileAddress(pSndInfo->fileId);
-    ut::FileStream* pFileStream = NULL;
+	detail::SeqFile const *seqFile = nullptr;
+	ut::FileStream *fileStream = nullptr;
+	u32 seqOffset = 0;
+	u32 allocTrack = info->allocTrack;
 
-    if (pSeqBin == NULL) {
-        detail::PlayerHeap* pHeap = pSound->GetPlayerHeap();
-        if (pHeap == NULL) {
-            return SoundStartable::START_ERR_NOT_DATA_LOADED;
-        }
+	if (externalSeqDataAddress)
+	{
+		seqFile = static_cast<detail::SeqFile const *>(externalSeqDataAddress);
+		seqOffset = 0;
 
-        void* pStreamBuffer = pSound->GetFileStreamBuffer();
-        u32 streamBufferSize = pSound->GetFileStreamBufferSize();
+		detail::SeqFileReader seqFileReader(seqFile);
 
-        pFileStream = mSoundArchive->detail_OpenFileStream(
-            pSndInfo->fileId, pStreamBuffer, streamBufferSize);
+		if (externalSeqStartLabel)
+		{
+			bool result = seqFileReader.ReadOffsetByLabel(externalSeqStartLabel,
+			                                              &seqOffset);
+			if (!result)
+				return START_ERR_INVALID_SEQ_START_LOCATION_LABEL;
+		}
 
-        if (pFileStream == NULL) {
-            return SoundStartable::START_ERR_CANNOT_OPEN_FILE;
-        }
+		seqOffset = detail::MmlParser::ParseAllocTrack(
+			seqFileReader.GetBaseAddress(), seqOffset, &allocTrack);
+	}
 
-        if (pHeap->GetFreeSize() < pFileStream->GetSize()) {
-            pFileStream->Close();
-            return SoundStartable::START_ERR_NOT_ENOUGH_PLAYER_HEAP;
-        }
-    }
+	if (!seqFile)
+	{
+		seqFile = static_cast<detail::SeqFile const *>(
+			detail_GetFileAddress(commonInfo->fileId));
+		seqOffset = info->dataOffset;
 
-    detail::SeqPlayer::SetupResult result = pSound->Setup(
-        mSeqTrackAllocator, pSeqInfo->allocTrack, voices, &mSeqCallback);
+		if (externalSeqStartLabel)
+		{
+			detail::SeqFileReader seqFileReader(seqFile);
 
-    while (result != detail::SeqPlayer::SETUP_SUCCESS) {
-        if (result == detail::SeqPlayer::SETUP_ERR_CANNOT_ALLOCATE_TRACK) {
-            if (mSeqSoundInstanceManager.GetActiveCount() == 1) {
-                if (pFileStream != NULL) {
-                    pFileStream->Close();
-                }
+			bool result = seqFileReader.ReadOffsetByLabel(externalSeqStartLabel,
+			                                              &seqOffset);
+			if (!result)
+				return START_ERR_INVALID_SEQ_START_LOCATION_LABEL;
+		}
+	}
 
-                return SoundStartable::START_ERR_LOW_PRIORITY;
-            }
+	if (!seqFile)
+	{
+		detail::PlayerHeap *heap = sound->GetPlayerHeap();
+		if (!heap)
+			return START_ERR_NOT_DATA_LOADED;
 
-            detail::BasicSound* pDropSound =
-                mSeqSoundInstanceManager.GetLowestPrioritySound();
+		void *fileStreamBuffer = sound->GetFileStreamBuffer();
+		s32 fileStreamBufferSize = sound->GetFileStreamBufferSize();
+		NW4RAssertPointerNonnull_Line(1477, fileStreamBuffer);
 
-            if (pSound == pDropSound) {
-                if (pFileStream != NULL) {
-                    pFileStream->Close();
-                }
+		fileStream = mSoundArchive->detail_OpenFileStream(
+			commonInfo->fileId, fileStreamBuffer, fileStreamBufferSize);
+		if (!fileStream)
+			return START_ERR_CANNOT_OPEN_FILE;
 
-                return SoundStartable::START_ERR_LOW_PRIORITY;
-            }
+		if (heap->GetFreeSize() < fileStream->GetSize())
+		{
+			fileStream->Close();
+			return SoundStartable::START_ERR_NOT_ENOUGH_PLAYER_HEAP;
+		}
+	}
 
-            pDropSound->Stop(0);
-            result = pSound->Setup(mSeqTrackAllocator, pSeqInfo->allocTrack,
-                                   voices, &mSeqCallback);
-        } else {
-            return SoundStartable::START_ERR_UNKNOWN;
-        }
-    }
+	detail::SeqPlayer::SetupResult result =
+		sound->Setup(mSeqTrackAllocator, allocTrack, &mSeqCallback);
 
-    pSound->SetInitialVolume(pSndInfo->volume / 127.0f);
-    pSound->SetChannelPriority(pSeqInfo->channelPriority);
-    pSound->SetReleasePriorityFix(pSeqInfo->releasePriorityFixFlag);
-    pSound->SetRemoteFilter(pSndInfo->remoteFilter);
-    pSound->SetPanMode(pSndInfo->panMode);
-    pSound->SetPanCurve(pSndInfo->panCurve);
+	while (result != detail::SeqPlayer::SETUP_SUCCESS)
+	{
+		if (result == detail::SeqPlayer::SETUP_ERR_CANNOT_ALLOCATE_TRACK)
+		{
+			if (mSeqSoundInstanceManager.GetActiveCount() == 1)
+			{
+				if (fileStream)
+					fileStream->Close();
 
-    detail::SeqPlayer::OffsetType seqOffsetType;
+				NW4RCheckMessage_Line(1520,
+				                      !detail::Debug_GetWarningFlag(
+				                          DEBUG_WARNING_NOT_ENOUGH_SEQTRACK),
+				                      "Failed to start sound (id:%d) for not "
+				                      "enough SeqTrack instance.",
+				                      sound->GetId());
 
-    switch (startType) {
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC: {
-        seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_MILLISEC;
-        break;
-    }
+				return START_ERR_NOT_ENOUGH_INSTANCE;
+			}
 
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_TICK: {
-        seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_TICK;
-        break;
-    }
+			detail::SeqSound *lowest =
+				mSeqSoundInstanceManager.GetLowestPrioritySound();
 
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_SAMPLE: {
-        seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_TICK;
-        startOffset = 0;
-        break;
-    }
+			if (sound == lowest)
+			{
+				if (fileStream)
+					fileStream->Close();
 
-    default: {
-        seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_TICK;
-        startOffset = 0;
-        break;
-    }
-    }
+				NW4RCheckMessage_Line(1536,
+				                      !detail::Debug_GetWarningFlag(
+				                          DEBUG_WARNING_NOT_ENOUGH_SEQTRACK),
+				                      "Failed to start sound (id:%d) for not "
+				                      "enough SeqTrack instance.",
+				                      sound->GetId());
 
-    if (pSeqBin != NULL) {
-        detail::SeqFileReader reader(pSeqBin);
-        pSound->Prepare(reader.GetBaseAddress(), pSeqInfo->dataOffset,
-                        seqOffsetType, startOffset);
-    } else {
-        pSound->Prepare(pFileStream, pSeqInfo->dataOffset, seqOffsetType,
-                        startOffset);
-    }
+				return START_ERR_NOT_ENOUGH_INSTANCE;
+			}
 
-    return SoundStartable::START_SUCCESS;
+			NW4RCheckMessage_Line(
+				1545,
+				!detail::Debug_GetWarningFlag(
+					DEBUG_WARNING_NOT_ENOUGH_SEQTRACK),
+				"Sound (id:%d) is stopped for not enough SeqTrack instance.",
+				lowest->GetId());
+
+			lowest->Stop(0);
+			result = sound->Setup(mSeqTrackAllocator, allocTrack,
+			                      &mSeqCallback);
+		}
+		else
+		{
+			return SoundStartable::START_ERR_UNKNOWN;
+		}
+	}
+
+	UpdateCommonSoundParam(sound, commonInfo);
+
+	sound->SetChannelPriority(info->channelPriority);
+	sound->SetReleasePriorityFix(info->releasePriorityFixFlag);
+	sound->SetSeqUserprocCallback(mSeqUserprocCallback,
+	                              mSeqUserprocCallbackArg);
+
+	detail::SeqPlayer::OffsetType seqOffsetType;
+	switch (startOffsetType)
+	{
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC:
+		seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_MILLISEC;
+		break;
+
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_TICK:
+		seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_TICK;
+		break;
+
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_SAMPLE:
+		seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_TICK;
+		startOffset = 0;
+		break;
+
+	default:
+		seqOffsetType = detail::SeqPlayer::OFFSET_TYPE_TICK;
+		startOffset = 0;
+		break;
+	}
+
+	if (seqFile)
+	{
+		detail::SeqFileReader seqFileReader(seqFile);
+
+		sound->Prepare(seqFileReader.GetBaseAddress(), seqOffset, seqOffsetType,
+		               startOffset);
+	}
+	else
+	{
+		sound->Prepare(fileStream, seqOffset, seqOffsetType, startOffset);
+	}
+
+	return SoundStartable::START_SUCCESS;
 }
 
 SoundStartable::StartResult SoundArchivePlayer::PrepareStrmImpl(
-    detail::StrmSound* pSound, const SoundArchive::SoundInfo* pSndInfo,
-    const SoundArchive::StrmSoundInfo* pStrmInfo,
-    SoundStartable::StartInfo::StartOffsetType startType, int startOffset,
-    int voices) {
+	detail::StrmSound *sound, SoundArchive::SoundInfo const *commonInfo,
+	SoundArchive::StrmSoundInfo const *info,
+	SoundStartable::StartInfo::StartOffsetType startOffsetType, int startOffset)
+{
+	detail::StrmPlayer::SetupResult setupResult = sound->Setup(
+		&mStrmBufferPool, info->allocChannelCount, info->allocTrackFlag);
 
-    // StrmSoundInfo is empty in this version of NW4R
-#pragma unused(pStrmInfo)
+	while (setupResult != detail::StrmPlayer::SETUP_SUCCESS)
+	{
+		if (setupResult == detail::StrmPlayer::SETUP_ERR_CANNOT_ALLOCATE_BUFFER)
+		{
+			if (mStrmSoundInstanceManager.GetActiveCount() == 1)
+			{
+				NW4RCheckMessage_Line(1648,
+				                      !detail::Debug_GetWarningFlag(
+				                          DEBUG_WARNING_NOT_ENOUGH_SEQTRACK),
+				                      "Failed to start sound (id:%d) for not "
+				                      "enough StrmChannel instance.",
+				                      sound->GetId());
 
-    detail::StrmPlayer::StartOffsetType strmOffsetType;
+				return START_ERR_NOT_ENOUGH_INSTANCE;
+			}
 
-    switch (startType) {
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC: {
-        strmOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_MILLISEC;
-        break;
-    }
+			detail::StrmSound *lowest =
+				mStrmSoundInstanceManager.GetLowestPrioritySound();
+			if (sound == lowest)
+			{
+				NW4RCheckMessage_Line(1660,
+				                      !detail::Debug_GetWarningFlag(
+				                          DEBUG_WARNING_NOT_ENOUGH_SEQTRACK),
+				                      "Failed to start sound (id:%d) for not "
+				                      "enough StrmChannel instance.",
+				                      sound->GetId());
 
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_TICK: {
-        strmOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_SAMPLE;
-        startOffset = 0;
-        break;
-    }
+				return START_ERR_NOT_ENOUGH_INSTANCE;
+			}
 
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_SAMPLE: {
-        strmOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_SAMPLE;
-        break;
-    }
+			NW4RCheckMessage_Line(
+				1669,
+				!detail::Debug_GetWarningFlag(
+					DEBUG_WARNING_NOT_ENOUGH_STRMCHANNEL),
+				"Sound (id:%d) is stopped for not enough StrmChannel instance.",
+				lowest->GetId());
 
-    default: {
-        strmOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_SAMPLE;
-        startOffset = 0;
-        break;
-    }
-    }
+			lowest->Stop(0);
+			setupResult =
+				sound->Setup(&mStrmBufferPool, info->allocChannelCount,
+			                 info->allocTrackFlag);
+		}
+		else
+		{
+			return SoundStartable::START_ERR_UNKNOWN;
+		}
+	}
 
-    void* pStreamBuffer = pSound->GetFileStreamBuffer();
-    u32 streamBufferSize = pSound->GetFileStreamBufferSize();
+	detail::StrmPlayer::StartOffsetType strmStartOffsetType;
+	switch (startOffsetType)
+	{
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC:
+		strmStartOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_MILLISEC;
+		break;
 
-    ut::FileStream* pFileStream = mSoundArchive->detail_OpenFileStream(
-        pSndInfo->fileId, pStreamBuffer, streamBufferSize);
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_TICK:
+		strmStartOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_SAMPLE;
+		startOffset = 0;
+		break;
 
-    if (pFileStream == NULL) {
-        return SoundStartable::START_ERR_CANNOT_OPEN_FILE;
-    }
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_SAMPLE:
+		strmStartOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_SAMPLE;
+		break;
 
-    if (!pSound->Prepare(&mStrmBufferPool, strmOffsetType, startOffset, voices,
-                         pFileStream)) {
-        return SoundStartable::START_ERR_UNKNOWN;
-    }
+	default:
+		strmStartOffsetType = detail::StrmPlayer::START_OFFSET_TYPE_SAMPLE;
+		startOffset = 0;
+		break;
+	}
 
-    pSound->SetInitialVolume(pSndInfo->volume / 127.0f);
-    pSound->SetRemoteFilter(pSndInfo->remoteFilter);
-    pSound->SetPanMode(pSndInfo->panMode);
-    pSound->SetPanCurve(pSndInfo->panCurve);
+	void *fileStreamBuffer = sound->GetFileStreamBuffer();
+	s32 fileStreamBufferSize = sound->GetFileStreamBufferSize();
+	NW4RAssertPointerNonnull_Line(1704, fileStreamBuffer);
 
-    return SoundStartable::START_SUCCESS;
+	ut::FileStream *fileStream = mSoundArchive->detail_OpenFileStream(
+		commonInfo->fileId, fileStreamBuffer, fileStreamBufferSize);
+	if (!fileStream)
+		return START_ERR_CANNOT_OPEN_FILE;
+
+	bool result = sound->Prepare(strmStartOffsetType, startOffset, fileStream);
+	if (!result)
+		return START_ERR_UNKNOWN;
+
+	UpdateCommonSoundParam(sound, commonInfo);
+
+	return SoundStartable::START_SUCCESS;
 }
 
 SoundStartable::StartResult SoundArchivePlayer::PrepareWaveSoundImpl(
-    detail::WaveSound* pSound, const SoundArchive::SoundInfo* pSndInfo,
-    const SoundArchive::WaveSoundInfo* pWsdInfo,
-    SoundStartable::StartInfo::StartOffsetType startType, int startOffset,
-    int voices) {
+	detail::WaveSound *sound, SoundArchive::SoundInfo const *commonInfo,
+	SoundArchive::WaveSoundInfo const *info,
+	SoundStartable::StartInfo::StartOffsetType startOffsetType, int startOffset)
+{
+	NW4RAssertPointerNonnull_Line(1751, info);
 
-    const void* pWsdBin = detail_GetFileAddress(pSndInfo->fileId);
-    if (pWsdBin == NULL) {
-        return SoundStartable::START_ERR_NOT_DATA_LOADED;
-    }
+	void const *wsdData = detail_GetFileAddress(commonInfo->fileId);
+	if (!wsdData)
+		return START_ERR_NOT_DATA_LOADED;
 
-    detail::WsdPlayer::StartOffsetType wsdOffsetType;
+	detail::WsdPlayer::StartOffsetType wsdStartOffsetType;
+	switch (startOffsetType)
+	{
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC:
+		wsdStartOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_MILLISEC;
+		break;
 
-    switch (startType) {
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_MILLISEC: {
-        wsdOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_MILLISEC;
-        break;
-    }
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_TICK:
+		wsdStartOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_SAMPLE;
+		startOffset = 0;
+		break;
 
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_TICK: {
-        wsdOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_SAMPLE;
-        startOffset = 0;
-        break;
-    }
+	case SoundStartable::StartInfo::START_OFFSET_TYPE_SAMPLE:
+		wsdStartOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_SAMPLE;
+		break;
 
-    case SoundStartable::StartInfo::START_OFFSET_TYPE_SAMPLE: {
-        wsdOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_SAMPLE;
-        break;
-    }
+	default:
+		wsdStartOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_SAMPLE;
+		startOffset = 0;
+		break;
+	}
 
-    default: {
-        wsdOffsetType = detail::WsdPlayer::START_OFFSET_TYPE_SAMPLE;
-        startOffset = 0;
-        break;
-    }
-    }
+	bool result =
+		sound->Prepare(wsdData, info->subNo, wsdStartOffsetType, startOffset,
+	                   &mWsdCallback, commonInfo->fileId);
+	if (!result)
+		return START_ERR_UNKNOWN;
 
-    if (!pSound->Prepare(pWsdBin, pWsdInfo->subNo, wsdOffsetType, startOffset,
-                         voices, &mWsdCallback, pSndInfo->fileId)) {
-        return SoundStartable::START_ERR_UNKNOWN;
-    }
+	UpdateCommonSoundParam(sound, commonInfo);
 
-    pSound->SetInitialVolume(pSndInfo->volume / 127.0f);
-    pSound->SetChannelPriority(pWsdInfo->channelPriority);
-    pSound->SetReleasePriorityFix(pWsdInfo->releasePriorityFixFlag);
-    pSound->SetRemoteFilter(pSndInfo->remoteFilter);
-    pSound->SetPanMode(pSndInfo->panMode);
-    pSound->SetPanCurve(pSndInfo->panCurve);
+	sound->SetChannelPriority(info->channelPriority);
+	sound->SetReleasePriorityFix(info->releasePriorityFixFlag);
 
-    return SoundStartable::START_SUCCESS;
+	return SoundStartable::START_SUCCESS;
 }
+
+void SoundArchivePlayer::UpdateCommonSoundParam(
+	detail::BasicSound *sound, SoundArchive::SoundInfo const *commonInfo)
+{
+	NW4RAssertPointerNonnull_Line(1814, sound);
+	NW4RAssertPointerNonnull_Line(1815, commonInfo);
+
+	sound->SetInitialVolume(commonInfo->volume / 127.0f);
+	sound->SetRemoteFilter(commonInfo->remoteFilter);
+	sound->SetPanMode(commonInfo->panMode);
+	sound->SetPanCurve(commonInfo->panCurve);
+}
+
+#if 0
+/* SoundArchivePlayer::LoadGroup(u32, SoundMemoryAllocatable *, u32)
+ * ([R89JEL]:/bin/RVL/Debug/mainD.MAP:14234)
+ */
+DECOMP_FORCE(NW4RAssertAligned_String(loadBlockSize, 32));
+#endif
 
 bool SoundArchivePlayer::LoadGroup(u32 id, SoundMemoryAllocatable* pAllocatable,
                                    u32 blockSize) {
@@ -902,112 +1397,128 @@ bool SoundArchivePlayer::LoadGroup(const char* pLabel,
     return LoadGroup(id, pAllocatable, blockSize);
 }
 
-void SoundArchivePlayer::InvalidateData(const void* pStart, const void* pEnd) {
-    if (mGroupTable == NULL) {
-        return;
-    }
-
-    for (int i = 0; i < mGroupTable->count; i++) {
-        const void* pAddr = mGroupTable->items[i].address;
-
-        if (pStart <= pAddr && pAddr <= pEnd) {
-            mGroupTable->items[i].address = NULL;
-        }
-    }
+bool SoundArchivePlayer::IsLoadedGroup(u32 groupId) const
+{
+	void const *groupAddress = GetGroupAddress(groupId);
+	return groupAddress != NULL;
 }
 
-void SoundArchivePlayer::InvalidateWaveData(const void* pStart,
-                                            const void* pEnd) {
-    if (mGroupTable == NULL) {
-        return;
-    }
+void SoundArchivePlayer::InvalidateData(void const *start, void const *end)
+{
+	if (mFileTable)
+	{
+		for (int i = 0; i < mFileTable->count; i++)
+		{
+			void const *addr = mFileTable->item[i].address;
 
-    for (int i = 0; i < mGroupTable->count; i++) {
-        const void* pAddr = mGroupTable->items[i].waveDataAddress;
+			if (start <= addr && addr <= end)
+				mFileTable->item[i].address = nullptr;
+		}
+	}
 
-        if (pStart <= pAddr && pAddr <= pEnd) {
-            mGroupTable->items[i].waveDataAddress = NULL;
-        }
-    }
+	if (mGroupTable)
+	{
+		for (int i = 0; i < mGroupTable->count; i++)
+		{
+			void const *addr = mGroupTable->item[i].address;
+
+			if (start <= addr && addr <= end)
+				mGroupTable->item[i].address = nullptr;
+		}
+	}
 }
 
-detail::Channel*
-SoundArchivePlayer::SeqNoteOnCallback::NoteOn(detail::SeqPlayer* pSeqPlayer,
-                                              int bankNo,
-                                              const detail::NoteOnInfo& rInfo) {
-#pragma unused(bankNo)
+void SoundArchivePlayer::InvalidateWaveData(void const *start, void const *end)
+{
+	if (mFileTable)
+	{
+		for (int i = 0; i < mFileTable->count; i++)
+		{
+			void const *addr = mFileTable->item[i].waveDataAddress;
 
-    if (!mSoundArchivePlayer.IsAvailable()) {
-        return NULL;
-    }
+			if (start <= addr && addr <= end)
+				mFileTable->item[i].waveDataAddress = nullptr;
+		}
+	}
 
-    const SoundArchive& rArchive = mSoundArchivePlayer.GetSoundArchive();
-    u32 soundId = pSeqPlayer->GetId();
+	if (mGroupTable)
+	{
+		for (int i = 0; i < mGroupTable->count; i++)
+		{
+			void const *addr = mGroupTable->item[i].waveDataAddress;
 
-    SoundArchive::SeqSoundInfo seqInfo;
-    if (!rArchive.detail_ReadSeqSoundInfo(soundId, &seqInfo)) {
-        return NULL;
-    }
+			if (start <= addr && addr <= end)
+				mGroupTable->item[i].waveDataAddress = nullptr;
+		}
+	}
+}
 
-    SoundArchive::BankInfo bankInfo;
-    if (!rArchive.detail_ReadBankInfo(seqInfo.bankId, &bankInfo)) {
-        return NULL;
-    }
+detail::Channel *SoundArchivePlayer::SeqNoteOnCallback::NoteOn(
+	detail::SeqPlayer *seqPlayer, int bankNo ATTR_UNUSED,
+	detail::NoteOnInfo const &noteOnInfo)
+{
+	if (!mSoundArchivePlayer.IsAvailable())
+		return nullptr;
 
-    const void* pBankBin =
-        mSoundArchivePlayer.detail_GetFileAddress(bankInfo.fileId);
+	SoundArchive const &sndArc = mSoundArchivePlayer.GetSoundArchive();
+	u32 soundId = seqPlayer->GetId();
 
-    if (pBankBin == NULL) {
-        return NULL;
-    }
+	SoundArchive::SeqSoundInfo seqInfo;
+	if (!sndArc.ReadSeqSoundInfo(soundId, &seqInfo))
+		return nullptr;
 
-    detail::Bank bank(pBankBin);
+	SoundArchive::BankInfo bankInfo;
+	if (!sndArc.ReadBankInfo(seqInfo.bankId, &bankInfo))
+		return nullptr;
 
-    const void* pWaveData =
-        mSoundArchivePlayer.detail_GetFileWaveDataAddress(bankInfo.fileId);
+	void const *bankData =
+		mSoundArchivePlayer.detail_GetFileAddress(bankInfo.fileId);
+	if (!bankData)
+		return nullptr;
 
-    if (pWaveData == NULL) {
-        return NULL;
-    }
+	detail::Bank bank(bankData);
 
-    bank.SetWaveDataAddress(pWaveData);
-    return bank.NoteOn(rInfo);
+	void const *waveData =
+		mSoundArchivePlayer.detail_GetFileWaveDataAddress(bankInfo.fileId);
+	if (!waveData)
+		return nullptr;
+
+	bank.SetWaveDataAddress(waveData);
+
+	detail::Channel *channel = bank.NoteOn(noteOnInfo);
+	return channel;
 }
 
 bool SoundArchivePlayer::WsdCallback::GetWaveSoundData(
-    detail::WaveSoundInfo* pSoundInfo, detail::WaveSoundNoteInfo* pNoteInfo,
-    detail::WaveData* pWaveData, const void* pWsdData, int index, int noteIndex,
-    u32 callbackArg) const {
+	detail::WaveSoundInfo *info, detail::WaveSoundNoteInfo *noteInfo,
+	detail::WaveInfo *waveData, void const *waveSoundData, int index,
+	int noteIndex, u32 userData) const
+{
+	u32 fileID = userData;
 
-    u32 fileId = callbackArg;
+	if (!mSoundArchivePlayer.IsAvailable())
+		return false;
 
-    if (!mSoundArchivePlayer.IsAvailable()) {
-        return false;
-    }
+	SoundArchive const &sndArc ATTR_UNUSED =
+		mSoundArchivePlayer.GetSoundArchive();
 
-    const void* pWaveAddr =
-        mSoundArchivePlayer.detail_GetFileWaveDataAddress(fileId);
+	void const *dataAddr =
+		mSoundArchivePlayer.detail_GetFileWaveDataAddress(fileID);
+	if (!dataAddr)
+		return false;
 
-    if (pWaveAddr == NULL) {
-        return false;
-    }
+	detail::WsdFileReader reader(waveSoundData);
 
-    detail::WsdFileReader reader(pWsdData);
+	if (!reader.ReadWaveSoundInfo(info, index))
+		return false;
 
-    if (!reader.ReadWaveSoundInfo(pSoundInfo, index)) {
-        return false;
-    }
+	if (!reader.ReadWaveSoundNoteInfo(noteInfo, index, noteIndex))
+		return false;
 
-    if (!reader.ReadWaveSoundNoteInfo(pNoteInfo, index, noteIndex)) {
-        return false;
-    }
+	if (!reader.ReadWaveInfo(noteInfo->waveIndex, waveData, dataAddr))
+		return false;
 
-    if (!reader.ReadWaveParam(pNoteInfo->waveIndex, pWaveData, pWaveAddr)) {
-        return false;
-    }
-
-    return true;
+	return true;
 }
 
-} // namespace snd
-} // namespace nw4r
+}} // namespace nw4r::snd

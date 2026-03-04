@@ -1,31 +1,25 @@
-#include <nw4r/ut.h>
+#include "nw4r/ut/ut_binaryFileFormat.h"
 
 namespace nw4r {
 namespace ut {
 
-bool IsValidBinaryFile(const BinaryFileHeader* pHeader, u32 signature,
-                       u16 version, u16 minBlocks) {
-    if (pHeader->signature != signature) {
+bool IsValidBinaryFile(const BinaryFileHeader *header, u32 magic, u16 version, u16 numBlocks) {
+    if (header->signature != magic) {
+        return false;
+    }
+    if (header->byteOrder != 0xFEFF) {
+        return false;
+    }
+    if (header->version != version) {
+        return false;
+    }
+    if (header->fileSize < (numBlocks * sizeof(BinaryBlockHeader) + sizeof(BinaryFileHeader))) {
         return false;
     }
 
-    if (pHeader->byteOrder != NW4R_BYTEORDER_NATIVE) {
+    if (header->numBlocks < numBlocks) {
         return false;
     }
-
-    if (pHeader->version != version) {
-        return false;
-    }
-
-    if (pHeader->fileSize <
-        sizeof(BinaryFileHeader) + (minBlocks * sizeof(BinaryBlockHeader))) {
-        return false;
-    }
-
-    if (pHeader->dataBlocks < minBlocks) {
-        return false;
-    }
-
     return true;
 }
 

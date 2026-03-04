@@ -2,7 +2,7 @@
 #define NW4R_G3D_RES_RES_DICT_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_rescommon.h>
+#include "nw4r/g3d/res/g3d_rescommon.h"
 
 namespace nw4r {
 namespace g3d {
@@ -29,12 +29,11 @@ public:
 public:
     NW4R_G3D_RESOURCE_FUNC_DEF(ResDic);
 
-    void* operator[](const char* pName) const;
-    void* operator[](const ResName name) const;
-    void* operator[](int idx) const {
+    void *operator[](const char *pName) const;
+    void *operator[](const ResName name) const;
+    void *operator[](int idx) const {
         if (IsValid()) {
-            return const_cast<void*>(
-                ofs_to_ptr<void>(ref().data[idx + 1].ofsData));
+            return const_cast<void *>(ofs_to_ptr<void>(ref().data[idx + 1].ofsData));
         }
 
         return NULL;
@@ -51,8 +50,8 @@ public:
     }
 
 private:
-    ResDicNodeData* Get(const ResName name) const;
-    ResDicNodeData* Get(const char* pName, u32 len) const;
+    ResDicNodeData *Get(const ResName name) const;
+    ResDicNodeData *Get(const char *pName, u32 len) const;
 };
 
 } // namespace g3d

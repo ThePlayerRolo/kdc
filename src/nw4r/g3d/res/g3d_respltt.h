@@ -2,9 +2,12 @@
 #define NW4R_G3D_RES_RES_PLTT_H
 #include <nw4r/types_nw4r.h>
 
-#include <nw4r/g3d/res/g3d_rescommon.h>
+/** NOTICE: Revision change from 1->??. Structures, Enums, and/or Functions may have changed and not yet done so
+ * (Zeldex72, Feb 1, 2025) */
 
-#include <revolution/GX.h>
+#include "nw4r/g3d/res/g3d_rescommon.h"
+
+#include "revolution/GX.h" // IWYU pragma: export
 
 namespace nw4r {
 namespace g3d {
@@ -24,7 +27,7 @@ struct ResPlttData {
 
 class ResPltt : public ResCommon<ResPlttData> {
 public:
-    static const u32 SIGNATURE = FOURCC('P', 'L', 'T', '0');
+    static const u32 SIGNATURE = 'PLT0';
     static const int REVISION = 1;
 
 public:
@@ -44,8 +47,8 @@ public:
 
     void DCStore(bool sync);
 
-    u16* GetPlttData() {
-        ResPlttData& r = ref();
+    u16 *GetPlttData() {
+        ResPlttData &r = ref();
 
         // clang-format off
         return r.toPlttData != 0
@@ -54,8 +57,8 @@ public:
         // clang-format on
     }
 
-    const u16* GetPlttData() const {
-        const ResPlttData& r = ref();
+    const u16 *GetPlttData() const {
+        const ResPlttData &r = ref();
 
         // clang-format off
         return r.toPlttData != 0

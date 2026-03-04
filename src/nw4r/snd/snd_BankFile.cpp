@@ -1,208 +1,373 @@
-#include <nw4r/snd.h>
-#include <nw4r/ut.h>
+#include "nw4r/snd/snd_BankFile.h"
 
-namespace nw4r {
-namespace snd {
-namespace detail {
+/* Original source:
+ * kiwi515/ogws
+ * src/nw4r/snd/snd_BankFile.cpp
+ */
 
-// See BankFile::Region
-enum {
-    DATATYPE_NONE = Util::DATATYPE_T0,
-    DATATYPE_INSTPARAM = Util::DATATYPE_T1,
-    DATATYPE_RANGETABLE = Util::DATATYPE_T2,
-    DATATYPE_INDEXTABLE = Util::DATATYPE_T3,
-};
+/*******************************************************************************
+ * headers
+ */
 
-bool BankFileReader::IsValidFileHeader(const void* pBankBin) {
-    const ut::BinaryFileHeader* pFileHeader =
-        static_cast<const ut::BinaryFileHeader*>(pBankBin);
+#include "common.h"
 
-    if (pFileHeader->signature != SIGNATURE) {
-        return false;
-    }
+#include "nw4r/snd/snd_Util.h"
+#include "nw4r/snd/snd_WaveArchive.h" // WaveArchiveReader
+#include "nw4r/snd/snd_WaveFile.h"
 
-    if (pFileHeader->version < NW4R_VERSION(1, 0)) {
-        return false;
-    }
+#include "nw4r/ut/ut_binaryFileFormat.h" // ut::BinaryFileHeader
+#include "nw4r/ut/ut_algorithm.h"
 
-    if (pFileHeader->version > VERSION) {
-        return false;
-    }
+#include "nw4r/NW4RAssert.hpp"
 
-    return true;
+/*******************************************************************************
+ * local function declarations
+ */
+
+namespace nw4r { namespace snd { namespace detail
+{
+	inline byte_t ReadByte(void const *address)
+	{
+		return *static_cast<byte_t const *>(address);
+	}
+}}} // namespace nw4r::snd::detail
+
+/*******************************************************************************
+ * functions
+ */
+
+namespace nw4r { namespace snd { namespace detail {
+
+bool BankFileReader::IsValidFileHeader(void const *bankData)
+{
+	ut::BinaryFileHeader const *fileHeader =
+		static_cast<ut::BinaryFileHeader const *>(bankData);
+
+	NW4RAssertMessage_Line(
+		59, fileHeader->signature == BankFile::SIGNATURE_FILE,
+		"invalid file signature. bank data is not available.");
+
+	if (fileHeader->signature != BankFile::SIGNATURE_FILE)
+		return false;
+
+	NW4RAssertMessage_Line(67, fileHeader->version >= NW4R_FILE_VERSION(1, 0),
+	                       "bank file is not supported version.\n  please "
+	                       "reconvert file using new version tools.\n");
+
+	if (fileHeader->version < NW4R_FILE_VERSION(1, 0))
+		return false;
+
+	NW4RAssertMessage_Line(73, fileHeader->version <= SUPPORTED_FILE_VERSION,
+	                       "bank file is not supported version.\n  please "
+	                       "reconvert file using new version tools.\n");
+
+	if (fileHeader->version > SUPPORTED_FILE_VERSION)
+		return false;
+
+	return true;
 }
 
-BankFileReader::BankFileReader(const void* pBankBin)
-    : mHeader(NULL), mDataBlock(NULL), mWaveBlock(NULL) {
-    if (!IsValidFileHeader(pBankBin)) {
-        return;
-    }
+BankFileReader::BankFileReader(void const *bankData) :
+	mHeader		(nullptr),
+	mDataBlock	(nullptr),
+	mWaveBlock	(nullptr)
+{
+	NW4RAssertPointerNonnull_Line(93, bankData);
 
-    mHeader = static_cast<const BankFile::Header*>(pBankBin);
+	if (!IsValidFileHeader(bankData))
+		return;
 
-    mDataBlock = static_cast<const BankFile::DataBlock*>(
-        ut::AddOffsetToPtr(mHeader, mHeader->dataBlockOffset));
+	mHeader = static_cast<BankFile::Header const *>(bankData);
 
-    mWaveBlock = static_cast<const BankFile::WaveBlock*>(
-        ut::AddOffsetToPtr(mHeader, mHeader->waveBlockOffset));
+	if (mHeader->dataBlockOffset)
+	{
+		mDataBlock = static_cast<BankFile::DataBlock const *>(
+			ut::AddOffsetToPtr(mHeader, mHeader->dataBlockOffset));
+
+		NW4RAssert_Line(105, mDataBlock->blockHeader.kind
+		                         == BankFile::SIGNATURE_DATA_BLOCK);
+	}
+
+	if (mHeader->waveBlockOffset)
+	{
+		mWaveBlock = static_cast<BankFile::WaveBlock const *>(
+			ut::AddOffsetToPtr(mHeader, mHeader->waveBlockOffset));
+
+		NW4RAssert_Line(113, mWaveBlock->blockHeader.kind
+		                         == BankFile::SIGNATURE_WAVE_BLOCK);
+	}
 }
 
-bool BankFileReader::ReadInstInfo(InstInfo* pInfo, int prgNo, int key,
-                                  int velocity) const {
-    if (mHeader == NULL) {
-        return false;
-    }
+BankFile::InstParam const *BankFileReader::GetInstParam(int prgNo, int key,
+                                                        int velocity) const
+{
+	NW4RAssertPointerNonnull_Line(135, mHeader);
+	if (!mHeader)
+		return nullptr;
 
-    if (prgNo < 0 || prgNo >= static_cast<int>(mDataBlock->instTable.count)) {
-        return false;
-    }
+	if (prgNo < 0 || prgNo >= static_cast<int>(mDataBlock->instTable.count))
+		return nullptr;
 
-    const BankFile::DataRegion* pRef = &mDataBlock->instTable.items[prgNo];
-    if (pRef->dataType == Util::DATATYPE_INVALID) {
-        return false;
-    }
+	BankFile::DataRegion const *ref = &mDataBlock->instTable.item[prgNo];
 
-    if (pRef->dataType != DATATYPE_INSTPARAM) {
-        pRef = GetReferenceToSubRegion(pRef, key);
-        if (pRef == NULL) {
-            return false;
-        }
-    }
+	if (ref->dataType == 4)
+		return nullptr;
 
-    if (pRef->dataType == Util::DATATYPE_INVALID) {
-        return false;
-    }
+	if (ref->dataType != 1)
+	{
+		ref = GetReferenceToSubRegion(ref, key);
+		if (!ref)
+			return nullptr;
+	}
 
-    if (pRef->dataType != DATATYPE_INSTPARAM) {
-        pRef = GetReferenceToSubRegion(pRef, velocity);
-        if (pRef == NULL) {
-            return false;
-        }
-    }
+	if (ref->dataType == 4)
+		return nullptr;
 
-    if (pRef->dataType != DATATYPE_INSTPARAM) {
-        return false;
-    }
+	if (ref->dataType != 1)
+	{
+		ref = GetReferenceToSubRegion(ref, velocity);
+		if (!ref)
+			return nullptr;
+	}
 
-    const BankFile::InstParam* pParam =
-        Util::GetDataRefAddress1(*pRef, &mDataBlock->instTable);
+	if (ref->dataType != 1)
+		return nullptr;
 
-    if (pParam == NULL) {
-        return false;
-    }
+	BankFile::InstParam const *instParam =
+		Util::GetDataRefAddress1(*ref, &mDataBlock->instTable);
 
-    if (pParam->waveIndex < 0) {
-        return false;
-    }
-
-    pInfo->waveIndex = pParam->waveIndex;
-    pInfo->attack = pParam->attack;
-    pInfo->decay = pParam->decay;
-    pInfo->sustain = pParam->sustain;
-    pInfo->release = pParam->release;
-    pInfo->originalKey = pParam->originalKey;
-    pInfo->pan = pParam->pan;
-
-    if (mHeader->fileHeader.version >= VERSION) {
-        pInfo->volume = pParam->volume;
-        pInfo->tune = pParam->tune;
-    } else {
-        pInfo->volume = 127;
-        pInfo->tune = 1.0f;
-    }
-
-    return true;
+	return instParam;
 }
 
-const BankFile::DataRegion*
-BankFileReader::GetReferenceToSubRegion(const BankFile::DataRegion* pRef,
-                                        int splitKey) const {
-    const BankFile::DataRegion* pSub = NULL;
+bool BankFileReader::ReadInstInfo(InstInfo *instInfo, int prgNo, int key,
+                                  int velocity) const
+{
+	NW4RAssertPointerNonnull_Line(188, instInfo);
 
-    switch (pRef->dataType) {
-    case DATATYPE_NONE: {
-        break;
-    }
+	BankFile::InstParam const *instParam = GetInstParam(prgNo, key, velocity);
+	if (!instParam)
+		return false;
 
-    case DATATYPE_INSTPARAM: {
-        pSub = pRef;
-        break;
-    }
+	if (instParam->waveDataLocationType
+	    == InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_INDEX)
+	{
+		if (instParam->waveIndex < 0)
+			return false;
 
-    case DATATYPE_RANGETABLE: {
-        const BankFile::RangeTable* pRangeTable =
-            Util::GetDataRefAddress2(*pRef, &mDataBlock->instTable);
+		instInfo->waveDataLocation.type =
+			InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_INDEX;
+		instInfo->waveDataLocation.index = instParam->waveIndex;
+	}
+	else if (instParam->waveDataLocationType
+	         == InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_ADDRESS)
+	{
+		if (!instParam->waveInfoAddress)
+			return false;
 
-        if (pRangeTable == NULL) {
-            return NULL;
-        }
+		instInfo->waveDataLocation.type =
+			InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_ADDRESS;
+		instInfo->waveDataLocation.address = instParam->waveInfoAddress;
+	}
+	else if (instParam->waveDataLocationType
+	         == InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_CALLBACK)
+	{
+		if (!instParam->waveDataLocationCallback)
+			return false;
 
-        int i = 0;
-        while (splitKey > ReadByte(pRangeTable->key + i)) {
-            if (++i >= pRangeTable->tableSize) {
-                return NULL;
-            }
-        }
+		instInfo->waveDataLocation.type =
+			InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_CALLBACK;
+		instInfo->waveDataLocation.callback =
+			instParam->waveDataLocationCallback;
+	}
+	else
+	{
+		NW4RPanicMessage_Line(210, "Invalid waveDataLocationType %d",
+		                      instParam->waveDataLocationType);
+		return false;
+	}
 
-        const u8* pBase = reinterpret_cast<const u8*>(pRangeTable);
-        u32 refOffset = i * sizeof(BankFile::DataRegion);
-        u32 refStart = ut::RoundUp<u32>(pRangeTable->tableSize + 1, 4);
+	instInfo->attack		= instParam->attack;
+	instInfo->hold			= instParam->hold;
+	instInfo->decay			= instParam->decay;
+	instInfo->sustain		= instParam->sustain;
+	instInfo->release		= instParam->release;
+	instInfo->originalKey	= instParam->originalKey;
+	instInfo->pan			= instParam->pan;
 
-        pSub = reinterpret_cast<const BankFile::DataRegion*>(pBase + refOffset +
-                                                             refStart);
-        break;
-    }
+	if (mHeader->fileHeader.version >= NW4R_FILE_VERSION(1, 1))
+	{
+		instInfo->volume	= instParam->volume;
+		instInfo->tune		= instParam->tune;
+	}
+	else
+	{
+		instInfo->volume	= 127;
+		instInfo->tune		= 1.0f;
+	}
 
-    case DATATYPE_INDEXTABLE: {
-        const BankFile::IndexTable* pIndexTable =
-            Util::GetDataRefAddress3(*pRef, &mDataBlock->instTable);
+	switch (instParam->noteOffType)
+	{
+	case 0:
+		instInfo->noteOffType = InstInfo::NOTE_OFF_TYPE_RELEASE;
+		break;
 
-        if (pIndexTable == NULL) {
-            return NULL;
-        }
+	case 1:
+		instInfo->noteOffType = InstInfo::NOTE_OFF_TYPE_IGNORE;
+		break;
 
-        if (splitKey < pIndexTable->min || splitKey > pIndexTable->max) {
-            return NULL;
-        }
+	default:
+		NW4RPanicMessage_Line(240, "Invalid noteOffType %d",
+		                      instParam->noteOffType);
+		return false;
+	}
 
-        pSub = reinterpret_cast<const BankFile::DataRegion*>(
-            pIndexTable->ref +
-            (splitKey - pIndexTable->min) * sizeof(BankFile::DataRegion));
-        break;
-    }
-    }
+	instInfo->alternateAssign = instParam->alternateAssign;
 
-    return pSub;
+	return true;
 }
 
-bool BankFileReader::ReadWaveParam(WaveData* pData, int waveIndex,
-                                   const void* pWaveAddr) const {
-    if (mHeader == NULL) {
-        return false;
-    }
+BankFile::DataRegion const *BankFileReader::GetReferenceToSubRegion(
+	BankFile::DataRegion const *ref, int splitKey) const
+{
+	BankFile::DataRegion const *subRef = nullptr;
 
-    if (mWaveBlock == NULL) {
-        return false;
-    }
+	switch (ref->dataType)
+	{
+	case 0:
+		break;
 
-    if (waveIndex >= mWaveBlock->waveInfoTable.count) {
-        return false;
-    }
+	case 1:
+		subRef = ref;
+		break;
 
-    const BankFile::WaveRegion* pRef =
-        &mWaveBlock->waveInfoTable.items[waveIndex];
+	case 2:
+	{
+		BankFile::RangeTable const *table =
+			Util::GetDataRefAddress2(*ref, &mDataBlock->instTable);
 
-    const WaveFile::WaveInfo* pInfo =
-        Util::GetDataRefAddress0(*pRef, &mWaveBlock->waveInfoTable);
+		if (!table)
+			return nullptr;
 
-    if (pInfo == NULL) {
-        return false;
-    }
+		int index = 0;
+		while (splitKey > ReadByte(table->key + index))
+		{
+			if (++index >= table->tableSize)
+				return nullptr;
+		}
 
-    WaveFileReader wfr(pInfo);
-    return wfr.ReadWaveParam(pData, pWaveAddr);
+		u32 refOffset = sizeof(BankFile::DataRegion) * index
+		              + ut::RoundUp(table->tableSize + 1, 4);
+
+		/* TODO: fake: how to properly match this call? (the arguments to
+		 * AddOffsetToPtr are supposed to be the other way around)
+		 */
+		subRef = static_cast<BankFile::DataRegion const *>(
+			ut::AddOffsetToPtr(reinterpret_cast<void const *>(refOffset),
+		                       reinterpret_cast<u32>(table)));
+	}
+		break;
+
+	case 3:
+	{
+		BankFile::IndexTable const *table =
+			Util::GetDataRefAddress3(*ref, &mDataBlock->instTable);
+
+		if (!table)
+			return nullptr;
+
+		if (splitKey < table->min || splitKey > table->max)
+			return nullptr;
+
+		subRef = reinterpret_cast<BankFile::DataRegion const *>(
+			table->ref
+			+ (splitKey - table->min) * sizeof(BankFile::DataRegion));
+	}
+		break;
+	}
+
+	return subRef;
 }
 
-} // namespace detail
-} // namespace snd
-} // namespace nw4r
+bool BankFileReader::ReadWaveInfo(
+	WaveInfo *waveParam, InstInfo::WaveDataLocation const &waveDataLocation,
+	void const *waveDataAddress, WaveInfo const **waveInfoAddress) const
+{
+	NW4RAssertPointerNonnull_Line(331, waveParam);
+
+	if (waveInfoAddress)
+		*waveInfoAddress = nullptr;
+
+	if (!mHeader)
+		return false;
+
+	if (waveDataLocation.type
+	    == InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_INDEX)
+	{
+		int waveIndex = waveDataLocation.index;
+
+		if (!mWaveBlock)
+		{
+			WaveArchiveReader waveArchiveReader(waveDataAddress);
+			WaveFile::FileHeader const *fileHeader =
+				waveArchiveReader.GetWaveFile(waveIndex);
+
+			if (!fileHeader)
+				return false;
+
+			WaveFileReader waveFileReader(fileHeader);
+			return waveFileReader.ReadWaveInfo(waveParam);
+		}
+		else if (waveIndex >= mWaveBlock->waveInfoTable.count)
+		{
+			return false;
+		}
+		else
+		{
+			WaveFile::WaveInfo const *waveInfo = Util::GetDataRefAddress0(
+				mWaveBlock->waveInfoTable.item[waveIndex],
+				&mWaveBlock->waveInfoTable);
+
+			if (!waveInfo)
+				return false;
+
+			WaveFileReader waveFileReader(waveInfo);
+			return waveFileReader.ReadWaveInfo(waveParam, waveDataAddress);
+		}
+	}
+	else if (waveDataLocation.type
+	         == InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_ADDRESS)
+	{
+		if (!waveDataLocation.address)
+			return false;
+
+		if (waveInfoAddress)
+			*waveInfoAddress = waveDataLocation.address;
+
+		*waveParam = *waveDataLocation.address;
+		return true;
+	}
+	else if (waveDataLocation.type
+	         == InstInfo::WaveDataLocation::WAVE_DATA_LOCATION_CALLBACK)
+	{
+		if (!waveDataLocation.callback)
+			return false;
+
+		WaveInfo *waveInfo = waveDataLocation.callback->at_0x08();
+		if (!waveInfo)
+			return false;
+
+		if (waveInfoAddress)
+			*waveInfoAddress = waveInfo;
+
+		*waveParam = *waveInfo;
+		return true;
+	}
+	else
+	{
+		NW4RPanicMessage_Line(389, "Invalid waveDataLocation.type %d",
+		                      waveDataLocation.type);
+		return false;
+	}
+}
+
+}}} // namespace nw4r::snd::detail
