@@ -1,0 +1,32 @@
+#ifndef STD_UTILITY
+#define STD_UTILITY
+
+namespace std {
+namespace tr1 {
+
+    template <typename T>
+    class reference_wrapper {
+    public:
+        reference_wrapper(T& ref)
+            : ref_(ref)
+        { }
+
+        inline operator T&() {
+            return ref_;
+        }
+
+        inline operator const T&() const {
+            return ref_;
+        }
+    private:
+        T& ref_;
+    };
+
+    template <typename T>
+    reference_wrapper<T> ref(T& r) {
+        return reference_wrapper<T>(r);
+    }
+}
+}
+
+#endif

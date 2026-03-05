@@ -2,13 +2,12 @@
 #define DONUT_OCOLL_GIMMICK_HPP
 
 #include "ocoll/AttackData.hpp"
+#include "ocoll/AttackResultGimmick.hpp"
+#include "ocoll/AttackRoot.hpp"
+#include "ocoll/Manager.hpp"
 #include "scn/step/gimmick/block/BlockAttackArg.hpp"
 
 namespace ocoll {
-
-class Manager { };
-class AttackRoot { };
-class AttackResultGimmick { };
 
 class Gimmick {
 public:
