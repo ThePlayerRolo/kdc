@@ -14,28 +14,23 @@ void __fini_cpp_exceptions(void);
 }
 #endif
 
-static void* GetTOC(void) {
-    register void* toc;
-
-    ASM (
-        mr toc, r2
-    )
-
-    return toc;
-}
-
-void __init_cpp_exceptions(void) {
+void __init_cpp_exceptions() {
     if (fragmentID == -2) {
-        fragmentID = __register_fragment(_eti_init_info, GetTOC());
+        register char *R2;
+        asm {
+            mr R2, r2
+        }
+        fragmentID = __register_fragment(_eti_init_info, R2);
     }
 }
 
-void __fini_cpp_exceptions(void) {
+void __fini_cpp_exceptions() {
     if (fragmentID != -2) {
         __unregister_fragment(fragmentID);
         fragmentID = -2;
     }
 }
+
 
 #pragma section ".ctors$10"
 DECL_SECTION(".ctors$10")
