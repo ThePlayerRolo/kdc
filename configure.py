@@ -341,7 +341,9 @@ config.libs = [
         "objects": [
             Object(Matching, "revolution/OS/OSAlarm.c"),
             Object(NonMatching, "revolution/OS/OSAlloc.c"),
-            Object(NonMatching, "revolution/OS/OSThread.c"),
+            Object(NonMatching, "revolution/OS/OSStateTM.c"),
+            Object(Matching, "revolution/OS/OSThread.c"),
+            Object(NonMatching, "revolution/OS/OSTime.c"),
         ],
     },
     {

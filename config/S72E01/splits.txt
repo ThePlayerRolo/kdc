@@ -34,6 +34,12 @@ revolution/OS/OSThread.c:
 	.sdata      start:0x805564F0 end:0x805564F8
 	.sbss       start:0x8055C840 end:0x8055C850
 
+revolution/OS/OSStateTM.c:
+	.bss        start:0x80499EC0 end:0x80499F80 align:32
+
+revolution/OS/OSTime.c:
+	.text       start:0x80025B40 end:0x80025F70 align:16
+
 nw4r/g3d/g3d_camera.cpp:
 	.text       start:0x800E5AF0 end:0x800E6A10
 	.sdata2     start:0x8055F040 end:0x8055F070
