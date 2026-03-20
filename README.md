@@ -1,6 +1,6 @@
 # Kirby's Dream Collection [![Code Progress]][progress] [![Linked Progress]][progress] [![Data Progress]][progress] [![Discord Badge]][discord]
 <!--[![Build Status]][actions]-->
-=============
+<!--=============-->
 
 <!--
 Replace with your repository's URL.
