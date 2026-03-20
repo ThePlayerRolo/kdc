@@ -423,6 +423,15 @@ config.libs = [
         ],
     },
     {
+        "lib": "scn/step/gimmick",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/scn/step/gimmick/block/BlockInfo.cpp"),
+        ],
+    },
+    {
         "lib": "scn/step/hero",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,
