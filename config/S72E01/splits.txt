@@ -20,6 +20,14 @@ runtime/__init_cpp_exceptions.cpp:
 	.dtors      start:0x80406544 end:0x80406548 rename:.dtors$15
 	.sdata      start:0x80556430 end:0x80556438
 
+revolution/OS/OSAlarm.c:
+	.text       start:0x8001B7A0 end:0x8001C050
+	.data       start:0x804221E8 end:0x804221F8
+	.sbss       start:0x8055C7C0 end:0x8055C7C8
+
+revolution/OS/OSAlloc.c:
+	.text       start:0x8001C050 end:0x8001C370 align:16
+
 revolution/OS/OSThread.c:
 	.text       start:0x800244A0 end:0x80025B40
 	.bss        start:0x804994B8 end:0x80499EC0
