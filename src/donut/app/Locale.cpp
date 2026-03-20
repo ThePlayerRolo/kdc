@@ -2,7 +2,7 @@
 
 namespace {
 
-const char* T_POSTS_US[] = {
+const char* const T_POSTS_US[] = {
     "US_JPN",
     "US_ENG",
     "US_GER",
