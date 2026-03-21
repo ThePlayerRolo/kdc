@@ -1,5 +1,5 @@
 #pragma peephole off
-#include <math/Random.hpp>
+#include <hel/math/Random.hpp>
 
 using hel::math::Random;
 
