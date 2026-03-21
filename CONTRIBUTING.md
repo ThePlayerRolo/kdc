@@ -35,10 +35,10 @@ Likewise, use `NULL` in C.
     ```
 
 ### Headers
-Use proper header guards.
+Use proper header guards. HAL likes to use the `.hpp` extension for their game headers.
 ```cpp
-#ifndef DONUT_SOME_FOLDER_MYHEADER_H
-#define DONUT_SOME_FOLDER_MYHEADER_H
+#ifndef DONUT_SOME_FOLDER_MYHEADER_HPP
+#define DONUT_SOME_FOLDER_MYHEADER_HPP
 // ...
 #endif
 ```
