@@ -7,9 +7,10 @@
 extern "C" {
 #endif
 
-inline float acosf(float x) {
-    return acos(x);
-}
+float acosf(float x);
+// inline float acosf(float x) {
+//     return acos(x);
+// }
 inline float asinf(float x) {
     return asin(x);
 }

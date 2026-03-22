@@ -15,7 +15,6 @@ Vector2 Vector2::ALL_ONE = Vector2(1.0f, 1.0f);
 Vector2 Vector2::BASIS_X = Vector2(1.0f, 0.0f);
 Vector2 Vector2::BASIS_Y = Vector2(0.0f, 1.0f);
 
-//https://decomp.me/scratch/TCu3z
 f32 Vector2::length() const {
     f32 sqLength = squareLength();
 
@@ -90,10 +89,8 @@ f32 Vector2::setLength(f32 arg1) {
     return lengthVar;
 }
 
-//https://decomp.me/scratch/2o5zM
 f32 Vector2::cos(const Vector2& rOther) const {
-    f32 lengthVar = rOther.length();
-    lengthVar *= length();
+    f32 lengthVar = length() *  rOther.length();
     if (lengthVar == 0.0f) {
         return 0.0f;
     }
@@ -108,10 +105,8 @@ f32 Vector2::cos(const Vector2& rOther) const {
     return cos;
 }
 
-//https://decomp.me/scratch/K9x0f
 f32 Vector2::signedAngle(const Vector2& rOther) const {
-    f32 lengthVar = rOther.length();
-    lengthVar *= length();
+    f32 lengthVar = length() * rOther.length();
     if (lengthVar < 0.0000099999997f) {
         return 0.0f;
     }
