@@ -330,7 +330,7 @@ config.libs = [
         "progress_category": "sdk",  # str | List[str]
         "objects": [
             Object(NonMatching, "runtime/__init_cpp_exceptions.cpp"),
-            Object(Matching, "runtime/__mem.c"),
+            Object(NonMatching, "runtime/__mem.c"),
             # Object(NonMatching, "Runtime.PPCEABI.H/global_destructor_chain.c"),
             # Object(NonMatching, "Runtime.PPCEABI.H/__init_cpp_exceptions.cpp"),
         ],
