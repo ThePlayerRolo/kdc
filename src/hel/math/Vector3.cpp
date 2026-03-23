@@ -1,7 +1,6 @@
 #pragma peephole off
-#include "math/math_types.h"
-#include <math.h>
-#include <cmath>
+#include <nw4r/math/math_types.h>
+#include <MSL/MSL_C/cmath>
 #include <hel/math/Vector3.hpp>
 
 using hel::math::Vector3;
