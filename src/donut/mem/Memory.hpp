@@ -3,6 +3,7 @@
 
 #include <hel/common/ExplicitSingleton.hpp>
 
+#include "mem/HeapCompaction.hpp"
 #include "mem/HeapExp.hpp"
 
 namespace mem {
@@ -15,6 +16,7 @@ public:
 
     HeapExp& mem2FixHeap();
     IAllocator& sceneHeap();
+    HeapCompaction& /* probably? */ externalHeap();
 };
 
 }

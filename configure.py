@@ -212,6 +212,7 @@ cflags_base = [
     "-i src/",
     "-i src/MSL/MSL_C/",
     "-i src/MSL/MSL_C/internal/",
+    "-i src/MSL/MSL_C++",
     "-i src/revolution/",
     "-i src/nw4r/",
     f"-i build/{config.version}/src",

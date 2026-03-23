@@ -32,6 +32,7 @@ public:
     Manager();
     ~Manager();
 
+    void clear();
     const char* text(Category category, const char* pText);
     const char* unsafedText(Category category, const char* pText);
 

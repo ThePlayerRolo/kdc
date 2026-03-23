@@ -2,6 +2,7 @@
 #define DONUT_APP_APPIMPL_HPP
 
 #include <types.h>
+#include <memory>
 #include <revolution/OS.h>
 #include <hel/common/NonCopyable.hpp>
 #include <hel/common/ProtectedSingleton.hpp>
@@ -28,6 +29,8 @@
 #include "nand/NandManager.hpp"
 #include "preload/PreLoadManager.hpp"
 #include "util/Alarm.hpp"
+#include "scn/IScene.hpp"
+#include "seq/ISequence.hpp"
 #include "storage/StorageManager.hpp"
 
 namespace app {
@@ -41,6 +44,24 @@ public:
 
     /* 0x8 */ virtual ~AppImpl();
     /* 0xC */ virtual void drawerExecDraw() override;
+
+    void run(bool, bool, bool);
+    void OnDrawDone();
+    void onDrawDone();
+    void runWithRootSequence(std::auto_ptr<seq::ISequence> pSequence);
+    void enterSceneSequence(seq::ISequence& rSequence);
+    void onBeforeSceneCreate();
+    void onAfterSceneDestroy(bool);
+    void sceneLoop(scn::IScene&);
+    void onSceneStartProcess(scn::IScene&);
+    void beginFrameProcess();
+    void updateProcess(scn::IScene&);
+    void updateHBMProcess();
+    void drawProcess(scn::IScene&);
+    void endFrameProcess(scn::IScene&);
+    void onSceneEndProcess(scn::IScene&);
+    bool canFrameUpdate() const;
+    bool canSceneUpdate() const;
 
     inline void DeleteInstance() {
         ptr_ = nullptr;
@@ -68,13 +89,13 @@ private:
     /* 0xE744 */ SaveInfo mSaveInfo;
     /* 0xEAFC */ NANDErrorMenu mNANDErrorMenu;
     /* 0xEB64 */ gfx::EFBToLetterBox mEFBToLetterBox;
-    /* 0xEB7C */ s32 m_EB7C; // maybe a pointer?
+    /* 0xEB7C */ scn::IScene* mScene;
     /* 0xEB80 */ s32 m_EB80; // maybe a pointer?
     /* 0xEB84 */ s32 m_EB84;
     /* 0xEB8C */ util::Alarm mAlarm;
     /* 0xEB90 */ STRUCT_FILL(0x30);
     /* 0xEBC0 */ OSSemaphore mSemaphore;
-    /* 0xEBCC */ bool m_EBCC;
+    /* 0xEBCC */ bool mDrawDone;
 };
 
 

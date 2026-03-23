@@ -9,6 +9,9 @@ class HIDManager {
 public:
     HIDManager();
     ~HIDManager();
+
+    void updateGame();
+    void resetButtonConvertKind();
 private:
     STRUCT_FILL(0x15A8);
 };

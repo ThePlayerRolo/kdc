@@ -29,12 +29,12 @@ AppImpl::AppImpl(System& rSystem)
     , mSaveInfo(mResidentFile)
     , mNANDErrorMenu(mResidentFile)
     , mEFBToLetterBox(mGameScreen)
-    , m_EB7C(0)
+    , mScene(nullptr)
     , m_EB80(0)
     , mAlarm()
 {
     OSInitSemaphore(&mSemaphore, 0);
-    m_EBCC = false;
+    mDrawDone = false;
 
     for (s32 tick = OSGetTick() & 0xFFFF; tick != 0; tick--) {
         mRandom(1);
@@ -48,4 +48,70 @@ Reset::~Reset() { }
 
 AppImpl::~AppImpl() {
     DeleteInstance();
+}
+
+void AppImpl::onBeforeSceneCreate() {
+    mPerformanceController.resetSetting();
+    mHIDManager.updateGame();
+}
+
+void AppImpl::onAfterSceneDestroy(bool arg1) {
+    mHIDErrorMenu.onAfterSceneDestroy();
+    mHIDManager.resetButtonConvertKind();
+    mMessageManager.clear();
+    mResidentFile.waitToFinish();
+    mSaveInfo.afterSceneDestroy(arg1);
+    mFileManager.clearFilesIfEnable();
+    mPreLoadManager.waitToFinishLoading();
+    mem::Memory::Instance->externalHeap().compaction();
+}
+
+void AppImpl::sceneLoop(scn::IScene& rScene) {
+    onSceneStartProcess(rScene);
+
+    do {
+        mReset.process();
+        beginFrameProcess();
+        drawProcess(rScene);
+        updateProcess(rScene);
+        endFrameProcess(rScene);
+
+        if (rScene.vf20()) {
+            break;
+        }
+    } while (!mReset.isExecuted());
+
+    onSceneEndProcess(rScene);
+}
+
+void AppImpl::onSceneStartProcess(scn::IScene& rScene) {
+    mScene = &rScene;
+    mResidentFile.startIfNecessary();
+    mPerformanceController.onSceneStart();
+    mDvdWatch.setBGMode(false);
+}
+
+void AppImpl::onSceneEndProcess(scn::IScene&) {
+    mDvdWatch.setBGMode(true);
+    mScene = nullptr;
+}
+
+bool AppImpl::canFrameUpdate() const {
+    return mReset.canFrameUpdate();
+}
+
+bool AppImpl::canSceneUpdate() const {
+    if (!canFrameUpdate()) {
+        return false;
+    }
+
+    if (mHomeButtonMenu.isOpened()) {
+        return false;
+    }
+
+    if (mHIDErrorMenu.isOpened()) {
+        return false;
+    }
+
+    return !mNANDErrorMenu.isOpened();
 }

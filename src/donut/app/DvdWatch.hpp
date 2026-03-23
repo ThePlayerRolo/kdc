@@ -13,6 +13,8 @@ class DvdWatch {
 public:
     DvdWatch(System& rSystem, nw4r::ut::RomFont& rFont, gfx::GameScreen& rGameScreen);
     ~DvdWatch();
+
+    void setBGMode(bool mode);
 private:
     STRUCT_FILL(0x344);
 };

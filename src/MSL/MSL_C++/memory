@@ -1,0 +1,15 @@
+#ifndef STD_MEMORY
+#define STD_MEMORY
+
+namespace std {
+    template <typename T>
+    class auto_ptr {
+    public:
+        auto_ptr();
+        ~auto_ptr();
+    private:
+        T* ptr_;
+    };
+
+}
+#endif

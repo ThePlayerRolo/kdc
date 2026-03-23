@@ -9,6 +9,10 @@ class Reset : public hel::common::ExplicitSingleton<Reset> {
 public:
     Reset();
     ~Reset();
+
+    void process();
+    bool canFrameUpdate() const;
+    bool isExecuted() const;
 private:
     STRUCT_FILL(0x54);
 };

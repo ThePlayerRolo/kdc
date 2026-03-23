@@ -9,6 +9,8 @@ class FileManager {
 public:
     FileManager();
     ~FileManager();
+
+    void clearFilesIfEnable();
 private:
     STRUCT_FILL(0x44);
 };

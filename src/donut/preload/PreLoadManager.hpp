@@ -9,6 +9,8 @@ class PreLoadManager {
 public:
     PreLoadManager();
     ~PreLoadManager();
+
+    void waitToFinishLoading();
 private:
     STRUCT_FILL(0xBB64);
 };

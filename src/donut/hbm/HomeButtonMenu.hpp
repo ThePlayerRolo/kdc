@@ -9,6 +9,8 @@ class HomeButtonMenu {
 public:
     HomeButtonMenu(bool);
     ~HomeButtonMenu();
+
+    bool isOpened() const;
 private:
     STRUCT_FILL(0x5E0);
 };

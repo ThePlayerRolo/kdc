@@ -9,6 +9,9 @@ class HIDErrorMenu {
 public:
     HIDErrorMenu();
     ~HIDErrorMenu();
+
+    bool isOpened() const;
+    void onAfterSceneDestroy();
 private:
     STRUCT_FILL(0x70);
 };

@@ -9,6 +9,9 @@ class PerformanceController {
 public:
     PerformanceController();
     ~PerformanceController();
+
+    void onSceneStart();
+    void resetSetting();
 private:
     STRUCT_FILL(0x14);
 };

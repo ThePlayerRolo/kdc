@@ -11,6 +11,8 @@ class NANDErrorMenu {
 public:
     NANDErrorMenu(ResidentFile&);
     ~NANDErrorMenu();
+
+    bool isOpened() const;
 private:
     STRUCT_FILL(0x68);
 };

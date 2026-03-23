@@ -10,6 +10,8 @@ class SaveInfo {
 public:
     SaveInfo(ResidentFile&);
     ~SaveInfo();
+
+    void afterSceneDestroy(bool);
 private:
     STRUCT_FILL(0x3B8);
 };
