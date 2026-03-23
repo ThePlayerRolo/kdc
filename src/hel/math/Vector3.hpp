@@ -20,10 +20,15 @@ namespace hel { namespace math {
         static Vector3 BASIS_Z;
 
         //Gets merged into nw4r::math::VEC3::VEC3(float, float, float)
-        Vector3(f32, f32, f32);
+        Vector3(f32 _x, f32 _y, f32 _z);
         Vector3();
 
-        void operator=(const Vector3& rOther);
+        void operator=(const Vector3& rOther) {
+            x = rOther.x;
+            y = rOther.y;
+            z = rOther.z;
+        }
+
         Vector3 operator+(const Vector3& rOther) const;
         void operator+=(const Vector3& rOther);
         void operator-=(const Vector3& rOther);
