@@ -1,6 +1,8 @@
 #include <revolution/OS.h>
 #include <runtime/GCN_mem_alloc.h>
 
+
+//Note: OSGetArenaLo and OSGetArenaHi ARE merged with their OSGetMEM1 variants, hence the slight mismatches
 inline static void InitDefaultHeap(void) {
 	void* arenaLo;
 	void* arenaHi;
