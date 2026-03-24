@@ -7,6 +7,9 @@ extern "C" {
 
 void abort();
 
+extern int __stdio_exit;
+extern BOOL __aborting;
+
 #ifdef __cplusplus
 }
 #endif

@@ -78,8 +78,8 @@ void __fini_cpp(void) {
         (*dtor)();
     }
 }
-
-void exit(void) {
+//Extra parameter required because of abort_exit_ppc_eabi
+void exit(int arg1) {
     __fini_cpp();
     _ExitProcess();
 }

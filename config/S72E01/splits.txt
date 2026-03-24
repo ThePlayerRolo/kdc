@@ -61,6 +61,10 @@ runtime/GCN_mem_alloc.c:
 	.text       start:0x8000917C end:0x80009234
 	.rodata     start:0x80406600 end:0x80406670
 
+MSL/MSL_C/PPC_EABI/SRC/abort_exit_ppc_eabi.c:
+	.text       start:0x80010528 end:0x8001055C
+	.sbss       start:0x8055C700 end:0x8055C708
+
 revolution/OS/OSAlarm.c:
 	.text       start:0x8001B7A0 end:0x8001C050
 	.data       start:0x804221E8 end:0x804221F8

@@ -2,7 +2,7 @@
  https://github.com/DarkRTA/rb3/blob/master/src/sdk/PowerPC_EABI_Support/Runtime/NMWException.cpp */
 
 #include <runtime/NMWException.h>
-#include <MSL/MSL_C/PPC_EABI/abort_exit_ppc_eabi.h>
+#include <abort_exit_ppc_eabi.h>
 
 #define ARRAY_HEADER_SIZE 16
 
