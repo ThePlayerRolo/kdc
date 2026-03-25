@@ -1,8 +1,3 @@
-
-#ifndef lint
-static  char sccsid[] = "@(#)e_pow.c 1.5 04/04/22 SMI";
-#endif
-
 /*
  * ====================================================
  * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
@@ -52,7 +47,7 @@ static  char sccsid[] = "@(#)e_pow.c 1.5 04/04/22 SMI";
  *	representable.
  *
  * Constants :
- * The hexadecimal values are the intended ones for the following
+ * The hexadecimal values are the intended 1.0s for the following
  * constants. The decimal values may be used, provided that the
  * compiler will convert from decimal to binary accurately enough
  * to produce the hexadecimal values shown.
@@ -112,13 +107,16 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	int hx,hy,ix,iy;
 	unsigned lx,ly;
 
-	i0 = ((*(int*)&one)>>29)^1; i1=1-i0;
+	//hack to prevent one from being placed by itself in sdata
+	double var1 = one;
+
+	i0 = ((*(int*)&var1)>>29)^1; i1=1-i0;
 	hx = __HI(x); lx = __LO(x);
 	hy = __HI(y); ly = __LO(y);
 	ix = hx&0x7fffffff;  iy = hy&0x7fffffff;
 
     /* y==zero: x**0 = 1 */
-	if((iy|ly)==0) return one;
+	if((iy|ly)==0) return 1.0;
 
     /* +-NaN return x+y */
 	if(ix > 0x7ff00000 || ((ix==0x7ff00000)&&(lx!=0)) ||
@@ -134,7 +132,7 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	if(hx<0) {
 	    if(iy>=0x43400000) yisint = 2; /* even integer y */
 	    else if(iy>=0x3ff00000) {
-		k = (iy>>20)-0x3ff;	   /* exponent */
+		k = (iy>>20)-0x3ff;	   /* exp1.0nt */
 		if(k>20) {
 		    j = ly>>(52-k);
 		    if((j<<(52-k))==ly) yisint = 2-(j&1);
@@ -156,7 +154,7 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 		    return (hy<0)?-y: zero;
 	    }
 	    if(iy==0x3ff00000) {	/* y is  +-1 */
-		if(hy<0) return one/x; else return x;
+		if(hy<0) return 1.0/x; else return x;
 	    }
 	    if(hy==0x40000000) return x*x; /* y is  2 */
 	    if(hy==0x3fe00000) {	/* y is  0.5 */
@@ -170,7 +168,7 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	if(lx==0) {
 	    if(ix==0x7ff00000||ix==0||ix==0x3ff00000){
 		z = ax;			/*x is +-0,+-inf,+-1*/
-		if(hy<0) z = one/z;	/* z = (1/|x|) */
+		if(hy<0) z = 1.0/z;	/* z = (1/|x|) */
 		if(hx<0) {
 		    if(((ix-0x3ff00000)|yisint)==0) {
 			// Why wasn't this replaced with the constant NAN too?
@@ -194,12 +192,12 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 		if(ix<=0x3fefffff) return (hy<0)? huge*huge:tiny*tiny;
 		if(ix>=0x3ff00000) return (hy>0)? huge*huge:tiny*tiny;
 	    }
-	/* over/underflow if x is not close to one */
+	/* over/underflow if x is not close to 1.0 */
 	    if(ix<0x3fefffff) return (hy<0)? huge*huge:tiny*tiny;
 	    if(ix>0x3ff00000) return (hy>0)? huge*huge:tiny*tiny;
 	/* now |1-x| is tiny <= 2**-20, suffice to compute
 	   log(x) by x-x^2/2+x^3/3-x^4/4 */
-	    t = x-one;		/* t has 20 trailing zeros */
+	    t = x-1.0;		/* t has 20 trailing zeros */
 	    w = (t*t)*(0.5-t*(0.3333333333333333333333-t*0.25));
 	    u = ivln2_h*t;	/* ivln2_h has 21 sig. bits */
 	    v = t*ivln2_l-w*ivln2;
@@ -223,7 +221,7 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 
 	/* compute ss = s_h+s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5) */
 	    u = ax-bp[k];		/* bp[0]=1.0, bp[1]=1.5 */
-	    v = one/(ax+bp[k]);
+	    v = 1.0/(ax+bp[k]);
 	    ss = u*v;
 	    s_h = ss;
 	    __LO(s_h) = 0;
@@ -256,8 +254,8 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	    t2 = z_l-(((t1-t)-dp_h[k])-z_h);
 	}
 
-	s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
-	if((((hx>>31)+1)|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */
+	s = 1.0; /* s (sign of result -ve**odd) = -1 else = 1 */
+	if((((hx>>31)+1)|(yisint-1))==0) s = -1.0;/* (-ve)**(odd int) */
 
     /* split up y into y1+y2 and compute (y1+y2)*(t1+t2) */
 	y1  = y;
@@ -304,7 +302,7 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	t  = z*z;
 	t1  = z - t*(P1+t*(P2+t*(P3+t*(P4+t*P5))));
 	r  = (z*t1)/(t1-two)-(w+z*w);
-	z  = one-(r-z);
+	z  = 1.0-(r-z);
 	j  = __HI(z);
 	j += (n<<20);
 	if((j>>20)<=0) z = scalbn(z,n);	/* subnormal output */

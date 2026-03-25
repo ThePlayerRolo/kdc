@@ -41,8 +41,10 @@
  *
  */
 
+#include <cerrno>
 #include <fdlibm.h>
 #include <math.h>
+#include <errno.h>
 
 #ifdef __STDC__
 static const double
@@ -81,6 +83,8 @@ double x;
         if (((ix - 0x3ff00000) | __LO(x)) == 0)
             /* asin(1)=+-pi/2 with inexact */
             return x * pio2_hi + x * pio2_lo;
+
+        errno = EDOM;
         return NAN;               /* asin(|x|>1) is NaN */
     } else if (ix < 0x3fe00000) { /* |x|<0.5 */
         if (ix < 0x3e400000) {    /* if |x| < 2**-27 */

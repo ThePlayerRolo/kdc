@@ -25,6 +25,7 @@ static const double one = 1.0, Zero[] = {0.0, -0.0,};
 static double one = 1.0, Zero[] = {0.0, -0.0,};
 #endif
 
+//https://decomp.me/scratch/CocFv
 #ifdef __STDC__
 	double __ieee754_fmod(double x, double y)
 #else
