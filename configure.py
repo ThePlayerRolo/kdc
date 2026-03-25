@@ -210,9 +210,12 @@ cflags_base = [
     # "-multibyte",  # For Wii compilers, replace with `-enc SJIS`
     "-enc SJIS",
     "-i src/",
-    "-i src/MSL/MSL_C/",
-    "-i src/MSL/MSL_C/internal/",
-    "-i src/MSL/MSL_C++",
+    "-i libs/",
+    "-i libs/MSL/MSL_C/",
+    "-i libs/MSL/MSL_C/MSL_Common/Include",
+    "-i libs/MSL/MSL_C/MSL_Common_Embedded/Include/",
+    "-i libs/MSL/MSL_C++/MSL_Common/Include",
+    "-i libs/MSL/MSL_C/PPC_EABI/Include",
     "-i src/revolution/",
     "-i src/nw4r/",
     f"-i build/{config.version}/src",
@@ -237,6 +240,16 @@ elif args.warn == "error":
 
 # Metrowerks library flags
 cflags_runtime = [
+    *cflags_base,
+    "-use_lmw_stmw on",
+    "-str reuse,pool,readonly",
+    "-gccinc",
+    "-common off",
+    "-inline auto",
+    "-O4,s"
+]
+
+cflags_msl = [
     *cflags_base,
     "-use_lmw_stmw on",
     "-str reuse,pool,readonly",
@@ -339,6 +352,48 @@ config.libs = [
             Object(NonMatching, "runtime/Gecko_ExceptionPPC.cpp", extra_cflags=["-RTTI on"]),
             Object(NonMatching, "runtime/New.cpp", extra_cflags=["-RTTI on"]),
             Object(NonMatching, "runtime/NMWException.cpp", extra_cflags=["-O4,p"]),
+        ],
+    },
+    {
+        "lib": "MSL_C.PPCEABI.bare",
+        "src_dir": "libs/",
+        "mw_version": config.linker_version,
+        "cflags": cflags_msl,
+        "progress_category": "msl",  # str | List[str]
+        "objects": [
+            Object(Matching, "MSL/MSL_C/MSL_Common/Src/float.c"),
+            Object(NonMatching, "MSL/MSL_C/PPC_EABI/SRC/abort_exit_ppc_eabi.c"),
+            Object(Matching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_acos.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_asin.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_atan2.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_fmod.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_log.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_log10.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_pow.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_rem_pio2.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/k_cos.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/k_rem_pio2.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/k_sin.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/k_tan.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_atan.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_ceil.c", extra_cflags=["-fp_contract off"]),
+            Object(Matching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_copysign.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_cos.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_floor.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_frexp.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_ldexp.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_modf.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_sin.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/s_tan.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/w_acos.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/w_asin.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/w_atan2.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/w_fmod.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/w_log10.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/w_pow.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/e_sqrt.c", extra_cflags=["-fp_contract off"]),
+            Object(NonMatching, "MSL/MSL_C/MSL_Common_Embedded/Math/Double_precision/w_sqrt.c", extra_cflags=["-fp_contract off"]),
+
         ],
     },
     {
@@ -494,6 +549,7 @@ config.progress_categories = [
     ProgressCategory("donut", "Game Code"),
     ProgressCategory("hel", "HAL Library Code"),
     ProgressCategory("sdk", "SDK Code"),
+    ProgressCategory("msl", "MSL Code"),
 ]
 config.progress_each_module = args.verbose
 # Optional extra arguments to `objdiff-cli report generate`
