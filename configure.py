@@ -552,6 +552,18 @@ config.libs = [
             ),
         ],
     },
+    {
+        "lib": "util",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/util/Alarm.cpp"),
+            Object(Matching, "donut/util/CurveUtility.cpp"),
+            Object(Equivalent, "donut/util/FrameCounter.cpp"),
+
+        ],
+    },
 ]
 
 
