@@ -1,4 +1,3 @@
-#include "runtime/runtime.h"
 #pragma peephole off
 #include <donut/util/Alarm.hpp>
 #include <donut/util/DisableInterrupts.hpp>
