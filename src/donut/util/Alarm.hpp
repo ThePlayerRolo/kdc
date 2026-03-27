@@ -17,8 +17,7 @@ public:
     void final();
 
 private:
-    s32 m_4;
-    /* 0x8 */ OSAlarm* mAlarm;
+    /* 0x4??? */ OSAlarm* mAlarm;
 };
 }
 
