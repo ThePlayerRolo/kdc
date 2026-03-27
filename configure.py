@@ -557,6 +557,7 @@ config.libs = [
         "progress_category": "donut",
         "objects": [
             Object(NonMatching, "donut/util/Alarm.cpp"),
+            Object(Matching, "donut/util/CurveUtility.cpp"),
         ],
     },
 ]

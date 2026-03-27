@@ -432,3 +432,7 @@ donut/util/Alarm.cpp:
 	.data       start:0x804966E0 end:0x804966F0
 	.sbss       start:0x8055DF68 end:0x8055DF74
 	.sdata2     start:0x80564378 end:0x80564388
+
+donut/util/CurveUtility.cpp:
+	.text       start:0x80405948 end:0x80405980
+	.sdata2     start:0x80564390 end:0x80564398
