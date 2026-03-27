@@ -1,6 +1,8 @@
+#include "FS/fs.h"
 #include <revolution/ESP.h>
 #include <revolution/NAND.h>
 #include <revolution/OS.h>
+#include <revolution/version.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -16,14 +18,15 @@ typedef enum {
 
 static void nandShutdownCallback(s32 result, void* arg);
 static void nandGetTypeCallback(s32 result, void* arg);
+static void nandLoggingCallback(BOOL arg1,  s32 arg);
 static BOOL nandOnShutdown(BOOL final, u32 event);
 static s32 _ES_InitLib(s32* fd);
 static s32 _ES_GetDataDir(s32* fd, u64 tid, char* dirOut) DECOMP_DONT_INLINE;
 static s32 _ES_GetTitleId(s32* fd, u64* tidOut);
 static s32 _ES_CloseLib(s32* fd);
 
-const char* __NANDVersion =
-    "<< RVL_SDK - NAND \trelease build: Nov 30 2006 03:32:57 (0x4199_60831) >>";
+RVL_LIB_VERSION_KDC(NAND, "17:33:46");
+
 
 static NANDLibState s_libState = NAND_LIB_UNINITIALIZED;
 static char s_currentDir[64] ALIGN(32) = "/";
@@ -155,46 +158,49 @@ s32 nandConvertErrorCode(s32 result) {
     int i;
 
     // clang-format off
-    const s32 errorMap[] = {IPC_RESULT_OK,                    NAND_RESULT_OK,
-                            IPC_RESULT_ACCESS,                NAND_RESULT_ACCESS,
-                            IPC_RESULT_CORRUPT,               NAND_RESULT_CORRUPT,
-                            IPC_RESULT_ECC_CRIT,              NAND_RESULT_ECC_CRIT,
-                            IPC_RESULT_EXISTS,                NAND_RESULT_EXISTS,
-                            -116,                             NAND_RESULT_AUTHENTICATION,
-                            IPC_RESULT_INVALID,               NAND_RESULT_INVALID,
-                            IPC_RESULT_MAXBLOCKS,             NAND_RESULT_MAXBLOCKS,
-                            IPC_RESULT_MAXFD,                 NAND_RESULT_MAXFD,
-                            IPC_RESULT_MAXFILES,              NAND_RESULT_MAXFILES,
-                            IPC_RESULT_NOEXISTS,              NAND_RESULT_NOEXISTS,
-                            IPC_RESULT_NOTEMPTY,              NAND_RESULT_NOTEMPTY,
-                            -104,                             NAND_RESULT_UNKNOWN,
-                            IPC_RESULT_OPENFD,                NAND_RESULT_OPENFD,
-                            -117,                             NAND_RESULT_UNKNOWN,
-                            IPC_RESULT_BUSY,                  NAND_RESULT_BUSY,
-                            IPC_RESULT_FATAL_ERROR,           NAND_RESULT_FATAL_ERROR,
-                            IPC_RESULT_ACCESS_INTERNAL,       NAND_RESULT_ACCESS,
-                            IPC_RESULT_EXISTS_INTERNAL,       NAND_RESULT_EXISTS,
-                            -3,                               NAND_RESULT_UNKNOWN,
-                            IPC_RESULT_INVALID_INTERNAL,      NAND_RESULT_INVALID,
-                            -5,                               NAND_RESULT_UNKNOWN,
-                            IPC_RESULT_NOEXISTS_INTERNAL,     NAND_RESULT_NOEXISTS,
-                            -7,                               NAND_RESULT_UNKNOWN,
-                            IPC_RESULT_BUSY_INTERNAL,         NAND_RESULT_BUSY,
-                            -9,                               NAND_RESULT_UNKNOWN,
-                            -10,                              NAND_RESULT_UNKNOWN,
-                            -11,                              NAND_RESULT_UNKNOWN,
-                            IPC_RESULT_ECC_CRIT_INTERNAL,     NAND_RESULT_ECC_CRIT,
-                            -13,                              NAND_RESULT_UNKNOWN,
-                            -14,                              NAND_RESULT_UNKNOWN,
-                            -15,                              NAND_RESULT_UNKNOWN,
-                            -16,                              NAND_RESULT_UNKNOWN,
-                            -17,                              NAND_RESULT_UNKNOWN,
-                            -18,                              NAND_RESULT_UNKNOWN,
-                            -19,                              NAND_RESULT_UNKNOWN,
-                            -20,                              NAND_RESULT_UNKNOWN,
-                            -21,                              NAND_RESULT_UNKNOWN,
+    const s32 errorMap[] = {        ISFS_ERROR_OK,                  NAND_RESULT_OK,
+                            ISFS_ERROR_ACCESS,              NAND_RESULT_ACCESS,
+                            ISFS_ERROR_CORRUPT,             NAND_RESULT_CORRUPT,
+                            ISFS_ERROR_ECC_CRIT,            NAND_RESULT_ECC_CRIT,
+                            ISFS_ERROR_EXISTS,              NAND_RESULT_EXISTS,
+                            ISFS_ERROR_AUTHENTICATION,      NAND_RESULT_AUTHENTICATION,
+                            ISFS_ERROR_INVALID,             NAND_RESULT_INVALID,
+                            ISFS_ERROR_MAXBLOCKS,           NAND_RESULT_MAXBLOCKS,
+                            ISFS_ERROR_MAXFD,               NAND_RESULT_MAXFD,
+                            ISFS_ERROR_MAXFILES,            NAND_RESULT_MAXFILES,
+                            ISFS_ERROR_MAXDEPTH,            NAND_RESULT_MAXDEPTH,
+                            ISFS_ERROR_NOEXISTS,            NAND_RESULT_NOEXISTS,
+                            ISFS_ERROR_NOTEMPTY,            NAND_RESULT_NOTEMPTY,
+                            ISFS_ERROR_NOTREADY,            NAND_RESULT_UNKNOWN,
+                            ISFS_ERROR_OPENFD,              NAND_RESULT_OPENFD,
+                            ISFS_ERROR_UNKNOWN,             NAND_RESULT_UNKNOWN,
+                            ISFS_ERROR_BUSY,                NAND_RESULT_BUSY,
+                            ISFS_ERROR_SHUTDOWN,            NAND_RESULT_FATAL_ERROR,
+
+                            IPC_RESULT_ACCESS,       NAND_RESULT_ACCESS,
+                            IPC_RESULT_EXISTS,       NAND_RESULT_EXISTS,
+                            IPC_RESULT_INTR,                               NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INVALID,      NAND_RESULT_INVALID,
+                            IPC_RESULT_CONN_MAX_INTERNAL,                               NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_NOEXISTS,     NAND_RESULT_NOEXISTS,
+                            IPC_RESULT_EMPTYQUEUE,                               NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_BUSY,         NAND_RESULT_BUSY,
+                            IPC_RESULT_UNKNOWN,                               NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_NOTREADY,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_ECC,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_ECC_CRIT,     NAND_RESULT_ECC_CRIT,
+                            IPC_RESULT_BADBLOCK,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INVALID_OBJTYPE,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INVALID_RNG,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INVALID_FLAG,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INVALID_FORMAT,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INVALID_VERSION,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INVALID_SIGNATURE,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_VERIFY_FAILED,                              NAND_RESULT_UNKNOWN,
+                            IPC_RESULT_INTERNAL_FAILURE,                              NAND_RESULT_UNKNOWN,
                             IPC_RESULT_ALLOC_FAILED,          NAND_RESULT_ALLOC_FAILED,
-                            -23,                              NAND_RESULT_UNKNOWN};
+                            IPC_RESULT_INVALID_SIZE,                              NAND_RESULT_UNKNOWN
+            };
     // clang-format on
 
     i = 0;
@@ -205,12 +211,27 @@ s32 nandConvertErrorCode(s32 result) {
 
     for (; i < ARRAY_SIZE(errorMap); i += 2) {
         if (result == errorMap[i]) {
-            nandReportErrorCode(result);
+                if (result == ISFS_ERROR_ECC_CRIT  || result == ISFS_ERROR_AUTHENTICATION || result == ISFS_ERROR_UNKNOWN ||
+                result == IPC_RESULT_UNKNOWN || result == IPC_RESULT_ECC_CRIT) {
+                char buf[128] ALIGN(64);
+                sprintf(buf, "ISFS error code: %d", result);
+                NANDLoggingAddMessageAsync(nandLoggingCallback, result, buf);
+            }
+
+            if (result < IPC_RESULT_INVALID_SIZE && result == ISFS_ERROR_UNKNOWN2 || result == ISFS_ERROR_MAXBLOCKS || result == ISFS_ERROR_MAXFILES || result == ISFS_ERROR_CORRUPT || result == ISFS_ERROR_BUSY || result == IPC_RESULT_BUSY || result == IPC_RESULT_ALLOC_FAILED) {
+                __NANDPrintErrorMessage(result);
+            }
+
             return errorMap[i + 1];
         }
     }
 
     OSReport("CAUTION!  Unexpected error code [%d] was found.\n", result);
+    {
+        char buf[128];
+        sprintf(buf, "ISFS unexpected error code: %d", result);
+        NANDLoggingAddMessageAsync(nandLoggingCallback, result, buf);
+    }
     nandReportErrorCode(result);
     return NAND_RESULT_UNKNOWN;
 }
@@ -250,7 +271,7 @@ void nandGetParentDirectory(char* dir, const char* path) {
 
 s32 NANDInit(void) {
     s32 result;
-    u64 tid;
+    ESTitleId tid;
     s32 fd;
     BOOL enabled;
 
@@ -270,21 +291,21 @@ s32 NANDInit(void) {
     result = ISFS_OpenLib();
     if (result == IPC_RESULT_OK) {
 
-        result = _ES_InitLib(&fd);
+        result = ESP_InitLib();
 
         if (result == IPC_RESULT_OK) {
-            result = _ES_GetTitleId(&fd, &tid);
+            result = ESP_GetTitleId(&tid);
         }
 
         if (result == IPC_RESULT_OK) {
-            result = _ES_GetDataDir(&fd, tid, s_homeDir);
+            result = ESP_GetDataDir(tid, s_homeDir);
         }
 
         if (result == IPC_RESULT_OK) {
             strcpy(s_currentDir, s_homeDir);
         }
 
-        _ES_CloseLib(&fd);
+        ESP_CloseLib();
 
         if (result != IPC_RESULT_OK) {
             OSReport("Failed to set home directory.\n");
@@ -294,13 +315,14 @@ s32 NANDInit(void) {
         enabled = OSDisableInterrupts();
         s_libState = NAND_LIB_INITIALIZED;
         OSRestoreInterrupts(enabled);
+        NANDSetAutoErrorMessaging(TRUE);
         OSRegisterVersion(__NANDVersion);
         return NAND_RESULT_OK;
     } else {
         enabled = OSDisableInterrupts();
         s_libState = NAND_LIB_UNINITIALIZED;
         OSRestoreInterrupts(enabled);
-        return nandConvertErrorCode(result);
+        nandConvertErrorCode(result);
     }
 }
 
@@ -364,14 +386,14 @@ static s32 nandGetType(const char* path, u8* type, NANDCommandBlock* block,
     s32 result;
 
     if (strlen(path) == 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     if (async) {
         nandGenerateAbsPath(block->path, path);
 
         if (!priv && nandIsUnderPrivatePath(block->path)) {
-            return IPC_RESULT_ACCESS;
+            return ISFS_ERROR_ACCESS;
         }
 
         block->type = type;
@@ -382,15 +404,15 @@ static s32 nandGetType(const char* path, u8* type, NANDCommandBlock* block,
         nandGenerateAbsPath(absPath, path);
 
         if (!priv && nandIsUnderPrivatePath(absPath)) {
-            return IPC_RESULT_ACCESS;
+            return ISFS_ERROR_ACCESS;
         }
 
         numFiles = 0;
         result = ISFS_ReadDir(absPath, NULL, &numFiles);
-        if (result == IPC_RESULT_OK || result == IPC_RESULT_ACCESS) {
+        if (result == IPC_RESULT_OK || result == ISFS_ERROR_ACCESS) {
             *type = NAND_FILE_TYPE_DIR;
             return IPC_RESULT_OK;
-        } else if (result == IPC_RESULT_INVALID) {
+        } else if (result == ISFS_ERROR_INVALID) {
             *type = NAND_FILE_TYPE_FILE;
             return IPC_RESULT_OK;
         }
@@ -424,7 +446,7 @@ static void nandGetTypeCallback(s32 result, void* arg) {
     if (result == IPC_RESULT_OK || result == IPC_RESULT_ACCESS) {
         *block->type = NAND_FILE_TYPE_DIR;
         result = IPC_RESULT_OK;
-    } else if (result == IPC_RESULT_INVALID) {
+    } else if (result == ISFS_ERROR_INVALID) {
         *block->type = NAND_FILE_TYPE_FILE;
         result = IPC_RESULT_OK;
     }

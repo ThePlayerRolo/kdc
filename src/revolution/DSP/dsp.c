@@ -1,8 +1,9 @@
 #include <revolution/DSP.h>
 #include <revolution/OS.h>
+#include <revolution/version.h>
 
-const char* __DSPVersion =
-    "<< RVL_SDK - DSP \trelease build: Nov 30 2006 03:26:46 (0x4199_60831) >>";
+RVL_LIB_VERSION_KDC(DSP, "17:30:03");
+
 
 static BOOL __DSP_init_flag = FALSE;
 
@@ -40,8 +41,8 @@ void DSPAssertInt(void) {
 void DSPInit(void) {
     BOOL enabled;
 
-    __DSP_debug_printf("DSPInit(): Build Date: %s %s\n", "Nov 30 2006",
-                       "03:26:46");
+    __DSP_debug_printf("DSPInit(): Build Date: %s %s\n", "Aug 23 2010",
+                       "17:30:03");
 
     if (__DSP_init_flag == TRUE) {
         return;
@@ -76,6 +77,7 @@ BOOL DSPCheckInit(void) {
     return __DSP_init_flag;
 }
 
+//https://decomp.me/scratch/Id3IE
 DSPTask* DSPAddTask(DSPTask* task) {
     BOOL enabled;
 
@@ -100,15 +102,15 @@ DSPTask* DSPAssertTask(DSPTask* task) {
     enabled = OSDisableInterrupts();
 
     if (__DSP_curr_task == task) {
-        __DSP_rude_task_pending = TRUE;
         __DSP_rude_task = task;
+        __DSP_rude_task_pending = TRUE;
         OSRestoreInterrupts(enabled);
         return task;
     }
 
     if (task->prio < __DSP_curr_task->prio) {
-        __DSP_rude_task_pending = TRUE;
         __DSP_rude_task = task;
+        __DSP_rude_task_pending = TRUE;
 
         if (__DSP_curr_task->state == DSP_TASK_STATE_1) {
             DSPAssertInt();

@@ -64,6 +64,7 @@ void __DSP_exec_task(DSPTask* task1, DSPTask* task2);
 void __DSP_boot_task(DSPTask* task);
 void __DSP_insert_task(DSPTask* task);
 void __DSP_remove_task(DSPTask* task);
+void __DSP_add_task(DSPTask* task);
 
 #ifdef __cplusplus
 }

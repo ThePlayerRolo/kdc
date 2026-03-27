@@ -1,3 +1,4 @@
+#include "fs.h"
 #include <revolution/FS.h>
 #include <revolution/IPC.h>
 #include <revolution/OS.h>
@@ -256,7 +257,7 @@ s32 ISFS_CreateDir(const char* path, u32 attr, u32 ownerPerm, u32 groupPerm,
 
     if (path == NULL || __fsFd < 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -292,12 +293,12 @@ s32 ISFS_CreateDirAsync(const char* path, u32 attr, u32 ownerPerm,
 
     if (path == NULL || __fsFd < 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -330,7 +331,7 @@ s32 ISFS_ReadDir(const char* path, char* filesOut, u32* fileCountOut) {
     if (path == NULL || fileCountOut == NULL || __fsFd < 0 ||
         (u32)filesOut % 32 != 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -411,12 +412,12 @@ s32 ISFS_ReadDirAsync(const char* path, char* filesOut, u32* fileCountOut,
     if (path == NULL || fileCountOut == NULL || __fsFd < 0 ||
         (u32)filesOut % 32 != 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -474,7 +475,7 @@ s32 ISFS_GetAttr(const char* path, u32* ownerIdOut, u16* groupIdOut,
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH ||
         ownerIdOut == NULL || groupIdOut == NULL || attrOut == NULL ||
         ownerPermOut == NULL || groupPermOut == NULL || otherPermOut == NULL) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -538,12 +539,12 @@ s32 ISFS_GetAttrAsync(const char* path, u32* ownerIdOut, u16* groupIdOut,
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH ||
         ownerIdOut == NULL || groupIdOut == NULL || attrOut == NULL ||
         ownerPermOut == NULL || groupPermOut == NULL || otherPermOut == NULL) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->getAttrCtx.ownerIdOut = ownerIdOut;
@@ -574,7 +575,7 @@ s32 ISFS_Delete(const char* path) {
 
     if (path == NULL || __fsFd < 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -606,12 +607,12 @@ s32 ISFS_DeleteAsync(const char* path, FSAsyncCallback callback,
 
     if (path == NULL || __fsFd < 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     memcpy(block->ioctlWork, path, len + 1);
@@ -634,7 +635,7 @@ s32 ISFS_Rename(const char* from, const char* to) {
     if (from == NULL || to == NULL || __fsFd < 0 ||
         (lenFrom = strnlen(from, FS_MAX_PATH)) == FS_MAX_PATH ||
         (lenTo = strnlen(to, FS_MAX_PATH)) == FS_MAX_PATH) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -669,12 +670,12 @@ s32 ISFS_RenameAsync(const char* from, const char* to, FSAsyncCallback callback,
     if (from == NULL || to == NULL || __fsFd < 0 ||
         (lenFrom = strnlen(from, FS_MAX_PATH)) == FS_MAX_PATH ||
         (lenTo = strnlen(to, FS_MAX_PATH)) == FS_MAX_PATH) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -702,7 +703,7 @@ s32 ISFS_GetUsage(const char* path, s32* blockCountOut, s32* fileCountOut) {
     if (path == NULL || __fsFd < 0 || blockCountOut == NULL ||
         fileCountOut == NULL ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -771,7 +772,7 @@ s32 ISFS_CreateFile(const char* path, u32 attr, u32 ownerPerm, u32 groupPerm,
 
     if (path == NULL || __fsFd < 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -807,12 +808,12 @@ s32 ISFS_CreateFileAsync(const char* path, u32 attr, u32 ownerPerm,
 
     if (path == NULL || __fsFd < 0 ||
         (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -838,7 +839,7 @@ s32 ISFS_Open(const char* path, IPCOpenMode mode) {
     block = NULL;
 
     if (path == NULL || (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        ret = IPC_RESULT_INVALID;
+        ret = ISFS_ERROR_INVALID;
         goto end;
     }
 
@@ -868,12 +869,12 @@ s32 ISFS_OpenAsync(const char* path, IPCOpenMode mode, FSAsyncCallback callback,
     block = NULL;
 
     if (path == NULL || (len = strnlen(path, FS_MAX_PATH)) == FS_MAX_PATH) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -888,7 +889,7 @@ s32 ISFS_OpenAsync(const char* path, IPCOpenMode mode, FSAsyncCallback callback,
 
 s32 ISFS_GetFileStats(s32 fd, FSFileStats* statsOut) {
     if (statsOut == NULL || (u32)statsOut % 32 != 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     return IOS_Ioctl(fd, FS_IOCTL_GET_FILE_STATS, NULL, 0, statsOut,
@@ -900,12 +901,12 @@ s32 ISFS_GetFileStatsAsync(s32 fd, FSFileStats* statsOut,
     FSCommandBlock* block;
 
     if (statsOut == NULL || (u32)statsOut % 32 != 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -926,7 +927,7 @@ s32 ISFS_SeekAsync(s32 fd, s32 offset, IPCSeekMode mode,
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -938,7 +939,7 @@ s32 ISFS_SeekAsync(s32 fd, s32 offset, IPCSeekMode mode,
 
 s32 ISFS_Read(s32 fd, void* dst, s32 len) {
     if (dst == NULL || (u32)dst % 32 != 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     return IOS_Read(fd, dst, len);
@@ -949,12 +950,12 @@ s32 ISFS_ReadAsync(s32 fd, void* dst, s32 len, FSAsyncCallback callback,
     FSCommandBlock* block;
 
     if (dst == NULL || (u32)dst % 32 != 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -966,7 +967,7 @@ s32 ISFS_ReadAsync(s32 fd, void* dst, s32 len, FSAsyncCallback callback,
 
 s32 ISFS_Write(s32 fd, const void* src, s32 len) {
     if (src == NULL || (u32)src % 32 != 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     return IOS_Write(fd, src, len);
@@ -977,12 +978,12 @@ s32 ISFS_WriteAsync(s32 fd, const void* src, s32 len, FSAsyncCallback callback,
     FSCommandBlock* block;
 
     if (src == NULL || (u32)src % 32 != 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -1001,7 +1002,7 @@ s32 ISFS_CloseAsync(s32 fd, FSAsyncCallback callback, void* callbackArg) {
 
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
     if (block == NULL) {
-        return IPC_RESULT_BUSY;
+        return ISFS_ERROR_BUSY;
     }
 
     block->callback = callback;
@@ -1018,7 +1019,7 @@ s32 ISFS_ShutdownAsync(FSAsyncCallback callback, void* callbackArg) {
     block = (FSCommandBlock*)iosAllocAligned(hId, sizeof(FSCommandBlock), 32);
 
     if (__fsFd < 0) {
-        return IPC_RESULT_INVALID;
+        return ISFS_ERROR_INVALID;
     }
 
     block->callback = callback;
