@@ -284,6 +284,51 @@ revolution/AXFX/AXFXReverbHi.c:
 	.text       start:0x80046160 end:0x80046210 align:16
 	.sdata2     start:0x8055E6C8 end:0x8055E6D0
 
+revolution/AXFX/AXFXReverbHiExp.c:
+	.text       start:0x80046210 end:0x80047040 align:16
+	.data       start:0x80436020 end:0x804361C0
+	.sdata2     start:0x8055E6D0 end:0x8055E710
+
+revolution/AXFX/AXFXHooks.c:
+	.text       start:0x80047040 end:0x80047090 align:16
+	.sdata      start:0x80556628 end:0x80556630
+
+revolution/CX/CXUncompression.c:
+	.text       start:0x80047090 end:0x800470D0 align:16
+
+revolution/CX/CXSecureUncompression.c:
+	.text       start:0x800470D0 end:0x800472F0 align:16
+
+revolution/DSP/dsp.c:
+	.text       start:0x800472F0 end:0x80047550 align:16
+	.data       start:0x804361C0 end:0x80436240
+	.sdata      start:0x80556630 end:0x80556638
+	.sbss       start:0x8055CCC0 end:0x8055CCC8
+
+revolution/DSP/dsp_debug.c:
+	.text       start:0x80047550 end:0x800475A0 align:16
+
+revolution/DSP/dsp_task.c:
+	.text       start:0x800475A0 end:0x80047E40 align:16
+	.data       start:0x80436240 end:0x80436380
+	.sbss       start:0x8055CCC8 end:0x8055CCE0
+
+revolution/NAND/nand.c:
+	.text       start:0x80047E40 end:0x800492A0 align:16
+	.rodata     start:0x804078A8 end:0x804078F0
+	.sdata      start:0x80556638 end:0x80556640
+
+revolution/NAND/NANDOpenClose.c:
+	.text       start:0x800492A0 end:0x800497B0 align:16
+
+revolution/NAND/NANDCore.c:
+	.text       start:0x800497B0 end:0x8004A910 align:16
+	.rodata     start:0x804078F0 end:0x80407A38
+	.data       start:0x80436380 end:0x804364D0
+	.bss        start:0x804B5820 end:0x804B5880
+	.sdata      start:0x80556640 end:0x80556660
+	.sbss       start:0x8055CCE0 end:0x8055CCE8
+
 revolution/SC/scapi.c:
 	.text       start:0x8004CCE0 end:0x8004D1F0
 

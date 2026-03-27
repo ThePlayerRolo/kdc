@@ -18,11 +18,11 @@ NWC24Err NWC24iOpenResourceManager(const char* user, const char* name,
     *fdOut = result;
 
     if (result < 0) {
-        if (result == IPC_RESULT_NOEXISTS_INTERNAL) {
+        if (result == IPC_RESULT_NOEXISTS) {
             return NWC24_ERR_INPROGRESS;
         }
 
-        if (result == IPC_RESULT_BUSY_INTERNAL) {
+        if (result == IPC_RESULT_BUSY) {
             return NWC24_ERR_BUSY;
         }
 

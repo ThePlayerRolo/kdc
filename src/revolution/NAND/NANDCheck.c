@@ -25,11 +25,11 @@ static s32 nandCalcUsage(s32* blockCountOut, s32* fileCountOut,
         s32 fileCount = 0;
 
         result = ISFS_GetUsage(*dirList, &blockCount, &fileCount);
-        if (result == IPC_RESULT_OK) {
+        if (result == ISFS_ERROR_OK) {
             *blockCountOut += blockCount;
             *fileCountOut += fileCount;
-        } else if (result == IPC_RESULT_NOEXISTS) {
-            result = IPC_RESULT_OK;
+        } else if (result == ISFS_ERROR_NOEXISTS) {
+            result = ISFS_ERROR_OK;
         } else {
             break;
         }
