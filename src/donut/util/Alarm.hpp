@@ -1,18 +1,25 @@
 #ifndef DONUT_UTIL_ALARM_HPP
 #define DONUT_UTIL_ALARM_HPP
 
-#include <types.h>
+#include <hel/common/ExplicitSingleton.hpp>
+#include <revolution/OS.h>
 
 namespace util {
 
-class Alarm {
+class Alarm : public hel::common::ExplicitSingleton<Alarm> {
 public:
-    Alarm();
-    ~Alarm();
-private:
-    STRUCT_FILL(8);
-};
+    DECL_EXPLICIT_SINGLETON(Alarm)
 
+    Alarm();
+    virtual ~Alarm();
+
+    void init();
+    void final();
+
+private:
+    s32 m_4;
+    /* 0x8 */ OSAlarm* mAlarm;
+};
 }
 
 #endif

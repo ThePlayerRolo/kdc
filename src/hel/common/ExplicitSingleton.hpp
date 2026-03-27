@@ -21,6 +21,11 @@ public:
     inline const T* operator->() const {
         return object_;
     }
+
+    inline void operator=(T* pOther) {
+        object_ = pOther;
+    }
+
 private:
     static T* object_;
 };
