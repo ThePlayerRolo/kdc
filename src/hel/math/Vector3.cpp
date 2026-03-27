@@ -115,7 +115,7 @@ f32 Vector3::cos(const Vector3& rOther) const {
 }
 
 bool Vector3::isZeroStrict() const {
-    return isZero();
+    return x == ZERO.x && y == ZERO.y && z == ZERO.z;
 }
 
 void Vector3::rotate(const Vector3& rAxis, f32 angle) {
