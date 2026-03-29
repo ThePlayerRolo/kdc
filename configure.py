@@ -553,15 +553,38 @@ config.libs = [
         ],
     },
     {
+        "lib": "snd",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/snd/BgmPlayer.cpp"),
+        ],
+    },
+    {
         "lib": "util",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
             Object(NonMatching, "donut/util/Alarm.cpp"),
+            Object(Equivalent, "donut/util/AnimController.cpp"),
+            Object(NonMatching, "donut/util/CharacterEncodeUtil.cpp", extra_cflags=["-O3,s"]),
             Object(Matching, "donut/util/CurveUtility.cpp"),
             Object(Equivalent, "donut/util/FrameCounter.cpp"),
+            Object(Matching, "donut/util/Mutex.cpp"),
+            Object(NonMatching, "donut/util/Thread.cpp"),
 
+        ],
+    },
+    {
+        "lib": "mem",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(Matching, "donut/mem/MemBlock.cpp"),
+            Object(Matching, "donut/mem/DataBlock.cpp"),
         ],
     },
 ]
