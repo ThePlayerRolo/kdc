@@ -9,9 +9,9 @@ using gfx::XFBManager;
 //This can't be a member or virtual or anything
 //Its just pure mem2FixHeap
 XFBManager::XFBManager(const gfx::VISetting& rVISetting)
-    : m_0(rVISetting.fbSize(), 0x20, *(mem::IAllocator*)&mem::Memory::Instance->mem2FixHeap())
-    , m_C(rVISetting.fbSize(), 0x20, *(mem::IAllocator*)&mem::Memory::Instance->mem2FixHeap())
-    , m_18(false)
+    : mTarget1(rVISetting.fbSize(), 0x20, *(mem::IAllocator*)&mem::Memory::Instance->mem2FixHeap())
+    , mTarget2(rVISetting.fbSize(), 0x20, *(mem::IAllocator*)&mem::Memory::Instance->mem2FixHeap())
+    , mIsDrawTarget1(false)
 
 {
     VISetNextFrameBuffer(drawTargetXFB());
@@ -20,21 +20,21 @@ XFBManager::XFBManager(const gfx::VISetting& rVISetting)
 }
 
 void* XFBManager::drawTargetXFB() {
-    if (m_18) {
-        return m_0.block().startAddress();
+    if (mIsDrawTarget1) {
+        return mTarget1.block().startAddress();
     }
 
-    return m_C.block().startAddress();
+    return mTarget2.block().startAddress();
 }
 
 void XFBManager::changeDrawTargetXFB() {
-    m_18 = m_18 == false;
+    mIsDrawTarget1 = mIsDrawTarget1 == false;
 }
 
 void* XFBManager::target1() {
-    return m_0.block().startAddress();
+    return mTarget1.block().startAddress();
 }
 
 void* XFBManager::target2() {
-    return m_C.block().startAddress();
+    return mTarget2.block().startAddress();
 }
