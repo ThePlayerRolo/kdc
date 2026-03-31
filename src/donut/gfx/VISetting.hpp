@@ -27,6 +27,10 @@ namespace gfx {
         void setDimming(bool dimming);
         bool getDimming() const;
 
+        u32 fbSize() const {
+            return (u32)(u16)((mRenderModeObj->fbWidth + 0xF) & 0xFFFFFFF0) * mRenderModeObj->xfbHeight * 2;
+        }
+
         /* 0x0 */ GXRenderModeObj* mRenderModeObj;
         /* 0x4 */ u16 mScreenWidth;
         /* 0x6 */ u16 mScreenHeight;

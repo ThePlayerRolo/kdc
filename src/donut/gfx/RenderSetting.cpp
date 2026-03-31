@@ -262,6 +262,7 @@ namespace gfx {
 
         //An abomination that is required for matching.
         //The `<< 1` and `& 0xFFFFFFF0` may be casts but idk
+        //NOTE: Similar thing goes down in VISetting.hpp
         u32 val = ((u32)(u16)((rmode()->fbWidth + 0xF) & 0xFFFFFFF0) * 228) << 1;
 
         GXCopyDisp((void *)((u32)pTarget + val), GX_TRUE);
