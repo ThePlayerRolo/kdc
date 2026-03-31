@@ -685,7 +685,7 @@ namespace gfx {
         }
 
         if (gfx::RenderSetting::Instance != nullptr) {
-            if (gfx::RenderSetting::Instance->m_4 == 2) {
+            if (gfx::RenderSetting::Instance->mType == gfx::RenderSetting::TYPE_2) {
                 switch (mode) {
                     case 0:
                         mode = 1;
