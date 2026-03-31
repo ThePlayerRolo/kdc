@@ -23,7 +23,7 @@ namespace gfx {
         u32 recommendRenderModeNo() const;
         void set(u32);
         void set(const GXRenderModeObj& rRenderModeObj, u16 screenWidth, u16 screenHeight, bool isWidescreen);
-        VISettingPreset* rmode(u32 mode) const;
+        GXRenderModeObj* rmode(u32 mode) const;
         void setDimming(bool dimming);
         bool getDimming() const;
 

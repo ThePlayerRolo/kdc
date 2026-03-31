@@ -741,8 +741,8 @@ namespace gfx {
         }
     }
 
-    VISettingPreset* VISetting::rmode(u32 mode) const {
-        return StandardRenderModeSets[mode];
+    GXRenderModeObj* VISetting::rmode(u32 mode) const {
+        return &StandardRenderModeSets[mode]->mRenderModeObj;
     }
 
     void VISetting::setDimming(bool dimming) {
