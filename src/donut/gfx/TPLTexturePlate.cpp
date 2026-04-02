@@ -34,7 +34,9 @@ void TPLTexturePlate::setAlpha(u8 alpha) {
 
 void TPLTexturePlate::drawForHomeButtonIcon() const {
     if (mInited) {
-        gfx::Utility::SetupGXForLayout2D(gfx::VISetting::Instance->mScreenWidth, gfx::VISetting::Instance->mScreenHeight, 0.0f, 1.0f);
+        gfx::Utility::SetupGXForLayout2D(gfx::VISetting::Instance->mScreenWidth,
+            gfx::VISetting::Instance->mScreenHeight, 0.0f, 1.0f);
+
         drawCore();
     }
 }
