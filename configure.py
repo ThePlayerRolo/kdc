@@ -533,6 +533,15 @@ config.libs = [
         ],
     },
     {
+        "lib": "hid",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(Matching, "donut/hid/Stick.cpp", extra_cflags=["-O3,s"]),
+        ],
+    },
+    {
         "lib": "ocoll",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,
