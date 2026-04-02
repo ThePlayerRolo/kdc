@@ -40,7 +40,8 @@ namespace gfx {
     //Very possible HeapExp inherits IAllocator
     EFBToLetterBox::EFBToLetterBox(GameScreen& rGameScreen)
         : mGameScreen(&rGameScreen)
-        , mBuffer(*(mem::IAllocator*)&mem::Memory::Instance->mem2FixHeap(), 640, 456, GX_TF_RGBA8)
+        , mBuffer(*(mem::IAllocator*)&mem::Memory::Instance->mem2FixHeap(), 640,
+        456, GX_TF_RGBA8)
     {
     }
     EFBToLetterBox::~EFBToLetterBox() {}
@@ -92,8 +93,10 @@ namespace gfx {
         EasyRender3D::SetViewMtx(viewMtx);
 
         GXTexObj texObj;
-        GXInitTexObj(&texObj, mBuffer.block().startAddress(), mBuffer.width(), mBuffer.height(), mBuffer.format(), GX_CLAMP,GX_CLAMP,0);
-        GXInitTexObjLOD(&texObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_FALSE, GX_ANISO_1);
+        GXInitTexObj(&texObj, mBuffer.block().startAddress(), mBuffer.width(),
+        mBuffer.height(), mBuffer.format(), GX_CLAMP,GX_CLAMP,0);
+        GXInitTexObjLOD(&texObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f,
+            0.0f, GX_FALSE, GX_FALSE, GX_ANISO_1);
         GXLoadTexObj(&texObj, GX_TEXMAP0);
         GXSetViewport(0.0f, 61.0f, 640.0f, 334.0f, 0.0f, 1.0f);
         GXSetColorUpdate(GX_TRUE);
