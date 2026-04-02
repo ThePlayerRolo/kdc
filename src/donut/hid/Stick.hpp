@@ -1,7 +1,6 @@
-#ifndef DONUT_HID_HIDMANAGER_HPP
-#define DONUT_HID_HIDMANAGER_HPP
+#ifndef DONUT_HID_STICK_HPP
+#define DONUT_HID_STICK_HPP
 
-#include <types.h>
 #include <hel/math/Vector2.hpp>
 
 namespace hid {
