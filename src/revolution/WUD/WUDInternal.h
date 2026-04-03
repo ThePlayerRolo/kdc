@@ -5,7 +5,7 @@
 // Public API
 #include <revolution/WUD/WUD.h>
 
-#include <revolution/BTE.h>
+//#include <revolution/BTE.h>
 #include <revolution/OS.h>
 #include <revolution/SC.h>
 #ifdef __cplusplus
@@ -122,10 +122,10 @@ typedef struct WUDDevInfoList {
 } WUDDevInfoList;
 
 typedef struct WUDDiscResp {
-    BD_ADDR devAddr;  // at 0x0
+    //BD_ADDR devAddr;  // at 0x0
     char devName[64]; // at 0x6
     u8 UNK_0x46[0xBA];
-    tBTA_SERVICE_MASK services; // at 0x100
+    //tBTA_SERVICE_MASK services; // at 0x100
     u8 UNK_0x104[0x4];
 } WUDDiscResp;
 
@@ -176,19 +176,19 @@ typedef struct WUDCB {
     u8 connectable;  // at 0x6EA
     u8 discoverable; // at 0x6EB
 
-    WUDHidRecvCallback hidRecvCB; // at 0x6EC
-    WUDHidConnCallback hidConnCB; // at 0x6F0
+    //WUDHidRecvCallback hidRecvCB; // at 0x6EC
+    //WUDHidConnCallback hidConnCB; // at 0x6F0
 
     WUDAllocFunc allocFunc; // at 0x6F4
     WUDFreeFunc freeFunc;   // at 0x6F8
 
-    BD_ADDR pairAddr; // at 0x6FC
-    BD_ADDR hostAddr; // at 0x702
+    //BD_ADDR pairAddr; // at 0x6FC
+    //BD_ADDR hostAddr; // at 0x702
 
     s8 libStatus; // at 0x708
 
     u8 serialPortStatus; // at 0x709
-    UINT8 pmID;          // at 0x70A
+    //UINT8 pmID;          // at 0x70A
     s8 syncRssi;         // at 0x70B
     OSAlarm alarm;       // at 0x710
     u32 hhFlags;         // at 0x740
@@ -202,7 +202,7 @@ extern WUDDevInfo _work;
 
 extern SCBtDeviceInfoArray _scArray;
 
-extern BD_ADDR_PTR _dev_handle_to_bda[WUD_MAX_DEV_ENTRY];
+//extern BD_ADDR_PTR _dev_handle_to_bda[WUD_MAX_DEV_ENTRY];
 extern u16 _dev_handle_queue_size[WUD_MAX_DEV_ENTRY];
 extern u16 _dev_handle_notack_num[WUD_MAX_DEV_ENTRY];
 

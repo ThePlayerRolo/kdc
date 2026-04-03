@@ -1,23 +1,26 @@
 #ifndef HEL_COMMON_PRIVATE_SINGLETON_HPP
 #define HEL_COMMON_PRIVATE_SINGLETON_HPP
 
-#include <donut/scn/IScene.hpp>
+#include <hel/common/NonCopyable.hpp>
 #include <types.h>
 
 namespace hel { namespace common {
 
-//TODO: This  inherits something that has its deconstructor merged into IScene
+//I hate this class so much
 template <typename T>
-class PrivateSingleton {
+class PrivateSingleton : public  NonCopyable {
 public:
+    //TODO: Get this constructor to actually inline
     inline PrivateSingleton() {
         isExist_ = true;
     }
+
     ~PrivateSingleton() {
         isExist_ = false;
     }
 
 private:
+    //TODO: This needs to be instinated inside the tus of the classes that use PrivateSingleton
     static bool isExist_;
 };
 
