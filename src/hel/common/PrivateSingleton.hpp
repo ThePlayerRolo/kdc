@@ -6,6 +6,7 @@
 
 namespace hel { namespace common {
 
+//I hate this class so much
 template <typename T>
 class PrivateSingleton : public  NonCopyable {
 public:

@@ -7,7 +7,8 @@ class NonCopyable {
 public:
     NonCopyable() { }
     //NOTE: Merged scn::IScene::~IScene
-    ~NonCopyable();
+    //TODO: Get this to inline in AppImpl but  not inline in PrivateSIngleton
+    ~NonCopyable() {}
 private:
     NonCopyable(const NonCopyable& rOther);
 };
