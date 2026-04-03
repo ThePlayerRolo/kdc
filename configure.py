@@ -513,7 +513,7 @@ config.libs = [
             Object(NonMatching, "donut/gfx/EFBToLetterBox.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/gfx/FullScreenPlate.cpp"),
             Object(Matching, "donut/gfx/GameScreen.cpp"),
-            Object(NonMatching, "donut/gfx/GXFifoMemoryManager.cpp"),
+            Object(NonMatching, "donut/gfx/GXFifoMemoryManager.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/gfx/GXFifoProtectCanceler.cpp"),
             Object(NonMatching, "donut/gfx/RenderSetting.cpp", extra_cflags=["-O3,s"]),
             Object(Matching, "donut/gfx/TexBuffer.cpp"),
@@ -540,6 +540,7 @@ config.libs = [
         "progress_category": "donut",
         "objects": [
             Object(Equivalent, "donut/hid/DPD.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/hid/LibInitializer.cpp", extra_cflags=["-O3,s"]),
             Object(Matching, "donut/hid/Stick.cpp", extra_cflags=["-O3,s"]),
         ],
     },

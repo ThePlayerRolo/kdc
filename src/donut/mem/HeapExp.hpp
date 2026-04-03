@@ -12,6 +12,7 @@ public:
     /* 0x0 */ virtual ~HeapExp();
     /* 0x4 */ virtual void* allocatorAlloc(u32, s32);
 
+    void* alloc(u32 size);
     void free(void* pData);
     IAllocator& allocFromTailAllocator();
 };
