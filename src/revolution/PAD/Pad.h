@@ -34,6 +34,7 @@ typedef enum {
 } PADFlag;
 
 BOOL __PADDisableRecalibration(BOOL disable);
+void PADInit(void);
 
 #ifdef __cplusplus
 }

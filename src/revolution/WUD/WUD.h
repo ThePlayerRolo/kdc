@@ -2,7 +2,7 @@
 #define RVL_SDK_WUD_H
 #include <types.h>
 
-#include <revolution/BTE.h>
+//#include <revolution/BTE.h>
 #include <revolution/SC.h>
 #ifdef __cplusplus
 extern "C" {
@@ -53,22 +53,22 @@ typedef BOOL (*WUDFreeFunc)(void* pBlock);
 typedef void (*WUDSyncDeviceCallback)(s32 result, s32 num);
 typedef void (*WUDClearDeviceCallback)(s32 result);
 
-typedef void (*WUDHidConnCallback)(UINT8 devHandle, u8 open);
-typedef void (*WUDHidRecvCallback)(UINT8 devHandle, UINT8* pReport, UINT16 len);
+//typedef void (*WUDHidConnCallback)(UINT8 devHandle, u8 open);
+//typedef void (*WUDHidRecvCallback)(UINT8 devHandle, UINT8* pReport, UINT16 len);
 
 typedef struct WUDDevInfo {
     SCDevInfo conf;   // at 0x0
-    BD_ADDR devAddr;  // at 0x40
-    LINK_KEY linkKey; // at 0x46
-    UINT8 devHandle;  // at 0x56
-    UINT8 subclass;   // at 0x57
-    UINT8 appID;      // at 0x58
+    //BD_ADDR devAddr;  // at 0x40
+    //LINK_KEY linkKey; // at 0x46
+    //UINT8 devHandle;  // at 0x56
+    //UINT8 subclass;   // at 0x57
+    //UINT8 appID;      // at 0x58
     u8 status;        // at 0x59
     s8 UNK_0x5A;      // at 0x5A
     u8 UNK_0x5B;      // at 0x5B
     u8 UNK_0x5C;      // at 0x5C
     u8 UNK_0x5D[1];
-    tBTA_HH_ATTR_MASK hhAttrMask; // at 0x5E
+    //tBTA_HH_ATTR_MASK hhAttrMask; // at 0x5E
 } WUDDevInfo;
 
 BOOL WUDInit(void);
@@ -80,7 +80,7 @@ void WUDShutdown(void);
 WUDLibStatus WUDGetStatus(void);
 u8 WUDGetBufferStatus(void);
 
-void WUDSetSniffMode(BD_ADDR addr, s32 interval);
+//void WUDSetSniffMode(BD_ADDR addr, s32 interval);
 
 // clang-format off
 WUDSyncDeviceCallback
@@ -98,8 +98,8 @@ BOOL WUDStopSyncSimple(void);
 BOOL WUDStartClearDevice(void);
 BOOL WUDSetDisableChannel(s8 afhChannel);
 
-WUDHidRecvCallback WUDSetHidRecvCallback(WUDHidRecvCallback pCallback);
-WUDHidConnCallback WUDSetHidConnCallback(WUDHidConnCallback pCallback);
+//WUDHidRecvCallback WUDSetHidRecvCallback(WUDHidRecvCallback pCallback);
+//WUDHidConnCallback WUDSetHidConnCallback(WUDHidConnCallback pCallback);
 
 void WUDSetVisibility(u8 disc, u8 conn);
 u8 WUDGetConnectable(void);
@@ -111,13 +111,13 @@ void WUDiEnableStack(void);
 void WUDiAutoSync(void);
 void WUDiDeleteAllLinkKeys(void);
 
-void WUDiRegisterDevice(BD_ADDR addr);
-void WUDiRemoveDevice(BD_ADDR addr);
+//void WUDiRegisterDevice(BD_ADDR addr);
+//void WUDiRemoveDevice(BD_ADDR addr);
 
-WUDDevInfo* WUDiGetDevInfo(BD_ADDR addr);
+//WUDDevInfo* WUDiGetDevInfo(BD_ADDR addr);
 WUDDevInfo* WUDiGetDevInfoIndex(int idx);
 WUDDevInfo* WUDiGetNewDevInfo(void);
-void WUDiRemoveDevInfo(BD_ADDR addr);
+//void WUDiRemoveDevInfo(BD_ADDR addr);
 void WUDiClearDevice(void);
 
 u8 WUDiGetDevNumber(void);
@@ -135,7 +135,7 @@ void WUDiMoveBottomStdDevInfoPtr(WUDDevInfo* pInfo);
 WUDDevInfo* WUDiGetRemoveStdDevice(void);
 void WUDiMoveTopOfDisconnectedStdDevice(WUDDevInfo* pInfo);
 
-BD_ADDR_PTR _WUDGetDevAddr(UINT8 handle);
+//BD_ADDR_PTR _WUDGetDevAddr(UINT8 handle);
 u16 _WUDGetQueuedSize(s8 handle);
 u16 _WUDGetNotAckedSize(s8 handle);
 u8 _WUDGetLinkNumber(void);
