@@ -10,6 +10,13 @@ public:
     //NOTE: Merged into GKI_init_timer_list
     Button();
 
+    //NOTE: Merged in hid::Stick::Stick(const Stick&)
+    Button(const Button& rOther)
+        : mHold(rOther.mHold)
+        , mTrigger(rOther.mTrigger)
+        , mRelease(rOther.mRelease)
+    { }
+
     void update(u32 buttonFlags);
 
     bool isHold(u32 buttonFlags) const;
