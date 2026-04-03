@@ -483,13 +483,13 @@ donut/hid/DPD.cpp:
 	.text       start:0x801A2268 end:0x801A22EC
 	.sdata2     start:0x8055F908 end:0x8055F910
 
-donut/hid/SimpleGCHID.cpp:
-	.text       start:0x801A4268 end:0x801A4408
-  
 donut/hid/LibInitializer.cpp:
 	.text       start:0x801A383C end:0x801A3A5C
 	.sbss       start:0x8055D280 end:0x8055D288
 	.sdata2     start:0x8055F918 end:0x8055F930
+
+donut/hid/SimpleGCHID.cpp:
+	.text       start:0x801A4268 end:0x801A4408
 
 donut/hid/Stick.cpp:
 	.text       start:0x801A4778 end:0x801A4810
