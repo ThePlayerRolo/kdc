@@ -509,6 +509,11 @@ donut/mem/DataBlock.cpp:
 donut/mem/MemBlock.cpp:
 	.text       start:0x801BF1B4 end:0x801BF1F8
 
+donut/msg/Message.cpp:
+	.text       start:0x801D1404 end:0x801D168C
+	.data       start:0x8045D1D0 end:0x8045D2A8
+	.sdata      start:0x80557628 end:0x80557638
+
 donut/msg/Project.cpp:
 	.text       start:0x801D168C end:0x801D17CC
 	.data       start:0x8045D2A8 end:0x8045D2B8

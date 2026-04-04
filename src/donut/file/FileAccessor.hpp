@@ -8,10 +8,9 @@ namespace file {
 
 class FileAccessor {
 public:
-    FileAccessor();
+    FileAccessor() {}
     FileAccessor(const char*, bool);
     ~FileAccessor();
-    //TODO: Double check this
     mem::MemBlock block() const;
 
 private:

@@ -25,6 +25,7 @@ struct MsbtAttrInfo {
 struct MsbtInfo *LMS_InitMessage(void *data);
 void LMS_CloseMessage(struct MsbtInfo *info);
 int LMS_GetTextIndexByLabel(struct MsbtInfo *info, const char *label);
+int LMS_GetTextNum(struct MsbtInfo* info);
 const wchar_t *LMS_GetText(struct MsbtInfo *info, int index);
 const wchar_t *LMS_GetTextByLabel(struct MsbtInfo *info, const char *label);
 int LMS_GetLabelByTextIndex(struct MsbtInfo *info, int index, char *outLabel);
