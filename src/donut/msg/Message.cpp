@@ -92,7 +92,7 @@ const char* Message::FilePath(const char* pFileName) {
     return hel::common::FixedStringIN<char, 80>::FromFormat("msg/%s/%s", regionDir, pFileName).str();
 }
 
-const wchar_t* Message::text(const char* pTag) const {
+const wchar_t* Message::text(const char* pTag) {
     int index = LMS_GetTextIndexByLabel(mMessageInfo, pTag);
     if (index < 0 || LMS_GetTextNum(mMessageInfo) <= index) {
         return 0;

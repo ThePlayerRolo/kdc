@@ -10,7 +10,7 @@ namespace msg {
         Message(const char* pFilename);
         ~Message();
 
-        const wchar_t* text(const char* pTag) const;
+        const wchar_t* text(const char* pTag);
         const char* FilePath(const char* pFileName);
 
     private:
