@@ -640,6 +640,7 @@ config.libs = [
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
+            Object(NonMatching, "donut/msg/Message.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/msg/Project.cpp", extra_cflags=["-O3,s"]),
         ],
     },
