@@ -9,12 +9,7 @@
 namespace {
     static const f32 VIEWPORT_NEAR = 0;
 
-    //I don't even know if the data in this struct is used, just the overall garbage data
-    struct garbageStruct {
-        STRUCT_FILL(0xA00);
-    };
-
-    garbageStruct garbage;
+    u8 garbage[2560];
 
     void t_setCopyClear() {
         GXColor copyClearColor = {0, 0, 0, 255};
