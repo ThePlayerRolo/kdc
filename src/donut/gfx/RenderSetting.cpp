@@ -9,7 +9,7 @@
 namespace {
     static const f32 VIEWPORT_NEAR = 0;
 
-    u8 garbage[2560];
+    u32 garbage[640];
 
     void t_setCopyClear() {
         GXColor copyClearColor = {0, 0, 0, 255};
