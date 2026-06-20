@@ -10,9 +10,15 @@ public:
     ModelDesc();
 
 public:
-    STRUCT_FILL(0x40);
+    /* 0x00 */ char _0[24];
+    /* 0x18 */ char _18[40];
     /* 0x40 */ s32 _40;
-    STRUCT_FILL(0x14);
+    /* 0x48 */ s32 _48;
+    /* 0x4C */ u8 _4C;
+    /* 0x4D */ u8 _4D;
+    /* 0x50 */ s32 _50;
+    /* 0x54 */ s32 _54;
+    /* 0x58 */ s32 _58;
 };
 }
 
