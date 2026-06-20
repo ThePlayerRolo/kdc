@@ -8,10 +8,10 @@ namespace gobj {
     public:
         struct Entry {
             public:
-            /* 0x0 */ const char* mLoopFn;
-            /* 0x4 */ s32 _4;
-            /* 0x8 */ s32 _8;
-            /* 0xC */ s32 _C;
+            /* 0x00 */ const char* mLoopFn;
+            /* 0x04 */ s32 _4;
+            /* 0x08 */ s32 _8;
+            /* 0x0C */ s32 _C;
             /* 0x10 */ s32 _10;
         };
     public:
