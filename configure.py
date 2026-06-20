@@ -594,6 +594,7 @@ config.libs = [
         "progress_category": "donut",
         "objects": [
             Object(NonMatching, "donut/scn/step/enemy/Param.cpp"),
+            Object(Equivalent, "donut/scn/step/enemy/waddledoo/ModelDesc.cpp")
         ],
     },
     {
