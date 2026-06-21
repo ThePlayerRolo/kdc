@@ -6,7 +6,7 @@
 namespace scn { namespace step { namespace enemy {
     namespace waddledoo {
         namespace ModelDesc {
-        chara::ModelDesc& CreateNormal();
+            chara::ModelDesc& CreateNormal();
         }
     }
 }}};
