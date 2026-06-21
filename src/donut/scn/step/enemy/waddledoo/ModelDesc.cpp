@@ -75,11 +75,13 @@ namespace scn { namespace step { namespace enemy { namespace waddledoo {
     }
 
     namespace ModelDesc {
-        //https://decomp.me/scratch/8ptq3
         chara::ModelDesc& CreateNormal() {
-            return ModelDescUtil::CreateTmpl<16, 0>("step/chara/enemy/Doo", "Waddledoo",
+            chara::ModelDesc& desc = ModelDescUtil::CreateTmpl<16, 0>("step/chara/enemy/Doo", "Waddledoo",
                 NODE_NAME_NORMAL_SIZE, T_NODE_NAMES_NORMAL,
                 ANIM_ENTRIES_SIZE, T_ANIM_ENTRIES, SCRIPT_ENTRIES_SIZE, T_SCRIPT_ENTRIES);
+
+            desc._18._40 = 2;
+            return desc;
         }
     }
 

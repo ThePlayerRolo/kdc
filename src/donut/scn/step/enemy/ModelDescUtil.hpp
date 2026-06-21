@@ -26,7 +26,6 @@ namespace scn { namespace step { namespace enemy {
             static gobj::ScriptDesc scriptDesc;
 
             Set(desc, animDesc, scriptDesc, pModelPath, pModelName, nodeNameSize, pNodeNames, animEntrySize, pAnimEntries, scriptEntrySize, pScriptEntries);
-            desc._18._40 = 2;
             return desc;
         }
     }
