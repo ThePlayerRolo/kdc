@@ -543,6 +543,7 @@ config.libs = [
         "progress_category": "donut",
         "objects": [
             Object(Matching, "donut/gobj/FootState.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/gobj/ModelDesc.cpp"),
         ],
     },
     {
@@ -595,6 +596,7 @@ config.libs = [
         "progress_category": "donut",
         "objects": [
             Object(NonMatching, "donut/scn/step/enemy/Param.cpp"),
+            Object(Matching, "donut/scn/step/enemy/waddledoo/ModelDesc.cpp", extra_cflags=["-O3,s"])
         ],
     },
     {
