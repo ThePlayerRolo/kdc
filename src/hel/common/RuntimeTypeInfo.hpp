@@ -3,14 +3,16 @@
 
 #include <types.h>
 
-namespace hel { namespace commmon {
+namespace hel { namespace common {
 
 class RuntimeTypeInfo {
 public:
-    static char* NoName;
+    static char* NoName() {
+        return "no name class";
+    }
 
-    RuntimeTypeInfo(const RuntimeTypeInfo* pParent, const char* pName)
-        : mParent(pParent)
+    RuntimeTypeInfo(const RuntimeTypeInfo* pParent, const char* pName) DECOMP_DONT_INLINE
+        : mParent((RuntimeTypeInfo*)pParent)
         , mName(pName)
     { }
 
@@ -19,18 +21,24 @@ public:
 };
 
 #define HEL_RTTI_IMPL_PARENT(T, P) \
+namespace hel { \
+namespace common { \
 template <typename T> \
 const RuntimeTypeInfo& RuntimeTypeInfoImpl() { \
-    static RuntimeTypeInfo ti((RuntimeTypeInfo*)RuntimeTypeInfoImpl<P>(), RuntimeTypeInfo::NoName); \
+    static RuntimeTypeInfo ti((RuntimeTypeInfo*)&RuntimeTypeInfoImpl<P>(), RuntimeTypeInfo::NoName()); \
     return ti; \
-}
+} \
+}}
 
 #define HEL_RTTI_IMPL_NO_PARENT(T) \
+namespace hel { \
+namespace common { \
 template <typename T> \
 const RuntimeTypeInfo& RuntimeTypeInfoImpl() { \
-    static RuntimeTypeInfo ti(nullptr, RuntimeTypeInfo::NoName); \
+    static RuntimeTypeInfo ti(nullptr, RuntimeTypeInfo::NoName()); \
     return ti; \
-}
+} \
+}}
 
 }}
 

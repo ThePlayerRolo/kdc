@@ -451,6 +451,10 @@ donut/gobj/FootState.cpp:
 donut/gobj/ModelDesc.cpp:
 	.text       start:0x8019B260 end:0x8019B314
 
+donut/gobj/MoveParamAccel.cpp:
+	.text       start:0x8019B9A4 end:0x8019B9F4
+	.sdata2     start:0x8055F798 end:0x8055F7A0
+
 hel/math/Direction3.cpp:
 	.text       start:0x8019DF7C end:0x8019E590
 	.ctors      start:0x80406318 end:0x8040631C
@@ -563,9 +567,37 @@ donut/scn/step/GridPos.cpp:
 	.text       start:0x802214BC end:0x80221668
 	.sdata2     start:0x80560200 end:0x80560210
 
+donut/scn/step/boss/IState.cpp:
+	.text       start:0x80230D3C end:0x80230D98
+
+donut/scn/step/enemy/CustomBase.cpp:
+	.text       start:0x80281E20 end:0x80281FBC
+	.data       start:0x80471B80 end:0x80471BD8
+	.sbss       start:0x8055D618 end:0x8055D628
+
+donut/scn/step/enemy/Desc.cpp:
+	.text       start:0x802845E0 end:0x802846F0
+
+donut/scn/step/enemy/IState.cpp:
+	.text       start:0x80288D8C end:0x80288D8C
+
 donut/scn/step/enemy/Param.cpp:
 	.text       start:0x8028C248 end:0x8028DA10
 	.data       start:0x804726D8 end:0x80472C18
+
+donut/scn/step/enemy/StateBase.cpp:
+	.text       start:0x8028DDC4 end:0x8028DE48
+	.data       start:0x80472C30 end:0x80472C50
+
+donut/scn/step/enemy/damage/StateDeadInWater.cpp:
+	.text       start:0x802AA9B4 end:0x802AAF74
+	.data       start:0x80475D20 end:0x80475D40
+	.sdata      start:0x80559928 end:0x80559930
+	.sdata2     start:0x80561698 end:0x805616F0
+
+donut/scn/step/enemy/waddledoo/Custom.cpp:
+	.text       start:0x802EFAF0 end:0x802EFB34
+	.data       start:0x8047E450 end:0x8047E498
 
 donut/scn/step/enemy/waddledoo/ModelDesc.cpp:
 	.text       start:0x802EFB34 end:0x802EFC4C
@@ -610,8 +642,21 @@ donut/util/FrameCounter.cpp:
 	.text       start:0x80405980 end:0x80405A9C
 	.sdata2     start:0x80564398 end:0x805643A8
 
+donut/util/IState.cpp:
+	.text       start:0x80405A9C end:0x80405A9C
+
+donut/util/IStateCallback.cpp:
+	.text       start:0x80405A9C end:0x80405A9C
+
+donut/util/IStateChanger.cpp:
+	.text       start:0x80405A9C end:0x80405A9C
+
 donut/util/Mutex.cpp:
 	.text       start:0x80405A9C end:0x80405B68
+
+donut/util/StateChanger.cpp:
+	.text       start:0x80405CD0 end:0x80405F14
+	.data       start:0x804966F0 end:0x804966FC
 
 donut/util/Thread.cpp:
 	.text       start:0x80405F14 end:0x8040603C
