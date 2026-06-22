@@ -29,12 +29,29 @@ namespace util {
         /* 0x08 */ IState* mCurrentState;
         /* 0x0C */ StateFactory<IState>* mStateFactory;
     };
+
+    //TODO: This is absolute pain and the worst part is, ITS USED THROUGHOUT ALL OF THE SCN CODE
+    template <typename T, int S>
+    class StateChanger : public StateChangerBase {
+    public:
+        /* 0x08 */ virtual ~StateChanger() { }
+
+        template <typename St, typename B>
+        void setNextState(B) {
+            onSetNextStateFactory();
+
+            if (&_10 != nullptr) {
+                _10 = StateFactoryArg1<IState, St, B>(_90);
+            }
+            mStateFactory = &_10;
+        }
+
+        template <typename St, typename B, typename P>
+        void setNextState(B, P);
+    public:
+        StateFactory<IState> _10;
+        void* _90;
+    };
 }
 
 #endif
-
-/*
---> hasNextState__Q24util16StateChangerBaseCFv is duplicated by wasSetParent__Q24file8FileTreeCFv, size = 16
-
---> currentStateRef__Q24util16StateChangerBaseFv is duplicated by ARCGetLength, size = 8
-*/

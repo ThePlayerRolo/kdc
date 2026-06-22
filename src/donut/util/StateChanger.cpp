@@ -1,3 +1,4 @@
+#include "scn/step/enemy/Enemy.hpp"
 #pragma peephole off
 #include "util/IStateCallback.hpp"
 #include "util/StateChanger.hpp"

@@ -4,13 +4,12 @@
 #include <types.h>
 
 namespace gobj {
-    namespace G3DAnimDataReposDesc {
+    struct G3DAnimDataReposDesc {
         struct Entry {
             /* 0x0 */ const char* mName;
             /* 0x4 */ s32 _4;
         };
     };
-
 };
 
 #define ANIM_ENTRIES_START(size) const gobj::G3DAnimDataReposDesc::Entry T_ANIM_ENTRIES[size] = {

@@ -543,7 +543,8 @@ config.libs = [
         "progress_category": "donut",
         "objects": [
             Object(Matching, "donut/gobj/FootState.cpp", extra_cflags=["-O3,s"]),
-            Object(NonMatching, "donut/gobj/ModelDesc.cpp"),
+            Object(NonMatching, "donut/gobj/ModelDesc.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/gobj/MoveParamAccel.cpp", extra_cflags=["-O3,s"]),
         ],
     },
     {
@@ -606,9 +607,13 @@ config.libs = [
         "objects": [
             Object(NonMatching, "donut/scn/step/enemy/CustomBase.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/scn/step/enemy/Desc.cpp", extra_cflags=["-O3,s"]),
-            Object(Equivalent, "donut/scn/step/enemy/IState.cpp"),
+            Object(Equivalent, "donut/scn/step/enemy/IState.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/scn/step/enemy/Param.cpp"),
-            Object(Matching, "donut/scn/step/enemy/waddledoo/ModelDesc.cpp", extra_cflags=["-O3,s"])
+            Object(Equivalent, "donut/scn/step/enemy/StateBase.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/scn/step/enemy/damage/StateDeadInWater.cpp", extra_cflags=["-O3,s"]),
+
+            Object(Equivalent, "donut/scn/step/enemy/waddledoo/Custom.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/scn/step/enemy/waddledoo/ModelDesc.cpp", extra_cflags=["-O3,s"]),
         ],
     },
     {

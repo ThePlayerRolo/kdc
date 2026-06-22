@@ -14,7 +14,7 @@ namespace scn { namespace step {
         CustomBase(Enemy& rObj);
 
         /* 0x08 */ virtual void GetRuntimeTypeInfo() const;
-        /* 0x0C */ virtual ~CustomBase() { }
+        /* 0x0C */ virtual ~CustomBase();
         //NOTE: Replaced by a branch to __wpadNoAlloc
         /* 0x10 */ virtual bool onInit();
         //NOTE: Replaced by a branch to __wpadNoAlloc
@@ -36,7 +36,7 @@ namespace scn { namespace step {
         //NOTE: Replaced by a branch to __wpadNoAlloc
         /* 0x3C */ virtual bool reqCustomDeadEffect();
         /* 0x40 */ virtual void setupSuperEnemyEffect();
-        
+
         // Yes, both do exist according to the map file and they do the same exact thing :)
         // NOTE: Is merged into GetZeroBufferAddress__Q44nw4r3snd6detail9AxManagerFv
         Enemy& obj() const;
