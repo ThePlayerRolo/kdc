@@ -6,6 +6,7 @@
 
 namespace util {
     class Thread {
+    public:
         Thread(mem::IAllocator&, u32, s32, OSThreadFunc, void*);
         ~Thread();
 

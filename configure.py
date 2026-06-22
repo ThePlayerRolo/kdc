@@ -590,11 +590,23 @@ config.libs = [
         ],
     },
     {
+        "lib": "scn/step/boss",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(Equivalent, "donut/scn/step/boss/IState.cpp", extra_cflags=["-O3,s"]),
+        ],
+    },
+    {
         "lib": "scn/step/enemy",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
+            Object(NonMatching, "donut/scn/step/enemy/CustomBase.cpp", extra_cflags=["-O3,s"]),
+            Object(Equivalent, "donut/scn/step/enemy/Desc.cpp", extra_cflags=["-O3,s"]),
+            Object(Equivalent, "donut/scn/step/enemy/IState.cpp"),
             Object(NonMatching, "donut/scn/step/enemy/Param.cpp"),
             Object(Matching, "donut/scn/step/enemy/waddledoo/ModelDesc.cpp", extra_cflags=["-O3,s"])
         ],
@@ -634,7 +646,10 @@ config.libs = [
             Object(Equivalent, "donut/util/FrameCounter.cpp"),
             Object(Matching, "donut/util/Mutex.cpp"),
             Object(NonMatching, "donut/util/Thread.cpp"),
-
+            Object(Equivalent, "donut/util/IState.cpp"),
+            Object(Equivalent, "donut/util/IStateCallback.cpp"),
+            Object(Equivalent, "donut/util/IStateChanger.cpp"),
+            Object(NonMatching, "donut/util/StateChanger.cpp"),
         ],
     },
     {
