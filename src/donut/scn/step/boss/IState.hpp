@@ -6,7 +6,7 @@
 namespace scn { namespace step { namespace boss {
     class IState : public util::IState {
     public:
-        virtual ~IState();
+        /* 0x08 */ virtual ~IState();
     };
 }}}
 

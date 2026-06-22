@@ -7,7 +7,7 @@ namespace util {
     class IStateChanger {
     public:
         //NOTE: Merged into scn::IScene::`IScene()
-        virtual ~IStateChanger();
+        /* 0x08 */ virtual ~IStateChanger();
     };
 }
 

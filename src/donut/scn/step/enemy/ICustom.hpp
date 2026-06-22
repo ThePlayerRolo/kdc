@@ -7,9 +7,9 @@ namespace scn { namespace step {
 
     class ICustom {
     public:
-        virtual void GetRuntimeTypeInfo() const { }
+        /* 0x08 */ virtual void GetRuntimeTypeInfo() const { }
         //NOTE: Merged into IScene::~IScene()
-        virtual ~ICustom();
+        /* 0x0C */ virtual ~ICustom();
     };
 
 }}};

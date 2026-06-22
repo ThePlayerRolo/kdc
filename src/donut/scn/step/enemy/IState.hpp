@@ -7,7 +7,7 @@ namespace scn { namespace step { namespace enemy {
     class IState : public util::IState {
     public:
         //NOTE: Merged into scn::step::boss::IState::~IState()
-        virtual ~IState();
+        /* 0x08 */ virtual ~IState();
     };
 }}}
 

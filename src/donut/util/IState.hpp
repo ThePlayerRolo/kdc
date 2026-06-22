@@ -9,7 +9,7 @@ namespace util {
         //TODO: Figure out whats in here and whats in the other IStates
 
         //NOTE: Merged into scn::IScene::`IScene()
-        virtual ~IState();
+        /* 0x08 */ virtual ~IState();
     };
 }
 
