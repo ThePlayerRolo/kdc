@@ -337,6 +337,10 @@ revolution/ARC/arc.c:
 	.data       start:0x80438498 end:0x80438508
 	.sdata      start:0x805567A0 end:0x805567A8
 
+nw4r/g3d/res/g3d_resfile.cpp:
+	.text       start:0x800C8F70 end:0x800CA6F0
+	.data       start:0x804404E0 end:0x80440640
+
 nw4r/g3d/g3d_camera.cpp:
 	.text       start:0x800E5AF0 end:0x800E6A10
 	.sdata2     start:0x8055F040 end:0x8055F070
@@ -378,6 +382,9 @@ donut/app/Locale.cpp:
 donut/app/Message.cpp:
 	.text       start:0x801793BC end:0x801798A8
 
+donut/effect/detail/DrawInfo.o:
+	.text       start:0x8017F38C end:0x8017F550
+
 donut/file/FileAccessor.cpp:
 	.text       start:0x80187A50 end:0x80187B5C
 
@@ -387,6 +394,21 @@ donut/file/FileClearDisableScope.cpp:
 donut/file/FileLoader.cpp:
 	.text       start:0x80187C00 end:0x80188204
 	.sdata      start:0x80556D18 end:0x80556D20
+
+donut/g3d/NodeLocalMtx.cpp:
+	.text       start:0x801930BC end:0x80193208
+	.sdata2     start:0x8055F698 end:0x8055F6A0
+
+donut/g3d/NodeLocalMtxAccessor.cpp:
+	.text       start:0x80193208 end:0x80193230
+
+donut/g3d/ResFile.cpp:
+	.text       start:0x80193230 end:0x80193438
+	.data       start:0x80454818 end:0x80454868
+
+donut/g3d/ResFileAccessor.cpp:
+	.text       start:0x80193438 end:0x80193760
+	.data       start:0x80454868 end:0x804548B0
 
 donut/gfx/EasyRender3D.cpp:
 	.text       start:0x80194FC4 end:0x80195854

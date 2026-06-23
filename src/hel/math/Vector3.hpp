@@ -22,6 +22,12 @@ namespace hel { namespace math {
         //Gets merged into nw4r::math::VEC3::VEC3(float, float, float)
         Vector3(f32 _x, f32 _y, f32 _z);
 
+        Vector3(f32 val) {
+            z = val;
+            y = val;
+            x = val;
+        }
+
         //TODO: Make this use LWZ and STW
         Vector3(const Vector3& rOther)
         : x(rOther.x)

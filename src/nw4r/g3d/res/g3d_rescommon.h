@@ -3,7 +3,7 @@
 #include "common.h"
 
 #include "revolution/GX.h" // IWYU pragma: export
-
+#include "NW4RAssert.hpp"
 /******************************************************************************
  *
  * Macros
@@ -13,6 +13,12 @@
 /**
  * Define ResName pascal string for file resource groups.
  */
+
+ #define NW4R_G3D_RESFILE_AC_ASSERT(resfile) \
+        if (((u32)resfile->ptr() & 0x1F) != 0) { \
+            nw4r::db::Panic("g3d_resfile_ac.h", 0x3C, "NW4R:Failed assertion !((u32)p & 0x1f)"); \
+        } \
+
 #define NW4R_G3D_RESFILE_NAME_DEF(VAR, STR)                                                                            \
     nw4r::g3d::ResNameData27 ResNameData_##VAR ALIGN_DECL(32) = {sizeof(STR) - 1, STR}
 
@@ -26,11 +32,16 @@
  * Define common functions for resource classes.
  * @note Hides ResCommon::ref, why did they do this???
  */
-#define NW4R_G3D_RESOURCE_FUNC_DEF(T) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data)
-#define NW4R_G3D_RESOURCE_FUNC_DEF_EX(TCLS, TDATA) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)
+#define NW4R_G3D_RESOURCE_FUNC_DEF(T) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data, false)
+#define NW4R_G3D_RESOURCE_FUNC_DEF_EX(TCLS, TDATA) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA, false)
 
-#define NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)                                                                   \
-    explicit TCLS(void *pData = NULL) : nw4r::g3d::ResCommon<TDATA>(pData) {}                                          \
+#define NW4R_G3D_RESOURCE_FUNC_DEF_ASSERT(T) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data, true)
+
+#define NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA, VAL)                                                                   \
+    explicit TCLS(void *pData = NULL) : nw4r::g3d::ResCommon<TDATA>(pData) { \
+        if (VAL) \
+            NW4R_G3D_RESFILE_AC_ASSERT(this) \
+    }                                          \
                                                                                                                        \
     TDATA &ref() {                                                                                                     \
         return *ptr();                                                                                                 \

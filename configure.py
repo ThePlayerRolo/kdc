@@ -448,6 +448,7 @@ config.libs = [
             Object(Matching, "nw4r/g3d/dcc/g3d_basic.cpp"),
             Object(NonMatching, "nw4r/g3d/dcc/g3d_maya.cpp"),
             Object(Matching, "nw4r/g3d/g3d_camera.cpp"),
+            Object(NonMatching, "nw4r/g3d/res/g3d_resfile.cpp"),
         ],
     },
     {
@@ -513,6 +514,18 @@ config.libs = [
             Object(Equivalent, "donut/file/FileAccessor.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/file/FileClearDisableScope.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/file/FileLoader.cpp", extra_cflags=["-O3,s"]),
+        ],
+    },
+    {
+        "lib": "g3d",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/g3d/NodeLocalMtx.cpp", extra_cflags=["-O3,s"]),
+            Object(Equivalent, "donut/g3d/NodeLocalMtxAccessor.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/g3d/ResFile.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/g3d/ResFileAccessor.cpp", extra_cflags=["-O3,s"]),
         ],
     },
     {

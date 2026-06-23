@@ -9,13 +9,13 @@ GameScreen::GameScreen()
 
 u16 GameScreen::gameWidth() const {
     if (mScreenType == SCREEN_TYPE_FULLSCREEN) {
-        return 608;
+        return GAMESCREEN_WIDTH_FULLSCREEN;
     }
-    return 832;
+    return GAMESCREEN_WIDTH_WIDESCREEN;
 }
 
 u16 GameScreen::gameHeight() const {
-    return 456;
+    return GAMESCREEN_HEIGHT;
 }
 
 //NOTE: All functions below are code merged into others. Refer to the header for more details

@@ -9,7 +9,7 @@ namespace mem {
     }
     //NOTE: All functions below are code merged into others. Refer to the header for more details
     HeapCompactionNodeHandle::HeapCompactionNodeHandle()
-        : mNode(0)
+        : mNode(nullptr)
     { }
 
     HeapCompactionNodeHandle::HeapCompactionNodeHandle(HeapCompactionNode& rNode)
