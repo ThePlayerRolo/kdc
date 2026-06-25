@@ -296,6 +296,7 @@ cflags_donut = [
     "-enc SJIS",
     "-O3",
     "-func_align 4",
+    "-DNW4R_ASSERT",
 ]
 
 
@@ -445,10 +446,10 @@ config.libs = [
         "cflags": cflags_nw4r,
         "progress_category": "sdk",
         "objects": [
-            Object(Matching, "nw4r/g3d/dcc/g3d_basic.cpp"),
-            Object(NonMatching, "nw4r/g3d/dcc/g3d_maya.cpp"),
-            Object(Matching, "nw4r/g3d/g3d_camera.cpp"),
             Object(NonMatching, "nw4r/g3d/res/g3d_resfile.cpp"),
+            Object(Matching, "nw4r/g3d/dcc/g3d_basic.cpp"),
+            Object(Matching, "nw4r/g3d/dcc/g3d_maya.cpp"),
+            Object(Matching, "nw4r/g3d/g3d_camera.cpp"),
         ],
     },
     {
@@ -458,7 +459,7 @@ config.libs = [
         "progress_category": "sdk",
         "objects": [
             Object(Matching, "nw4r/lyt/lyt_pane.cpp"),
-            Object(NonMatching, "nw4r/lyt/lyt_group.cpp"),
+            Object(Matching, "nw4r/lyt/lyt_group.cpp"),
         ],
     },
     {
@@ -522,10 +523,23 @@ config.libs = [
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
+            Object(Matching, "donut/g3d/AutoReqAnimReqInfo.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/g3d/CameraAccessor.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/g3d/FogAccessor.cpp"),
+            Object(Matching, "donut/g3d/LightSetAccessor.cpp"),
+            Object(NonMatching, "donut/g3d/Group.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/g3d/MaterialAccessor.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/g3d/ModelAnimContext.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/g3d/ModelBufferOption.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/g3d/ModelContext.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/NodeLocalMtx.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/g3d/NodeLocalMtxAccessor.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ResFile.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ResFileAccessor.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/g3d/ResFileRepository.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/g3d/ResModelContext.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/g3d/ResNode.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/g3d/RootContext.cpp"),
         ],
     },
     {

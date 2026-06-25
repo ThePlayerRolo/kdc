@@ -3,8 +3,8 @@
 
 using util::AnimController;
 
-AnimController::AnimController(f32 arg1)
-    : mTotalFrame(arg1)
+AnimController::AnimController(f32 totalFrame)
+    : mTotalFrame(totalFrame)
     , mFrame(0.0f)
     , mFrameRate(1.0f)
     , mDoLoop(false)
@@ -49,8 +49,8 @@ void AnimController::updateFrame() {
     checkAnimEnd();
 }
 
-void AnimController::start(bool arg1) {
-    mDoLoop = arg1;
+void AnimController::start(bool doLoop) {
+    mDoLoop = doLoop;
     mIsAnimating = true;
     mLooped = false;
     checkAnimEnd();

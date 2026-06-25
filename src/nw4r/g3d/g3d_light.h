@@ -114,11 +114,17 @@ struct LightSetData {
 class LightSet {
 public:
     LightSet(LightSetting *pSetting, LightSetData *pData) : mpSetting(pSetting), mpLightSetData(pData) {}
+    LightSet() : mpSetting(nullptr), mpLightSetData(nullptr) { }
+    LightSet(const LightSet& rOther) : mpSetting(rOther.mpSetting), mpLightSetData(rOther.mpLightSetData) { }
+
     ~LightSet() {}
 
     bool IsValid() const {
         return mpSetting != NULL && mpLightSetData != NULL;
     }
+
+    LightObj* GetLightObj(u32 lightIdx);
+    AmbLightObj* GetAmbLightObj();
 
     bool SelectLightObj(u32 lightIdx, int lightObjIdx);
     bool SelectAmbLightObj(int lightObjIdx);

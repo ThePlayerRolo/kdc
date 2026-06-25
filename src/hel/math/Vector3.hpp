@@ -4,6 +4,7 @@
 #include <nw4r/math.h>
 
 namespace hel { namespace math {
+    //TODO: Could this inherit nw4r::math::VEC3?
     class Vector3 {
     public:
 
@@ -37,6 +38,13 @@ namespace hel { namespace math {
 
         //TODO: Is this compiler generated?
         Vector3();
+
+        //NOTE: Is merged into operator=(const hel::math::Vector3&)
+        Vector3(const nw4r::math::VEC3& rOther)
+        : x(rOther.x)
+        , y(rOther.y)
+        , z(rOther.z)
+        { }
 
         void operator=(const Vector3& rOther);
 

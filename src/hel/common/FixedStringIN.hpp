@@ -11,11 +11,12 @@ class FixedStringIN {
 public:
     static FixedStringIN<T, S> FromFormat(const T* pStr, ...);
 
+    FixedStringIN() : mString() { }
     inline T* str() const {
         return (T*)mString;
     }
 
-private:
+public:
     /* 0x0 */ T mString[S];
 };
 

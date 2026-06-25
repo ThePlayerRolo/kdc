@@ -6,7 +6,7 @@
 #include "g3d/ResAnmAutoReq.hpp"
 
 namespace g3d {
-    class ResFileAccessor {
+    class ResFileAccessor : public nw4r::g3d::ResFile {
     public:
         //NOTE: Merged into nw4r::g3d::LightObj::LightObj()
         ResFileAccessor();
@@ -18,13 +18,14 @@ namespace g3d {
         bool isValid() const;
 
         //NOTE: Merged into nw4r::ut::Color::Color(const nw4r::ut::Color&)
+        //TODO: Fix the DONT_INLINE (This could be compiler generated)
         void operator=(const ResFileAccessor& rOther) DONT_INLINE {
-            mFile = rOther.mFile;
+            this->setPtr(rOther.ptr());
         }
 
         bool bind(const ResFileAccessor&, bool) const;
         //TODO: These returns act like pointers in  isExistAnyAnim and  ModelAnim::createWithEntryName but are required to be not for  a closer match
-        //ALSO according to the .map file the constructor assert strings are generated for these types  (but unused) which means they need to not return Pointers??????
+        //ALSO according to the .map file the constructor assert strings are generated for these types  (but unused besides ResMdl) which means they need to not return Pointers??????
         nw4r::g3d::ResMdl* model(const char* pName) const;
         nw4r::g3d::ResAnmChr* animChara(const char *pName) const;
         nw4r::g3d::ResAnmClr* animColor(const char *pName) const;
@@ -38,9 +39,6 @@ namespace g3d {
         u32 modelCount() const;
         nw4r::g3d::ResMdl modelAtIndex(u32 idx) const;
         bool isExistAnyAnim(const char* pName) const;
-
-    private:
-        /* 0x00 */ const nw4r::g3d::ResFile* mFile;
     };
 }
 

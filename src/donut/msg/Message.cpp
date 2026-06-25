@@ -1,6 +1,6 @@
 #pragma peephole off
 #include <donut/msg/Message.hpp>
-#include <hel/common/FixedStringIN.hpp>
+#include <hel/common/FixedString.hpp>
 #include <hel/common/Traits.hpp>
 #include <donut/app/Locale.hpp>
 
@@ -54,17 +54,14 @@ namespace {
 //https://decomp.me/scratch/vFaa1
 Message::Message(const char* pFilename) {
     const char* msbt = ".msbt";
-    char strCopy[80] = {0};
-    hel::common::Traits<char>::Strncpy(strCopy, msbt, 80);
+    hel::common::FixedString<80> strCopy(msbt);
     const char* filePath = FilePath(pFilename);
 
-    char* strCopy2;
+    hel::common::FixedStringIN<char, 80> strCopy2  = hel::common::FixedStringIN<char, 80>::FromFormat("%s%s", filePath,
+    strCopy.str());
 
-    strCopy2  = hel::common::FixedStringIN<char, 80>::FromFormat("%s%s", filePath,
-    strCopy).str();
-
-    mFileAccessor = file::FileAccessor(strCopy2, false);
-    mMessageInfo = LMS_InitMessage(mFileAccessor.block().mStartAddress);
+    mFileAccessor = file::FileAccessor(strCopy2.str(), false);
+    mMessageInfo = LMS_InitMessage(file::FileAccessor(strCopy2.str(), false).block().mStartAddress);
 }
 
 Message::~Message() {

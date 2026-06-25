@@ -4,6 +4,7 @@
 
 #include "revolution/GX.h" // IWYU pragma: export
 #include "NW4RAssert.hpp"
+#include "g3d/res/g3d_resfile_ac.h"
 /******************************************************************************
  *
  * Macros
@@ -14,13 +15,9 @@
  * Define ResName pascal string for file resource groups.
  */
 
- #define NW4R_G3D_RESFILE_AC_ASSERT(resfile) \
-        if (((u32)resfile->ptr() & 0x1F) != 0) { \
-            nw4r::db::Panic("g3d_resfile_ac.h", 0x3C, "NW4R:Failed assertion !((u32)p & 0x1f)"); \
-        } \
-
 #define NW4R_G3D_RESFILE_NAME_DEF(VAR, STR)                                                                            \
     nw4r::g3d::ResNameData27 ResNameData_##VAR ALIGN_DECL(32) = {sizeof(STR) - 1, STR}
+
 
 /**
  * Similar to "ofs_to_obj" but accounting for the additional -4 offset.
@@ -32,15 +29,14 @@
  * Define common functions for resource classes.
  * @note Hides ResCommon::ref, why did they do this???
  */
-#define NW4R_G3D_RESOURCE_FUNC_DEF(T) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data, false)
-#define NW4R_G3D_RESOURCE_FUNC_DEF_EX(TCLS, TDATA) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA, false)
+ //Some weird way for me to get around KDC having asserts - ThePlayerRolo
+#define NW4R_G3D_RESOURCE_FUNC_DEF(T) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data)
+#define NW4R_G3D_RESOURCE_FUNC_DEF_EX(TCLS, TDATA) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)
 
-#define NW4R_G3D_RESOURCE_FUNC_DEF_ASSERT(T) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(T, T##Data, true)
+#define NW4R_G3D_RESOURCE_FUNC_DEF_ASSERT(T, valConstructor, file, CONSTRUCTOR_LINE, REF_LINE) NW4R_G3D_RESOURCE_FUNC_DEF_IMPL_ASSERT(T, T##Data, valConstructor, file, CONSTRUCTOR_LINE, REF_LINE)
 
-#define NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA, VAL)                                                                   \
+#define NW4R_G3D_RESOURCE_FUNC_DEF_IMPL(TCLS, TDATA)                                                                   \
     explicit TCLS(void *pData = NULL) : nw4r::g3d::ResCommon<TDATA>(pData) { \
-        if (VAL) \
-            NW4R_G3D_RESFILE_AC_ASSERT(this) \
     }                                          \
                                                                                                                        \
     TDATA &ref() {                                                                                                     \
@@ -58,6 +54,37 @@
     bool operator!=(const TCLS &rOther) const {                                                                        \
         return ptr() != rOther.ptr();                                                                                  \
     }
+
+
+#define NW4R_G3D_RESOURCE_FUNC_DEF_IMPL_ASSERT(TCLS, TDATA, VALCONSTRUCTOR, FILE, CONSTRUCTOR_LINE_NUMBER, REF_LINE)                                                                   \
+    explicit TCLS(void *pData = NULL) : nw4r::g3d::ResCommon<TDATA>(pData) { \
+            NW4R_G3D_RES_COMPAREVAL_ASSERT(FILE, CONSTRUCTOR_LINE_NUMBER, VALCONSTRUCTOR, this) \
+    }                                          \
+                                                                                                                       \
+            \
+    static const char* GetClassName() { \
+        return #TCLS;                                    \
+    }                                       \
+    \
+    TDATA &ref() {                                                                                                     \
+        \
+        return *ptr();                                                                                                 \
+    }                                                                                                                  \
+                                                                                                                       \
+    const TDATA &ref() const { \
+        NW4RAssertMessage_FileLine(FILE, REF_LINE, ptr() != nullptr, "%s::%s: Object not valid.", GetClassName(), __FUNCTION__); \
+        const TDATA& ret = *ptr(); \
+        return ret;                                                                                                 \
+    }                                                                                                                  \
+                                                                                                                       \
+    bool operator==(const TCLS &rOther) const {                                                                        \
+        return ptr() == rOther.ptr();                                                                                  \
+    }                                                                                                                  \
+                                                                                                                       \
+    bool operator!=(const TCLS &rOther) const {                                                                        \
+        return ptr() != rOther.ptr();                                                                                  \
+    }
+
 
 namespace nw4r {
 namespace g3d {
@@ -86,10 +113,15 @@ public:
     }
 
     T &ref() {
+       NW4R_G3D_COMMON_AC_ASSERT_PTR(mpData);
         return *mpData;
     }
     const T &ref() const {
         return *mpData;
+    }
+
+    void setPtr(const T* ptr) {
+        mpData = (T*)ptr;
     }
 
     template <typename PTR_T>
