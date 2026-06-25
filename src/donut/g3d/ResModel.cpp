@@ -22,6 +22,8 @@ namespace g3d {
         return ResNode(mObj.GetResNode(pName));
     }
 
+    //NOTE: All functions below are code merged into others. Refer to the header for more details
+
     bool ResModel::isValid() const {
         return mObj.IsValid();
     }
