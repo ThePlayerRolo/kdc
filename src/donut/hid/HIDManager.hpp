@@ -1,6 +1,7 @@
 #ifndef DONUT_HID_HIDMANAGER_HPP
 #define DONUT_HID_HIDMANAGER_HPP
 
+#include <hel/common/ExplicitSingleton.hpp>
 #include <donut/hid/Button.hpp>
 
 #define MAX_HID_COUNT 4
@@ -16,6 +17,8 @@ public:
 
 class HIDManager {
 public:
+    DECL_EXPLICIT_SINGLETON(HIDManager)
+
     HIDManager();
     ~HIDManager();
 
@@ -23,6 +26,7 @@ public:
     void resetButtonConvertKind();
     void updateMaster();
     HIDAccessor& gameHID(u32 index) const;
+    void resetGCControllerAll();
 
     void updateDebug() DONT_INLINE { }
 private:

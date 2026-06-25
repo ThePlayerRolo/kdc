@@ -659,6 +659,17 @@ config.libs = [
         ],
     },
     {
+        "lib": "scn/vc",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(Matching, "donut/scn/vc/Loader.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/scn/vc/Main.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/scn/vc/SceneVC.cpp", extra_cflags=["-O3,s"]),
+        ],
+    },
+    {
         "lib": "snd",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,
