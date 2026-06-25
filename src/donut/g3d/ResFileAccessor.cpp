@@ -1,6 +1,6 @@
 #pragma peephole off
 #include "g3d/ResFileAccessor.hpp"
-#include <hel/common/FixedStringIN.hpp>
+#include <hel/common/FixedString.hpp>
 
 namespace g3d {
 
@@ -14,10 +14,10 @@ namespace g3d {
         }
     }
 
-    nw4r::g3d::ResMdl* ResFileAccessor::model(const char* pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResMdl ResFileAccessor::model(const char* pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResMdl(nullptr);
 
-        return &GetResMdl(pName);
+        return GetResMdl(pName);
     }
 
     nw4r::g3d::ResAnmChr* ResFileAccessor::animChara(const char *pName) const {
@@ -65,9 +65,7 @@ namespace g3d {
     ResAnmAutoReq ResFileAccessor::animAutoReq(const char* pName) const {
         if (this->ptr() == nullptr) return ResAnmAutoReq();
 
-        hel::common::FixedStringIN<char, 40> fileName;
-        fileName =  hel::common::FixedStringIN<char, 40>::FromFormat("%s.autoreq", pName);
-
+        hel::common::FixedString<40> fileName(hel::common::FixedString<40>::FromFormat("%s.autoreq", pName));
         return ResAnmAutoReq(GetExternalData(fileName.str()));
     }
 

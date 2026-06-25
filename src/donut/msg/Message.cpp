@@ -53,11 +53,8 @@ namespace {
 
 //https://decomp.me/scratch/vFaa1
 Message::Message(const char* pFilename) {
-    const char* msbt = ".msbt";
-    hel::common::FixedString<80> strCopy(msbt);
-    const char* filePath = FilePath(pFilename);
-
-    hel::common::FixedStringIN<char, 80> strCopy2  = hel::common::FixedStringIN<char, 80>::FromFormat("%s%s", filePath,
+    hel::common::FixedString<80> strCopy(".msbt");
+    hel::common::FixedString<80> strCopy2  = hel::common::FixedString<80>::FromFormat("%s%s", FilePath(pFilename).str(),
     strCopy.str());
 
     mFileAccessor = file::FileAccessor(strCopy2.str(), false);
@@ -70,7 +67,7 @@ Message::~Message() {
 }
 
 //https://decomp.me/scratch/GORYp
-const char* Message::FilePath(const char* pFileName) {
+hel::common::FixedString<80> Message::FilePath(const char* pFileName) {
     int language = app::Locale::GetLanguage();
     const char* regionDir = nullptr;
     int region = app::Locale::GetRegion();
@@ -86,7 +83,7 @@ const char* Message::FilePath(const char* pFileName) {
             regionDir = DIRS_EU[language];
             break;
     }
-    return hel::common::FixedStringIN<char, 80>::FromFormat("msg/%s/%s", regionDir, pFileName).str();
+    return hel::common::FixedString<80>::FromFormat("msg/%s/%s", regionDir, pFileName);
 }
 
 const wchar_t* Message::text(const char* pTag) {

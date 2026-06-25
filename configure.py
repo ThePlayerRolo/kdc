@@ -538,6 +538,7 @@ config.libs = [
             Object(NonMatching, "donut/g3d/ResFile.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ResFileAccessor.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ResFileRepository.cpp", extra_cflags=["-O3,s"]),
+            Object(Equivalent, "donut/g3d/ResModel.cpp", extra_cflags=["-O3,s"]),
             Object(Matching, "donut/g3d/ResModelContext.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ResNode.cpp", extra_cflags=["-O3,s"]),
             Object(Matching, "donut/g3d/RootContext.cpp"),

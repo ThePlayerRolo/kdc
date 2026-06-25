@@ -446,6 +446,9 @@ donut/g3d/ResFileAccessor.cpp:
 donut/g3d/ResFileRepository.cpp:
 	.text       start:0x80193760 end:0x80193B9C
 
+donut/g3d/ResModel.cpp:
+	.text       start:0x80193B9C end:0x80193CC8
+
 donut/g3d/ResModelContext.cpp:
 	.text       start:0x80193CC8 end:0x80193D38
 	.sdata      start:0x80556DE0 end:0x80556DF0
@@ -457,6 +460,9 @@ donut/g3d/ResNode.cpp:
 
 donut/g3d/RootContext.cpp:
 	.text       start:0x8019461C end:0x80194634
+
+donut/g3d/SceneAnimContext.cpp:
+	.text       start:0x801949EC end:0x801949EC
 
 donut/gfx/EasyRender3D.cpp:
 	.text       start:0x80194FC4 end:0x80195854
