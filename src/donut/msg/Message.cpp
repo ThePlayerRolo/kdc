@@ -61,7 +61,7 @@ Message::Message(const char* pFilename) {
     strCopy.str());
 
     mFileAccessor = file::FileAccessor(strCopy2.str(), false);
-    mMessageInfo = LMS_InitMessage(file::FileAccessor(strCopy2.str(), false).block().mStartAddress);
+    mMessageInfo = LMS_InitMessage(mFileAccessor.block().mStartAddress);
 }
 
 Message::~Message() {
