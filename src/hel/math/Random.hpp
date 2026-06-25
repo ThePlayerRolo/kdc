@@ -19,9 +19,7 @@ namespace hel  { namespace math {
         Random(const Seed& rSeed);
 
         //Is folded into rand(int)
-        int operator()(int arg1) {
-            return randS32(arg1);
-        }
+        int operator()(int arg1);
 
         bool randBool(float);
         int rand(int);

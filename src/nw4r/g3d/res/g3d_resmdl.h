@@ -131,7 +131,7 @@ public:
     static const int REVISION = 11;
 
 public:
-    NW4R_G3D_RESOURCE_FUNC_DEF(ResMdl);
+    NW4R_G3D_RESOURCE_FUNC_DEF_ASSERT(ResMdl, 0x1f, "g3d_resmdl_ac.h", 120, 0);
 
     void Init();
     void Terminate();
@@ -158,6 +158,8 @@ public:
     ResNode GetResNode(const char *pName) const;
     ResNode GetResNode(const ResName name) const;
     ResNode GetResNode(int idx) const;
+
+    // Note is merged into nw4r::g3d::ResMdl::GetResNode(int) const
     ResNode GetResNode(u32 idx) const;
     u32 GetResNodeNumEntries() const;
 

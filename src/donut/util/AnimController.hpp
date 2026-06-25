@@ -6,12 +6,12 @@
 namespace util {
     class AnimController {
     public:
-        AnimController(f32);
+        AnimController(f32 totalFrame);
 
         void setFrameToHead();
         void setFrameToTail();
         void updateFrame();
-        void start(bool);
+        void start(bool doLoop);
         void stop();
         bool isAnimEnd() const;
 

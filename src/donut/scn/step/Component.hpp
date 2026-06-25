@@ -10,12 +10,7 @@
 #include "scn/step/debug/ObjInfoRepos.hpp"
 #include "scn/step/map/DataFile.hpp"
 #include "scn/step/hero/Manager.hpp"
-
-// todo: move these to their own headers
-
-namespace g3d {
-    class ResFileRepository { };
-}
+#include "g3d/ResFileRepository.hpp"
 
 namespace scn { namespace step {
     namespace core {

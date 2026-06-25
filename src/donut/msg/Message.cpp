@@ -1,7 +1,5 @@
 #pragma peephole off
 #include <donut/msg/Message.hpp>
-#include <hel/common/FixedStringIN.hpp>
-#include <hel/common/Traits.hpp>
 #include <donut/app/Locale.hpp>
 
 using msg::Message;
@@ -51,19 +49,13 @@ namespace {
     };
 };
 
-//https://decomp.me/scratch/vFaa1
+//https://decomp.me/scratch/ngvuW
 Message::Message(const char* pFilename) {
-    const char* msbt = ".msbt";
-    char strCopy[80] = {0};
-    hel::common::Traits<char>::Strncpy(strCopy, msbt, 80);
-    const char* filePath = FilePath(pFilename);
+    hel::common::FixedString<80> strCopy(".msbt");
+    hel::common::FixedString<80> strCopy2  = hel::common::FixedString<80>::FromFormat("%s%s", FilePath(pFilename).str(),
+    strCopy.str());
 
-    char* strCopy2;
-
-    strCopy2  = hel::common::FixedStringIN<char, 80>::FromFormat("%s%s", filePath,
-    strCopy).str();
-
-    mFileAccessor = file::FileAccessor(strCopy2, false);
+    mFileAccessor = file::FileAccessor(strCopy2.str(), false);
     mMessageInfo = LMS_InitMessage(mFileAccessor.block().mStartAddress);
 }
 
@@ -72,8 +64,8 @@ Message::~Message() {
     mMessageInfo = nullptr;
 }
 
-//https://decomp.me/scratch/GORYp
-const char* Message::FilePath(const char* pFileName) {
+//https://decomp.me/scratch/snpLJ
+hel::common::FixedString<80> Message::FilePath(const char* pFileName) {
     int language = app::Locale::GetLanguage();
     const char* regionDir = nullptr;
     int region = app::Locale::GetRegion();
@@ -89,7 +81,7 @@ const char* Message::FilePath(const char* pFileName) {
             regionDir = DIRS_EU[language];
             break;
     }
-    return hel::common::FixedStringIN<char, 80>::FromFormat("msg/%s/%s", regionDir, pFileName).str();
+    return hel::common::FixedString<80>::FromFormat("msg/%s/%s", regionDir, pFileName);
 }
 
 const wchar_t* Message::text(const char* pTag) {

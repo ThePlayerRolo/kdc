@@ -1,7 +1,8 @@
 #ifndef DONUT_MSG_PROJECT_HPP
 #define DONUT_MSG_PROJECT_HPP
 
-#include <donut/file/FileAccessor.hpp>
+#include <hel/common/FixedString.hpp>
+#include "donut/file/FileAccessor.hpp"
 #include <libms/msgfile.h>
 
 namespace msg {
@@ -11,7 +12,7 @@ namespace msg {
         ~Message();
 
         const wchar_t* text(const char* pTag);
-        const char* FilePath(const char* pFileName);
+        hel::common::FixedString<80> FilePath(const char* pFileName);
 
     private:
         /* 0x00 */ file::FileAccessor mFileAccessor;

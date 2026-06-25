@@ -3,6 +3,10 @@
 
 #include <types.h>
 
+#define GAMESCREEN_WIDTH_FULLSCREEN 608
+#define GAMESCREEN_WIDTH_WIDESCREEN 832
+#define GAMESCREEN_HEIGHT 456
+
 namespace gfx {
 
 class GameScreen {
