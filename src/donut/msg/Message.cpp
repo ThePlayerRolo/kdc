@@ -1,7 +1,5 @@
 #pragma peephole off
 #include <donut/msg/Message.hpp>
-#include <hel/common/FixedString.hpp>
-#include <hel/common/Traits.hpp>
 #include <donut/app/Locale.hpp>
 
 using msg::Message;
@@ -51,7 +49,7 @@ namespace {
     };
 };
 
-//https://decomp.me/scratch/vFaa1
+//https://decomp.me/scratch/ngvuW
 Message::Message(const char* pFilename) {
     hel::common::FixedString<80> strCopy(".msbt");
     hel::common::FixedString<80> strCopy2  = hel::common::FixedString<80>::FromFormat("%s%s", FilePath(pFilename).str(),
@@ -66,7 +64,7 @@ Message::~Message() {
     mMessageInfo = nullptr;
 }
 
-//https://decomp.me/scratch/GORYp
+//https://decomp.me/scratch/snpLJ
 hel::common::FixedString<80> Message::FilePath(const char* pFileName) {
     int language = app::Locale::GetLanguage();
     const char* regionDir = nullptr;

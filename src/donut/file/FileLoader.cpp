@@ -65,7 +65,7 @@ namespace file {
         return m_64;
     }
 
-    //https://decomp.me/scratch/Ad1gb
+    //https://decomp.me/scratch/ssYS1
     void FileLoader::loadIN(const char* pFilename, mem::IAllocator& rAllocator, mem::HeapCompaction* pCompaction, bool arg3,
         const IFileInitializer* pFileInitializer, const mem::MemBlock* pMemBlock) {
             bool isMemBlockhere =  pMemBlock != nullptr;

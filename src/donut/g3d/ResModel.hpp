@@ -22,7 +22,7 @@ namespace g3d {
         bool isValid() const;
 
         //NOTE: Merged into nw4r::snd::detail::AxManager::GetZeroBufferAddress()
-        nw4r::g3d::ResMdl* obj() const;
+        nw4r::g3d::ResMdl* obj() const; /* TODO: Double check type */
     public:
         /* 0x00 */ ResFileAccessor mFile;
         /* 0x04 */ nw4r::g3d::ResMdl mObj;
@@ -30,9 +30,3 @@ namespace g3d {
 }
 
 #endif
-
-/*
---> isValid__Q23g3d8ResModelCFv is duplicated by isConstruct__Q23mem43ExplicitScopedPtr<Q23app16HIDErrorMenuImpl>CFv, size = 16
-
---> obj__Q23g3d8ResModelCFv is duplicated by GetZeroBufferAddress__Q44nw4r3snd6detail9AxManagerFv, size = 8
-*/

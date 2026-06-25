@@ -21,4 +21,12 @@ namespace g3d {
     ResNode ResModel::nodeByName(const char* pName) const {
         return ResNode(mObj.GetResNode(pName));
     }
+
+    bool ResModel::isValid() const {
+        return mObj.IsValid();
+    }
+
+    nw4r::g3d::ResMdl* ResModel::obj() const {
+        return (nw4r::g3d::ResMdl*)mObj.ptr();
+    }
 }

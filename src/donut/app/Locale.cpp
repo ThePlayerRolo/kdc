@@ -18,4 +18,13 @@ const char* Locale::FilePostfix() {
     return T_POSTS_US[1];
 }
 
+//NOTE: All functions below are code merged into others. Refer to the header for more details
+
+int GetRegion() {
+    return 1;
+}
+
+int GetLanguage() {
+    return 1;
+}
 }

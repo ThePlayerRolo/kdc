@@ -14,52 +14,53 @@ namespace g3d {
         }
     }
 
+    // https://decomp.me/scratch/5h9mM
     nw4r::g3d::ResMdl ResFileAccessor::model(const char* pName) const {
         if (this->ptr() == nullptr) return nw4r::g3d::ResMdl(nullptr);
 
         return GetResMdl(pName);
     }
 
-    nw4r::g3d::ResAnmChr* ResFileAccessor::animChara(const char *pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResAnmChr ResFileAccessor::animChara(const char *pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResAnmChr(nullptr);
 
-        return &GetResAnmChr(pName);
+        return GetResAnmChr(pName);
     }
 
-    nw4r::g3d::ResAnmClr* ResFileAccessor::animColor(const char *pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResAnmClr ResFileAccessor::animColor(const char *pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResAnmClr(nullptr);
 
-        return &GetResAnmClr(pName);
+        return GetResAnmClr(pName);
     }
 
-    nw4r::g3d::ResAnmShp* ResFileAccessor::animShape(const char *pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResAnmShp ResFileAccessor::animShape(const char *pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResAnmShp(nullptr);
 
-        return &GetResAnmShp(pName);
+        return GetResAnmShp(pName);
     }
 
-    nw4r::g3d::ResAnmScn* ResFileAccessor::animScene(const char *pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResAnmScn ResFileAccessor::animScene(const char *pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResAnmScn(nullptr);
 
-        return &GetResAnmScn(pName);
+        return GetResAnmScn(pName);
     }
 
-    nw4r::g3d::ResAnmTexPat* ResFileAccessor::animTexPattern(const char *pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResAnmTexPat ResFileAccessor::animTexPattern(const char *pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResAnmTexPat(nullptr);
 
-        return &GetResAnmTexPat(pName);
+        return GetResAnmTexPat(pName);
     }
 
-    nw4r::g3d::ResAnmTexSrt* ResFileAccessor::animTexSRT(const char *pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResAnmTexSrt ResFileAccessor::animTexSRT(const char *pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResAnmTexSrt(nullptr);
 
-        return &GetResAnmTexSrt(pName);
+        return GetResAnmTexSrt(pName);
     }
 
-    nw4r::g3d::ResAnmVis* ResFileAccessor::animVisible(const char *pName) const {
-        if (this->ptr() == nullptr) return nullptr;
+    nw4r::g3d::ResAnmVis ResFileAccessor::animVisible(const char *pName) const {
+        if (this->ptr() == nullptr) return nw4r::g3d::ResAnmVis(nullptr);
 
-        return &GetResAnmVis(pName);
+        return GetResAnmVis(pName);
     }
 
     ResAnmAutoReq ResFileAccessor::animAutoReq(const char* pName) const {
@@ -78,38 +79,19 @@ namespace g3d {
     }
 
     bool ResFileAccessor::isExistAnyAnim(const char* pName) const {
-        bool animExist = true;
-        bool animVisibleExist = true;
-        bool animTexSRTExist = true;
-        bool animTexPatternExist = true;
-        bool animShapeExist = true;
-        bool animSceneExist = true;
-        bool animColorExist = true;
+        return animChara(pName).ptr() != nullptr || animColor(pName).ptr() != nullptr || animScene(pName).ptr() != nullptr
+            || animShape(pName).ptr() != nullptr || animTexPattern(pName).ptr() != nullptr || animTexSRT(pName).ptr() != nullptr
+            || animVisible(pName).ptr() != nullptr || animAutoReq(pName).isValid();
+    }
 
-        if (animChara(pName) == nullptr && animColor(pName) == nullptr) {
-            animColorExist = false;
-        }
-        if (!animColorExist && animScene(pName) == nullptr) {
-            animSceneExist = false;
-        }
-        if (!animSceneExist && animShape(pName) == nullptr) {
-            animShapeExist = false;
-        }
-        if (!animShapeExist && animTexPattern(pName) == nullptr) {
-            animTexPatternExist = false;
-        }
-        if (!animTexPatternExist && animTexSRT(pName) == nullptr) {
-            animTexSRTExist = false;
-        }
-        if (!animTexSRTExist && animVisible(pName) == nullptr) {
-            animVisibleExist = false;
-        }
+    //NOTE: All functions below are code merged into others. Refer to the header for more details
 
-        if (!animVisibleExist) {
-            ResAnmAutoReq autoReq = animAutoReq(pName);
-            if (!autoReq.isValid())
-                animExist = false;
-        }
-        return animExist;
+    // TODO: Consturctor problems
+    ResFileAccessor::ResFileAccessor() : nw4r::g3d::ResFile(nullptr) { }
+
+    ResFileAccessor::ResFileAccessor(const nw4r::g3d::ResFile& rOther) : nw4r::g3d::ResFile(rOther) { }
+
+    bool ResFileAccessor::isValid() const {
+        return IsValid();
     }
 }

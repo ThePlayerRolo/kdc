@@ -25,15 +25,13 @@ namespace g3d {
 
         bool bind(const ResFileAccessor&, bool) const;
         nw4r::g3d::ResMdl model(const char* pName) const;
-        //TODO: These returns act like pointers in  isExistAnyAnim and  ModelAnim::createWithEntryName but are required to be not for  a closer match
-        //ALSO according to the .map file the constructor assert strings are generated for these types  (but unused besides ResMdl) which means they need to not return Pointers??????
-        nw4r::g3d::ResAnmChr* animChara(const char *pName) const;
-        nw4r::g3d::ResAnmClr* animColor(const char *pName) const;
-        nw4r::g3d::ResAnmShp* animShape(const char *pName) const;
-        nw4r::g3d::ResAnmScn* animScene(const char *pName) const;
-        nw4r::g3d::ResAnmTexPat* animTexPattern(const char *pName) const;
-        nw4r::g3d::ResAnmTexSrt* animTexSRT(const char *pName) const;
-        nw4r::g3d::ResAnmVis* animVisible(const char *pName) const;
+        nw4r::g3d::ResAnmChr animChara(const char *pName) const;
+        nw4r::g3d::ResAnmClr animColor(const char *pName) const;
+        nw4r::g3d::ResAnmShp animShape(const char *pName) const;
+        nw4r::g3d::ResAnmScn animScene(const char *pName) const;
+        nw4r::g3d::ResAnmTexPat animTexPattern(const char *pName) const;
+        nw4r::g3d::ResAnmTexSrt animTexSRT(const char *pName) const;
+        nw4r::g3d::ResAnmVis animVisible(const char *pName) const;
 
         ResAnmAutoReq animAutoReq(const char* pName) const;
         u32 modelCount() const;

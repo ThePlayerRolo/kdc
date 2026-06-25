@@ -2,6 +2,7 @@
 #include "g3d/MaterialAccessor.hpp"
 
 namespace g3d {
+    // https://decomp.me/scratch/y8YZQ
     MaterialAccessor::MaterialAccessor()
     : nw4r::g3d::ScnMdl::CopiedMatAccess(nullptr, nullptr)
     , _4(false)
@@ -15,6 +16,7 @@ namespace g3d {
         const_cast<MaterialAccessor*>(this)->GetResMatTevColor(false).EndEdit();
     }
 
+    // https://decomp.me/scratch/FFvbY
     void MaterialAccessor::matPixGXSetDstAlpha(bool enable, u8 alpha) const {
         const_cast<MaterialAccessor*>(this)->GetResMatPix(false).GXSetDstAlpha(enable, alpha);
     }

@@ -37,6 +37,7 @@ namespace g3d {
         _6 = true;
     }
 
+    // https://decomp.me/scratch/5eFx6
     u32 ModelBufferOption::value() const {
         u32 value = _0;
         value |= (_1) & 2;

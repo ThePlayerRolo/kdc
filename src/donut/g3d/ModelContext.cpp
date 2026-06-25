@@ -19,6 +19,7 @@ namespace g3d {
 
     }
 
+    // https://decomp.me/scratch/f7fx3
     ModelContext::ModelContext(const ResModelContext &rModelCtx, const ModelBufferOption& rBufferOptions,
         u32 maxNumChildren, u32 numView, mem::IAllocator& rAllocator, bool isCreateNodeLocalMtx)
     : ResModelContext(rModelCtx)
