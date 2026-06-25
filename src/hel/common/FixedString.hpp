@@ -18,11 +18,15 @@ public:
         Traits<char>::Strncpy(mString, pString, S);
     }
 
+    FixedString(const FixedStringIN<char, S>& rOther ) : FixedStringIN(rOther) { }
+
     inline char* str() const {
         return (char*)mString;
     }
 
     void operator=(const FixedString& rOther);
+
+
 };
 
 } // common

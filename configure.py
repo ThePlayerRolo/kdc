@@ -532,6 +532,7 @@ config.libs = [
             Object(Matching, "donut/g3d/ModelAnimContext.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ModelBufferOption.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ModelContext.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/g3d/ModelMultiAnimContext.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/NodeLocalMtx.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/g3d/NodeLocalMtxAccessor.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ResFile.cpp", extra_cflags=["-O3,s"]),

@@ -424,6 +424,10 @@ donut/g3d/ModelBufferOption.cpp:
 donut/g3d/ModelContext.cpp:
 	.text       start:0x801920E8 end:0x80192208
 
+donut/g3d/ModelMultiAnimContext.cpp:
+	.text       start:0x80192C20 end:0x80192CE4
+	.sdata      start:0x80556DD0 end:0x80556DE0
+
 donut/g3d/NodeLocalMtx.cpp:
 	.text       start:0x801930BC end:0x80193208
 	.sdata2     start:0x8055F698 end:0x8055F6A0
