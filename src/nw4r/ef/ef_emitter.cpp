@@ -772,7 +772,7 @@ void Emitter::CalcEmitter() {
 
         if (((u32)(pTrackAsHeader->magic + 0x55) & 0xFF) > 1) continue;
         u8 kind = pTrackAsHeader->kindType;
-        AnimCurveExecuteF32(reinterpret_cast<u8*>(pTrackAsHeader), (f32*)((u32)&mParameter + kind), animTime, mRandSeed,
+        AnimCurveExecuteF32(pEmitTrack, (f32*)((u32)&mParameter + kind), animTime, mRandSeed,
                                 animSpan);
             if (kind >= 0x70)
                 mtxDirty = true;
