@@ -416,6 +416,32 @@ donut/app/Application.cpp:
 	.text       start:0x80176268 end:0x80176714
 	.sbss       start:0x8055D130 end:0x8055D138
 
+donut/app/AutoResetTimer.cpp:
+	.text       start:0x80176714 end:0x80176804
+	.sbss       start:0x8055D138 end:0x8055D140
+
+donut/app/BackupFileAccessor.cpp:
+	.text       start:0x80176804 end:0x801768B4
+
+donut/app/DvdWatch.cpp:
+	.text       start:0x801768B4 end:0x801776BC
+	.data       start:0x80452B30 end:0x80452BC0
+
+donut/app/DvdWatch_ENG.cpp:
+	.rodata     start:0x804144C8 end:0x804144E0
+	.data       start:0x80452BC0 end:0x80452CF8
+	.sdata      start:0x80556B78 end:0x80556B80
+
+donut/app/EntryPoint.cpp:
+	.text       start:0x801776BC end:0x8017793C
+	.data       start:0x80452CF8 end:0x80452D18
+	.sbss       start:0x8055D140 end:0x8055D148
+
+donut/app/HIDErrorMenu.cpp:
+	.text       start:0x8017793C end:0x801793AC
+	.data       start:0x80452D18 end:0x80452EE0
+	.sdata      start:0x80556B80 end:0x80556BF8
+
 donut/app/Locale.cpp:
 	.text       start:0x801793AC end:0x801793BC
 	.rodata     start:0x804144E0 end:0x80414500
@@ -424,8 +450,41 @@ donut/app/Locale.cpp:
 donut/app/Message.cpp:
 	.text       start:0x801793BC end:0x801798A8
 
+donut/app/NANDErrorMenu.cpp:
+	.text       start:0x801798A8 end:0x8017A588
+	.data       start:0x80452EE0 end:0x80453020
+	.sdata      start:0x80556C30 end:0x80556CB8
+
+donut/app/PerformanceController.cpp:
+	.text       start:0x8017A588 end:0x8017A9DC
+	.ctors      start:0x804062DC end:0x804062E0
+	.rodata     start:0x80414500 end:0x80414518
+	.sbss       start:0x8055D148 end:0x8055D150
+
+donut/app/Random.cpp:
+	.text       start:0x8017A9DC end:0x8017AC2C
+
+donut/app/Reset.cpp:
+	.text       start:0x8017AC2C end:0x8017B1F8
+	.sdata      start:0x80556CB8 end:0x80556CC0
+	.sbss       start:0x8055D150 end:0x8055D160
+	.sdata2     start:0x8055F5D8 end:0x8055F5E8
+
+donut/app/ResidentFile.cpp:
+	.text       start:0x8017B1F8 end:0x8017B548
+	.data       start:0x80453020 end:0x80453068
+	.sdata2     start:0x8055F5E8 end:0x8055F5F0
+
 donut/app/RomFontWrapper.cpp:
 	.text       start:0x8017B548 end:0x8017B63C
+	.data       start:0x80453068 end:0x80453100
+	.sdata      start:0x80556CC0 end:0x80556CD8
+
+donut/app/SaveInfo.cpp:
+	.text       start:0x8017B63C end:0x8017BBDC
+
+donut/app/System.cpp:
+	.text       start:0x8017BBDC end:0x8017BD88
 
 donut/effect/detail/DrawInfo.cpp:
 	.text       start:0x8017F38C end:0x8017F550
