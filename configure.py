@@ -589,6 +589,23 @@ config.libs = [
         ],
     },
     {
+        "lib": "freeze",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/freeze/Console.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/Exception.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/FreezeHandler.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/FreezeManager.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/FreezeThread.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/MapFile.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/Message.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/NW4RAssert.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/freeze/XFBRestore.cpp", extra_cflags=["-O3,s"]),
+        ],
+    },
+    {
         "lib": "g3d",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,

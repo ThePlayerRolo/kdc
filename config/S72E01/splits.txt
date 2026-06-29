@@ -483,6 +483,49 @@ donut/font/FontManager.cpp:
 	.text       start:0x801894A8 end:0x80189648
 	.sdata      start:0x80556D30 end:0x80556D38
 
+donut/freeze/Console.cpp:
+	.text       start:0x80189648 end:0x801899D0
+	.data       start:0x804538A0 end:0x80453990
+
+donut/freeze/Exception.cpp:
+	.text       start:0x801899D0 end:0x8018A2D0
+	.data       start:0x80453990 end:0x80453EB8
+	.sdata      start:0x80556D38 end:0x80556D68
+	.sbss       start:0x8055D188 end:0x8055D190
+	.sdata2     start:0x8055F658 end:0x8055F660
+
+donut/freeze/FreezeHandler.cpp:
+	.text       start:0x8018A2D0 end:0x8018A548
+	.data       start:0x80453EB8 end:0x80453EE8
+
+donut/freeze/FreezeManager.cpp:
+	.text       start:0x8018A548 end:0x8018AC10
+	.data       start:0x80453EE8 end:0x80453F20
+	.bss        start:0x80544520 end:0x805447E8
+	.sdata      start:0x80556D68 end:0x80556D70
+	.sbss       start:0x8055D190 end:0x8055D1A0
+
+donut/freeze/FreezeThread.cpp:
+	.text       start:0x8018AC10 end:0x8018B16C
+	.rodata     start:0x80414570 end:0x80414598
+	.data       start:0x80453F20 end:0x80454038
+	.sdata      start:0x80556D70 end:0x80556D78
+
+donut/freeze/MapFile.cpp:
+	.text       start:0x8018B16C end:0x8018B498
+	.sbss       start:0x8055D1A0 end:0x8055D1A8
+
+donut/freeze/Message.cpp:
+	.text       start:0x8018B498 end:0x8018B504
+
+donut/freeze/NW4RAssert.cpp:
+	.text       start:0x8018B504 end:0x8018B57C
+	.data       start:0x80454038 end:0x80454048
+	.sdata      start:0x80556D78 end:0x80556D80
+
+donut/freeze/XFBRestore.cpp:
+	.text       start:0x8018B57C end:0x8018B6A8
+
 donut/g3d/AddOnMint.cpp:
 	.text       start:0x8018B6A8 end:0x8018B910
 	.data       start:0x80454048 end:0x80454158
