@@ -720,6 +720,9 @@ donut/gobj/MoveParamAccel.cpp:
 	.text       start:0x8019B9A4 end:0x8019B9F4
 	.sdata2     start:0x8055F798 end:0x8055F7A0
 
+hel/common/Array.cpp:
+	.text       start:0x8019D88C end:0x8019D88C
+
 hel/math/Direction3.cpp:
 	.text       start:0x8019DF7C end:0x8019E590
 	.ctors      start:0x80406318 end:0x8040631C

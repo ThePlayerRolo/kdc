@@ -505,6 +505,15 @@ config.libs = [
         ],
     },
     {
+        "lib": "hel/common",
+        "mw_version": config.linker_version,
+        "cflags": cflags_hel,
+        "progress_category": "hel",
+        "objects": [
+            Object(Matching, "hel/common/Array.cpp"),
+        ],
+    },
+    {
         "lib": "hel/math",
         "mw_version": config.linker_version,
         "cflags": cflags_hel,
