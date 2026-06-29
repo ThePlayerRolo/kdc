@@ -1222,6 +1222,46 @@ donut/hid/Stick.cpp:
 	.text       start:0x801A4778 end:0x801A4810
 	.sdata2     start:0x8055F930 end:0x8055F938
 
+donut/info/Util.cpp:
+	.text       start:0x801A4810 end:0x801A5B58
+	.rodata     start:0x80414B40 end:0x80414B60
+	.data       start:0x80456F80 end:0x804571E8
+	.sdata      start:0x80556EA8 end:0x80556F28
+	.sdata2     start:0x8055F938 end:0x8055F940
+
+donut/info/sequence/Sequence.cpp:
+	.text       start:0x801A5B58 end:0x801A701C
+	.data       start:0x804571E8 end:0x804572A8
+
+donut/info/common/AddWiiRemote.cpp:
+	.text       start:0x801A701C end:0x801A7DB0
+	.data       start:0x804572A8 end:0x80457340
+	.sdata      start:0x80556F28 end:0x80556F98
+	.sdata2     start:0x8055F940 end:0x8055F948
+
+donut/info/common/Button.cpp:
+	.text       start:0x801A7DB0 end:0x801A830C
+	.rodata     start:0x80414B60 end:0x80414B70
+	.data       start:0x80457340 end:0x804573C8
+	.sdata      start:0x80556F98 end:0x80556FD8
+	.sdata2     start:0x8055F948 end:0x8055F950
+
+donut/info/common/ButtonHelp.cpp:
+	.text       start:0x801A830C end:0x801A857C
+	.data       start:0x804573C8 end:0x80457430
+	.sdata      start:0x80556FD8 end:0x80556FF0
+
+donut/info/common/CheckWindow.cpp:
+	.text       start:0x801A857C end:0x801A9348
+	.data       start:0x80457430 end:0x80457518
+	.sdata      start:0x80556FF0 end:0x80557060
+
+donut/info/common/Confirm.cpp:
+	.text       start:0x801A9348 end:0x801A9DC0
+	.data       start:0x80457518 end:0x804575D0
+	.sdata      start:0x80557060 end:0x80557098
+	.sdata2     start:0x8055F950 end:0x8055F958
+
 donut/mem/AllocatorHandle.cpp:
 	.text       start:0x801BD204 end:0x801BD204
 
