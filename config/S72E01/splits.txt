@@ -888,8 +888,51 @@ donut/gobj/Target.cpp:
 donut/gobj/TargetDesc.cpp:
 	.text       start:0x8019C14C end:0x8019C158
 
+donut/hbm/DisableIcon.cpp:
+	.text       start:0x8019C158 end:0x8019C390
+	.ctors      start:0x80406310 end:0x80406314
+	.sbss       start:0x8055D208 end:0x8055D218
+	.sdata2     start:0x8055F7B8 end:0x8055F7E0
+
+donut/hbm/HomeButtonMenu.cpp:
+	.text       start:0x8019C390 end:0x8019D5D8
+	.data       start:0x80456920 end:0x80456930
+	.sdata      start:0x80556E30 end:0x80556E48
+	.sdata2     start:0x8055F7E0 end:0x8055F818
+
+donut/hbm/Resource.cpp:
+	.text       start:0x8019D5D8 end:0x8019D834
+
+donut/hbm/ResourceFileName.cpp:
+	.text       start:0x8019D834 end:0x8019D88C
+	.data       start:0x80456930 end:0x804569D0
+	.sdata      start:0x80556E48 end:0x80556E60
+	.sdata2     start:0x8055F818 end:0x8055F828
+
 hel/common/Array.cpp:
 	.text       start:0x8019D88C end:0x8019D88C
+
+hel/common/Color.cpp:
+	.text       start:0x8019D88C end:0x8019D994
+	.ctors      start:0x80406314 end:0x80406318
+	.sbss       start:0x8055D218 end:0x8055D240
+
+hel/common/FixedString.cpp:
+	.text       start:0x8019D994 end:0x8019DA54
+
+hel/common/Locale.cpp:
+	.text       start:0x8019DA54 end:0x8019DE24
+	.data       start:0x804569D0 end:0x804569E0
+	.sdata      start:0x80556E60 end:0x80556E88
+
+hel/common/ScopedPtr.cpp:
+	.text       start:0x8019DE24 end:0x8019DE24
+
+hel/common/Assert.cpp:
+	.text       start:0x8019DE24 end:0x8019DE98
+
+hel/common/Print.cpp:
+	.text       start:0x8019DE98 end:0x8019DF7C
 
 hel/math/Direction3.cpp:
 	.text       start:0x8019DF7C end:0x8019E590
@@ -926,9 +969,44 @@ hel/math/Vector3.cpp:
 	.bss        start:0x805452D0 end:0x80545310
 	.sdata2     start:0x8055F880 end:0x8055F8A0
 
+hel/geo/AABBox.cpp:
+	.text       start:0x8019FD4C end:0x8019FD54
+	.sdata2     start:0x8055F8A0 end:0x8055F8A8
+
 hel/geo/Rect.cpp:
 	.text       start:0x8019FD54 end:0x801A01FC
 	.sdata2     start:0x8055F8A8 end:0x8055F8B8
+
+hel/geo/Closest.cpp:
+	.text       start:0x801A01FC end:0x801A05E0
+	.sdata2     start:0x8055F8B8 end:0x8055F8C8
+
+hel/geo/Intersection.cpp:
+	.text       start:0x801A05E0 end:0x801A0D9C
+	.sdata2     start:0x8055F8C8 end:0x8055F8E0
+
+hel/mint/AddOnCast.cpp:
+	.text       start:0x801A0D9C end:0x801A0F00
+	.data       start:0x804569E0 end:0x80456A60
+	.sdata2     start:0x8055F8E0 end:0x8055F8E8
+
+hel/mint/AddOnMathDirection3.cpp:
+	.text       start:0x801A0F00 end:0x801A1B1C
+	.data       start:0x80456A60 end:0x80456E38
+	.bss        start:0x80545310 end:0x80545338
+	.sdata      start:0x80556E88 end:0x80556EA0
+	.sbss       start:0x8055D268 end:0x8055D270
+
+hel/mint/AddOnMathMath.cpp:
+	.text       start:0x801A1B1C end:0x801A1DB4
+	.data       start:0x80456E38 end:0x80456F40
+	.sdata2     start:0x8055F8E8 end:0x8055F900
+
+hel/mint/AddOnMathVector3.cpp:
+	.text       start:0x801A1DB4 end:0x801A21FC
+	.bss        start:0x80545338 end:0x80545378
+	.sbss       start:0x8055D270 end:0x8055D278
+	.sdata2     start:0x8055F900 end:0x8055F908
 
 donut/hid/Accel.cpp:
 	.text       start:0x801A21FC end:0x801A2224
