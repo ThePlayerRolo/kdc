@@ -753,15 +753,140 @@ donut/gfx/VISetting.cpp:
 donut/gfx/XFBManager.cpp:
 	.text       start:0x80197D50 end:0x80197EF4
 
+donut/gobj/AddOnMint.cpp:
+	.text       start:0x80197EF4 end:0x80199324
+	.data       start:0x804549E0 end:0x80454FD0
+
+donut/gobj/AnimScript.cpp:
+	.data       start:0x80454FD0 end:0x80455020
+	.sdata      start:0x80556E00 end:0x80556E08
+
+donut/gobj/Anim.cpp:
+	.text       start:0x80199324 end:0x80199914
+	.sdata2     start:0x8055F780 end:0x8055F788
+
+donut/gobj/ColorAnim.cpp:
+	.text       start:0x80199914 end:0x80199EB8
+	.sdata2     start:0x8055F788 end:0x8055F790
+
 donut/gobj/FootState.cpp:
 	.text       start:0x80199EB8 end:0x80199ED4
 
+donut/gobj/G3DAnimData.cpp:
+	.text       start:0x80199ED4 end:0x80199EE4
+
+donut/gobj/G3DAnimDataRepos.cpp:
+	.text       start:0x80199EE4 end:0x8019A224
+
+donut/gobj/GearAnim.cpp:
+	.text       start:0x8019A224 end:0x8019A5F4
+
+donut/gobj/GearModel.cpp:
+	.text       start:0x8019A5F4 end:0x8019A8A0
+	.data       start:0x80455020 end:0x80455030
+
+donut/gobj/GearModelDesc.cpp:
+	.text       start:0x8019A8A0 end:0x8019A954
+	.sdata      start:0x80556E08 end:0x80556E18
+
+donut/gobj/IG3DModel.cpp:
+	.text       start:0x8019A954 end:0x8019A954
+
+donut/gobj/IScriptCallback.cpp:
+	.text       start:0x8019A954 end:0x8019A954
+
+donut/gobj/Location.cpp:
+	.text       start:0x8019A954 end:0x8019A9D0
+
+donut/gobj/LocationDesc.cpp:
+	.text       start:0x8019A9D0 end:0x8019AA1C
+
+donut/gobj/MeshFlip.cpp:
+	.text       start:0x8019AA1C end:0x8019ABC4
+
+donut/gobj/MintAnim.cpp:
+	.text       start:0x8019ABC4 end:0x8019AC68
+	.ctors      start:0x804062EC end:0x804062F0
+	.sbss       start:0x8055D1C0 end:0x8055D1C8
+
+donut/gobj/MintFootState.cpp:
+	.text       start:0x8019AC68 end:0x8019AC94
+	.ctors      start:0x804062F0 end:0x804062F4
+	.sbss       start:0x8055D1C8 end:0x8055D1D0
+
+donut/gobj/MintGearAnim.cpp:
+	.text       start:0x8019AC94 end:0x8019AD34
+	.ctors      start:0x804062F4 end:0x804062F8
+	.sbss       start:0x8055D1D0 end:0x8055D1D8
+
+donut/gobj/MintLocation.cpp:
+	.text       start:0x8019AD34 end:0x8019ADC0
+	.ctors      start:0x804062F8 end:0x804062FC
+	.sbss       start:0x8055D1D8 end:0x8055D1E0
+
+donut/gobj/MintMeshFlip.cpp:
+	.text       start:0x8019ADC0 end:0x8019ADE8
+	.ctors      start:0x804062FC end:0x80406300
+	.sbss       start:0x8055D1E0 end:0x8055D1E8
+
+donut/gobj/MintModel.cpp:
+	.text       start:0x8019ADE8 end:0x8019AE8C
+	.ctors      start:0x80406300 end:0x80406304
+	.sbss       start:0x8055D1E8 end:0x8055D1F0
+
+donut/gobj/MintMove.cpp:
+	.text       start:0x8019AE8C end:0x8019AF44
+	.ctors      start:0x80406304 end:0x80406308
+	.sbss       start:0x8055D1F0 end:0x8055D1F8
+
+donut/gobj/MintScript.cpp:
+	.text       start:0x8019AF44 end:0x8019AF68
+	.ctors      start:0x80406308 end:0x8040630C
+	.sbss       start:0x8055D1F8 end:0x8055D200
+
+donut/gobj/MintTarget.cpp:
+	.text       start:0x8019AF68 end:0x8019AFD8
+	.ctors      start:0x8040630C end:0x80406310
+	.sbss       start:0x8055D200 end:0x8055D208
+
+donut/gobj/Model.cpp:
+	.text       start:0x8019AFD8 end:0x8019B260
+	.data       start:0x80455030 end:0x80455040
+
 donut/gobj/ModelDesc.cpp:
 	.text       start:0x8019B260 end:0x8019B314
+	.sdata      start:0x80556E18 end:0x80556E28
+
+donut/gobj/Move.cpp:
+	.text       start:0x8019B314 end:0x8019B9A4
+	.sdata2     start:0x8055F790 end:0x8055F798
 
 donut/gobj/MoveParamAccel.cpp:
 	.text       start:0x8019B9A4 end:0x8019B9F4
 	.sdata2     start:0x8055F798 end:0x8055F7A0
+
+donut/gobj/MoveParamDecel.cpp:
+	.text       start:0x8019B9F4 end:0x8019BA10
+	.sdata2     start:0x8055F7A0 end:0x8055F7A8
+
+donut/gobj/MoveParamFall.cpp:
+	.text       start:0x8019BA10 end:0x8019BA20
+	.sdata2     start:0x8055F7A8 end:0x8055F7B0
+
+donut/gobj/NodeRepos.cpp:
+	.text       start:0x8019BA20 end:0x8019BD40
+
+donut/gobj/Script.cpp:
+	.text       start:0x8019BD40 end:0x8019C094
+	.data       start:0x80455040 end:0x80455060
+	.sdata      start:0x80556E28 end:0x80556E30
+
+donut/gobj/Target.cpp:
+	.text       start:0x8019C094 end:0x8019C14C
+	.sdata2     start:0x8055F7B0 end:0x8055F7B8
+
+donut/gobj/TargetDesc.cpp:
+	.text       start:0x8019C14C end:0x8019C158
 
 hel/common/Array.cpp:
 	.text       start:0x8019D88C end:0x8019D88C
