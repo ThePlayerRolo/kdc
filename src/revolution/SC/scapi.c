@@ -115,6 +115,14 @@ BOOL SCSetBtDeviceInfoArray(const SCBtDeviceInfoArray* info) {
                                   SC_ITEM_BT_DINF);
 }
 
+BOOL SCGetBtCmpDevInfoArray(SCBtCmpDevInfoArray* devInfo) {
+    return SCFindByteArrayItem(devInfo, sizeof(*devInfo), SC_ITEM_ID_BT_CMPDEV_INFO);
+}
+
+BOOL SCSetBtCmpDevInfoArray(SCBtCmpDevInfoArray* devInfo) {
+    return SCReplaceByteArrayItem(devInfo, sizeof(*devInfo), SC_ITEM_ID_BT_CMPDEV_INFO);
+}
+
 u32 SCGetBtDpdSensibility(void) {
     u32 item;
 

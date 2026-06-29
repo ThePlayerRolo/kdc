@@ -337,9 +337,40 @@ revolution/ARC/arc.c:
 	.data       start:0x80438498 end:0x80438508
 	.sdata      start:0x805567A0 end:0x805567A8
 
+revolution/MEM/mem_list.c:
+	.text       start:0x800A3830 end:0x800A3950
+
+nw4r/ef/ef_effectsystem.cpp:
+	.text       start:0x800A4670 end:0x800A4D50
+	.ctors      start:0x80406268 end:0x8040626C
+	.data       start:0x80440098 end:0x804400E0
+	.bss        start:0x804FE280 end:0x8050A398
+	.sdata      start:0x80556958 end:0x80556960
+	.sbss       start:0x8055CF20 end:0x8055CF30
+	.sdata2     start:0x8055E978 end:0x8055E980
+
+nw4r/ef/ef_emitter.cpp:
+	.text       start:0x800A4D50 end:0x800A6EF0
+	.data       start:0x804400E0 end:0x80440108
+	.sdata2     start:0x8055E980 end:0x8055E9B8
+
 nw4r/g3d/res/g3d_resfile.cpp:
 	.text       start:0x800C8F70 end:0x800CA6F0
 	.data       start:0x804404E0 end:0x80440640
+
+nw4r/g3d/res/g3d_resmat.cpp:
+	.text       start:0x800CCD10 end:0x800CE3F0
+	.sdata2     start:0x8055EE28 end:0x8055EE60
+
+nw4r/g3d/g3d_state.cpp:
+	.text       start:0x800DCA10 end:0x800E0070
+	.ctors      start:0x8040627C end:0x80406280
+	.rodata     start:0x80408D88 end:0x80408DB8
+	.data       start:0x80440F50 end:0x80440F68
+	.bss        start:0x8050AEE0 end:0x80510500
+	.sdata      start:0x805569F8 end:0x80556A00
+	.sbss       start:0x8055CF78 end:0x8055CF98
+	.sdata2     start:0x8055EFD0 end:0x8055EFF8
 
 nw4r/g3d/g3d_camera.cpp:
 	.text       start:0x800E5AF0 end:0x800E6A10
@@ -354,6 +385,10 @@ nw4r/g3d/dcc/g3d_maya.cpp:
 	.rodata     start:0x80408DE8 end:0x80408E20
 	.sdata2     start:0x8055F080 end:0x8055F098
 
+nw4r/g3d/g3d_fog.cpp:
+	.text       start:0x800F17A0 end:0x800F1900
+	.sdata2     start:0x8055F0D8 end:0x8055F0E0
+
 nw4r/lyt/lyt_pane.cpp:
 	.text       start:0x800F2BA0 end:0x800F3AF0
 	.ctors      start:0x80406280 end:0x80406284
@@ -364,6 +399,9 @@ nw4r/lyt/lyt_pane.cpp:
 nw4r/lyt/lyt_group.cpp:
 	.text       start:0x800F3AF0 end:0x800F3E50 align:16
 	.data       start:0x80441258 end:0x80441268
+
+nw4r/ut/ut_list.cpp:
+	.text       start:0x8011FB40 end:0x8011FC80
 
 donut/Main.cpp:
 	.text       start:0x80174AD8 end:0x80174AF8
@@ -386,8 +424,27 @@ donut/app/Locale.cpp:
 donut/app/Message.cpp:
 	.text       start:0x801793BC end:0x801798A8
 
+donut/app/RomFontWrapper.cpp:
+	.text       start:0x8017B548 end:0x8017B63C
+
 donut/effect/detail/DrawInfo.cpp:
 	.text       start:0x8017F38C end:0x8017F550
+
+donut/fdg/CallBackObj.cpp:
+	.text       start:0x801870EC end:0x801870EC
+
+donut/fdg/FDGAccessor.cpp:
+	.text       start:0x801870EC end:0x80187538
+
+donut/file/DNOption.cpp:
+	.text       start:0x80187538 end:0x80187544
+
+donut/file/FDGManager.cpp:
+	.text       start:0x80187544 end:0x80187A50
+	.rodata     start:0x80414518 end:0x80414528
+	.data       start:0x804537E0 end:0x804537F0
+	.sdata      start:0x80556D10 end:0x80556D18
+	.sdata2     start:0x8055F650 end:0x8055F658
 
 donut/file/FileAccessor.cpp:
 	.text       start:0x80187A50 end:0x80187B5C
@@ -399,12 +456,84 @@ donut/file/FileLoader.cpp:
 	.text       start:0x80187C00 end:0x80188204
 	.sdata      start:0x80556D18 end:0x80556D20
 
+donut/file/FileManager.cpp:
+	.text       start:0x80188204 end:0x801882BC
+
+donut/file/FileTree.cpp:
+	.text       start:0x801882BC end:0x80188BF4
+
+donut/file/Utility.cpp:
+	.text       start:0x80188BF4 end:0x8018917C
+	.sdata      start:0x80556D20 end:0x80556D28
+	.sbss       start:0x8055D180 end:0x8055D188
+
+donut/font/Font.cpp:
+	.text       start:0x8018917C end:0x8018933C
+
+donut/font/FontKindUtil.cpp:
+	.text       start:0x8018933C end:0x801893FC
+	.rodata     start:0x80414528 end:0x80414570
+	.data       start:0x804537F0 end:0x804538A0
+	.sdata      start:0x80556D28 end:0x80556D30
+
+donut/font/FontLoader.cpp:
+	.text       start:0x801893FC end:0x801894A8
+
+donut/font/FontManager.cpp:
+	.text       start:0x801894A8 end:0x80189648
+	.sdata      start:0x80556D30 end:0x80556D38
+
+donut/g3d/AddOnMint.cpp:
+	.text       start:0x8018B6A8 end:0x8018B910
+	.data       start:0x80454048 end:0x80454158
+
+donut/g3d/AutoReqAnim.cpp:
+	.text       start:0x8018B910 end:0x8018BE34
+	.sdata2     start:0x8055F660 end:0x8055F670
+
 donut/g3d/AutoReqAnimReqInfo.cpp:
 	.text       start:0x8018BE34 end:0x8018BE84
 
 donut/g3d/CameraAccessor.cpp:
 	.text       start:0x8018BE84 end:0x8018BFDC
 	.data       start:0x80454158 end:0x80454198
+
+donut/g3d/CharaAnimBlender.cpp:
+	.text       start:0x8018BFDC end:0x8018CC84
+	.data       start:0x80454198 end:0x80454380
+	.sdata2     start:0x8055F670 end:0x8055F680
+
+donut/g3d/CharaAnimInterpolation.cpp:
+	.text       start:0x8018CC84 end:0x8018CF5C
+	.sdata2     start:0x8055F680 end:0x8055F688
+
+donut/g3d/CharaAnimInterpolationContext.cpp:
+	.text       start:0x8018CF5C end:0x8018CF8C
+
+donut/g3d/CharaModel.cpp:
+	.text       start:0x8018CF8C end:0x8018D760
+	.data       start:0x80454380 end:0x80454390
+
+donut/g3d/CharaModelContext.cpp:
+	.text       start:0x8018D760 end:0x8018D888
+
+donut/g3d/ColorAnim.cpp:
+	.text       start:0x8018D888 end:0x8018DA54
+
+donut/g3d/ColorAnimContext.cpp:
+	.text       start:0x8018DA54 end:0x8018DA90
+
+donut/g3d/ColorAnimFlash.cpp:
+	.text       start:0x8018DA90 end:0x8018DD4C
+
+donut/g3d/ColorAnimMaterialTarget.cpp:
+	.text       start:0x8018DD4C end:0x8018DDB8
+	.rodata     start:0x80414598 end:0x804145B8
+
+donut/g3d/ColorAnimTevManager.cpp:
+	.text       start:0x8018DDB8 end:0x8018E44C
+	.data       start:0x80454390 end:0x80454450
+	.sdata      start:0x80556D80 end:0x80556D90
 
 donut/g3d/FogAccessor.cpp:
 	.text       start:0x8018E44C end:0x8018E63C
@@ -419,6 +548,35 @@ donut/g3d/LightSetAccessor.cpp:
 donut/g3d/MaterialAccessor.cpp:
 	.text       start:0x8018E758 end:0x8018E944
 
+donut/g3d/MintModelAccessor.cpp:
+	.text       start:0x8018E944 end:0x8018E9EC
+	.ctors      start:0x804062E0 end:0x804062E4
+	.bss        start:0x805447E8 end:0x80544808
+
+donut/g3d/MintNodeAccessor.cpp:
+	.text       start:0x8018E9EC end:0x8018EB4C
+	.ctors      start:0x804062E4 end:0x804062E8
+	.bss        start:0x80544808 end:0x80544828
+
+donut/g3d/Model.cpp:
+	.text       start:0x8018EB4C end:0x80190634
+	.data       start:0x80454510 end:0x80454690
+	.sdata      start:0x80556D90 end:0x80556DB0
+
+donut/g3d/ModelAccessor.cpp:
+	.text       start:0x80190634 end:0x80190760
+
+donut/g3d/ModelAnim.cpp:
+	.text       start:0x80190760 end:0x80191C90
+	.data       start:0x80454690 end:0x80454808
+	.sdata      start:0x80556DB0 end:0x80556DC8
+	.sdata2     start:0x8055F688 end:0x8055F698
+
+donut/g3d/ModelAnimAccessor.cpp:
+	.text       start:0x80191C90 end:0x80191EEC
+	.data       start:0x80454808 end:0x80454818
+	.sbss       start:0x8055D1A8 end:0x8055D1B0
+
 donut/g3d/ModelAnimContext.cpp:
 	.text       start:0x80191EEC end:0x80191F30
 
@@ -428,9 +586,16 @@ donut/g3d/ModelBufferOption.cpp:
 donut/g3d/ModelContext.cpp:
 	.text       start:0x801920E8 end:0x80192208
 
+donut/g3d/ModelMultiAnim.cpp:
+	.text       start:0x80192208 end:0x80192C20
+	.sdata      start:0x80556DC8 end:0x80556DD0
+
 donut/g3d/ModelMultiAnimContext.cpp:
 	.text       start:0x80192C20 end:0x80192CE4
 	.sdata      start:0x80556DD0 end:0x80556DE0
+
+donut/g3d/NodeAccessor.cpp:
+	.text       start:0x80192CE4 end:0x801930BC
 
 donut/g3d/NodeLocalMtx.cpp:
 	.text       start:0x801930BC end:0x80193208
@@ -438,6 +603,9 @@ donut/g3d/NodeLocalMtx.cpp:
 
 donut/g3d/NodeLocalMtxAccessor.cpp:
 	.text       start:0x80193208 end:0x80193230
+
+donut/g3d/ResAnmAutoReq.cpp:
+	.text       start:0x80193230 end:0x80193230
 
 donut/g3d/ResFile.cpp:
 	.text       start:0x80193230 end:0x80193438
@@ -462,11 +630,28 @@ donut/g3d/ResNode.cpp:
 	.data       start:0x804548B0 end:0x80454950
 	.sdata      start:0x80556DF0 end:0x80556DF8
 
+donut/g3d/Root.cpp:
+	.text       start:0x80193F74 end:0x8019461C
+	.sbss       start:0x8055D1B0 end:0x8055D1B8
+	.sdata2     start:0x8055F6A0 end:0x8055F6B8
+
 donut/g3d/RootContext.cpp:
 	.text       start:0x8019461C end:0x80194634
 
+donut/g3d/SceneAnim.cpp:
+	.text       start:0x80194634 end:0x801949EC
+	.data       start:0x80454950 end:0x80454990
+	.sdata      start:0x80556DF8 end:0x80556E00
+	.sdata2     start:0x8055F6B8 end:0x8055F6C8
+
 donut/g3d/SceneAnimContext.cpp:
 	.text       start:0x801949EC end:0x801949EC
+
+donut/g3d/StdModel.cpp:
+	.text       start:0x801949EC end:0x80194FC4
+
+donut/g3d/StdModelContext.cpp:
+	.text       start:0x80194FC4 end:0x80194FC4
 
 donut/gfx/EasyRender3D.cpp:
 	.text       start:0x80194FC4 end:0x80195854
@@ -604,11 +789,22 @@ donut/hid/Stick.cpp:
 donut/mem/AllocatorHandle.cpp:
 	.text       start:0x801BD204 end:0x801BD204
 
+donut/mem/AutoHeapExp.cpp:
+	.text       start:0x801BD204 end:0x801BD2A4
+
 donut/mem/DataBlock.cpp:
 	.text       start:0x801BD2A4 end:0x801BD370
 
+donut/mem/ExplicitScopedPtr.cpp:
+	.text       start:0x801BD370 end:0x801BD370
+
 donut/mem/GlobalNewDeleteChanger.cpp:
 	.text       start:0x801BD370 end:0x801BD404
+
+donut/mem/HeapCompaction.cpp:
+	.text       start:0x801BD404 end:0x801BE1F8
+	.data       start:0x80459CB0 end:0x80459D10
+	.sdata      start:0x80557268 end:0x80557270
 
 donut/mem/HeapCompactionNode.cpp:
 	.text       start:0x801BE1F8 end:0x801BE2A8
@@ -620,13 +816,54 @@ donut/mem/HeapExp.cpp:
 	.text       start:0x801BE2B0 end:0x801BE640
 	.data       start:0x80459D10 end:0x80459D48
 
+donut/mem/HeapExpArray.cpp:
+	.text       start:0x801BE640 end:0x801BEC24
+	.sdata      start:0x80557270 end:0x80557280
+
+donut/mem/HeapExpArrayUser.cpp:
+	.text       start:0x801BEC24 end:0x801BECC0
+
+donut/mem/HeapMapUserRepos.cpp:
+	.text       start:0x801BECC0 end:0x801BEEB8
+	.ctors      start:0x80406334 end:0x80406338
+	.bss        start:0x805453E8 end:0x80545BF8
+
+donut/mem/HeapUnit.cpp:
+	.text       start:0x801BEEB8 end:0x801BF1B4
+	.data       start:0x80459D48 end:0x80459D70
+
+donut/mem/IAllocator.cpp:
+	.text       start:0x801BF1B4 end:0x801BF1B4
+
+donut/mem/IHeap.cpp:
+	.text       start:0x801BF1B4 end:0x801BF1B4
+
 donut/mem/MemBlock.cpp:
 	.text       start:0x801BF1B4 end:0x801BF1F8
+
+donut/mem/Memory.cpp:
+	.text       start:0x801BF1F8 end:0x801BF618
+	.data       start:0x80459D70 end:0x80459D80
+	.bss        start:0x80545BF8 end:0x80545ED0
+	.sdata      start:0x80557280 end:0x805572B8
+	.sbss       start:0x8055D2A0 end:0x8055D2A8
 
 donut/mem/OperatorNewDelete.cpp:
 	.text       start:0x801BF618 end:0x801BF760
 	.ctors      start:0x80406338 end:0x8040633C
 	.sbss       start:0x8055D2A8 end:0x8055D2B0
+
+donut/mem/SDKAllocator.cpp:
+	.text       start:0x801BF760 end:0x801BF7AC
+	.sdata2     start:0x8055FBB8 end:0x8055FBC0
+
+donut/mem/UnitHeapMapUser.cpp:
+	.text       start:0x801BF7AC end:0x801BFA30
+	.data       start:0x80459D80 end:0x80459DB0
+	.sdata2     start:0x8055FBC0 end:0x8055FBC8
+
+donut/mem/Utility.cpp:
+	.text       start:0x801BFA30 end:0x801BFAD4
 
 donut/msg/Message.cpp:
 	.text       start:0x801D1404 end:0x801D168C

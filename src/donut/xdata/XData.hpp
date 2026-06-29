@@ -14,9 +14,8 @@ private:
         /* 0xC */ u32 unk;
     };
 public:
-    #if defined(DONUT_INLINE)
-    inline void* dataHeadAddress() {
-        XDataHeader* header = &mHeader;
+    void* dataHeadAddress() const {
+        const XDataHeader* header = &mHeader;
 
         bool magic = false, bom = false, size = false;
 
@@ -33,15 +32,11 @@ public:
         }
 
         if (size) {
-            return reinterpret_cast<char*>(header) + sizeof(XData);
+            return (void*)(reinterpret_cast<const char*>(header) + sizeof(XData));
         }
 
         return nullptr;
     }
-
-    #else
-    void* dataHeadAddress();
-    #endif
 
     bool isValidData() const;
 

@@ -694,6 +694,7 @@ typedef enum _GXTevMode {
     GX_PASSCLR
 } GXTevMode;
 
+
 typedef enum _GXTexCoordID {
     GX_TEXCOORD0,
     GX_TEXCOORD1,
@@ -817,6 +818,28 @@ typedef enum _GXTexMtx {
     GX_TEXMTX8 = 54,
     GX_TEXMTX9 = 57,
     GX_IDENTITY = 60,
+
+    GX_DUALMTX0 = 64,
+    GX_DUALMTX1 = 67,
+    GX_DUALMTX2 = 70,
+    GX_DUALMTX3 = 73,
+    GX_DUALMTX4 = 76,
+    GX_DUALMTX5 = 79,
+    GX_DUALMTX6 = 82,
+    GX_DUALMTX7 = 85,
+    GX_DUALMTX8 = 88,
+    GX_DUALMTX9 = 91,
+    GX_DUALMTX10 = 94,
+    GX_DUALMTX11 = 97,
+    GX_DUALMTX12 = 100,
+    GX_DUALMTX13 = 103,
+    GX_DUALMTX14 = 106,
+    GX_DUALMTX15 = 109,
+    GX_DUALMTX16 = 112,
+    GX_DUALMTX17 = 115,
+    GX_DUALMTX18 = 118,
+    GX_DUALMTX19 = 121,
+    GX_DUALMTX_IDENT = 125,
 } GXTexMtx;
 
 typedef enum _GXPTTexMtx {

@@ -16,8 +16,9 @@ public:
     //NOTE: operator=(const MemBlock&) is merged into nw4r::ut::Link::operator=(const nw4r::ut::Link&) and is probably compiler generated
 
     //NOTE: Is merged into GetZeroBufferAddress__Q44nw4r3snd6detail9AxManagerFv
+    //TODO: Could be in header
     void* startAddress() const;
-
+public:
     /* 0x0 */ u32 mSize;
     /* 0x4 */ void* mStartAddress;
 };

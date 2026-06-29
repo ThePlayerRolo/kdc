@@ -27,7 +27,7 @@ public:
     bool isLoaded() const;
     u32 latestUpdateDate() const;
     //NOTE: is merged into app::RomFontWrapper::font()
-    hel::common::FixedString<80> pathRef() const;
+    hel::common::FixedString<80>& pathRef() const;
 
 private:
     /* 0x04 */ mem::HeapCompaction* m_4;
