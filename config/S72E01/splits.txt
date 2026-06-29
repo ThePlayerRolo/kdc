@@ -573,6 +573,30 @@ donut/effect/detail/PolyEffectMemManager.cpp:
 donut/effect/detail/PolyEffectRes.cpp:
 	.text       start:0x80183A10 end:0x80183CCC
 
+donut/effect/detail/PtclEffect.cpp:
+	.text       start:0x80183CCC end:0x801848BC
+
+donut/effect/detail/PtclEffectManager.cpp:
+	.text       start:0x801848BC end:0x80185694
+	.data       start:0x80453420 end:0x804535E8
+	.sbss       start:0x8055D170 end:0x8055D178
+
+donut/effect/detail/PtclEffectMemManager.cpp:
+	.text       start:0x80185694 end:0x8018661C
+	.data       start:0x804535E8 end:0x804537B8
+	.sbss       start:0x8055D178 end:0x8055D180
+
+donut/effect/detail/PtclEffectRes.cpp:
+	.text       start:0x8018661C end:0x80186BD0
+	.data       start:0x804537B8 end:0x804537E0
+
+donut/effect/detail/RequestArg.cpp:
+	.text       start:0x80186BD0 end:0x80186DC8
+
+donut/effect/detail/RequestArgOption.cpp:
+	.text       start:0x80186DC8 end:0x801870EC
+	.sdata2     start:0x8055F648 end:0x8055F650
+
 donut/fdg/CallBackObj.cpp:
 	.text       start:0x801870EC end:0x801870EC
 
