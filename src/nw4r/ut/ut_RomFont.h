@@ -34,7 +34,8 @@ public:
     virtual FontEncoding GetEncoding() const;                    // at 0x58
 
     bool Load(void *buffer);
-    u32 GetRequireBufferSize();
+    void Unload();
+    static u32 GetRequireBufferSize();
     void MakeCharPtr(char *buffer, u16 c) const;
     u16 HandleUndefinedChar(u16 c) const;
 

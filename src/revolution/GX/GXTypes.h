@@ -703,6 +703,7 @@ typedef enum _GXTexCoordID {
     GX_TEXCOORD5,
     GX_TEXCOORD6,
     GX_TEXCOORD7,
+    GX_MAX_TEXCOORD,
 
     GX_DUALMTX0 = 64,
     GX_DUALMTX1 = 67,
@@ -725,7 +726,6 @@ typedef enum _GXTexCoordID {
     GX_DUALMTX18 = 118,
     GX_DUALMTX19 = 121,
     GX_DUALMTX_IDENT = 125,
-    GX_MAX_TEXCOORD,
     GX_TEXCOORD_NULL = 255
 } GXTexCoordID;
 
