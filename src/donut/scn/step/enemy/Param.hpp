@@ -85,7 +85,8 @@ namespace scn { namespace step { namespace enemy {
 class Param {
 public:
     Param();
-    static void exception(u32); // weak
+    // // NOTE: Is merged into DefaultSwitchThreadCallback
+    static void exception(u32);
 
     DECL_GET_ENEMY_PARAM(common);
     DECL_GET_ENEMY_PARAM(sirkibble);

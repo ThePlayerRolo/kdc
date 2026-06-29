@@ -2,8 +2,8 @@
 #define RVL_SDK_SC_SCAPI_H
 #include <types.h>
 
-//TODO: Actually configure BTE
-//#include <revolution/BTE.h>
+//If you include all of BTE scratches take FOREVER (and could crash your editor lol)
+#include <revolution/BTE/stack/include/bt_types.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,14 +46,20 @@ typedef struct SCDevInfo {
     char devName[20]; // at 0x0
     char at_0x14[1];
     char UNK_0x15[0xB];
-    //LINK_KEY linkKey; // at 0x20
+    LINK_KEY linkKey; // at 0x20
     char UNK_0x30[0x10];
 } SCDevInfo;
 
 typedef struct SCBtDeviceInfo {
-    //BD_ADDR addr;   // at 0x0
+    BD_ADDR addr;   // at 0x0
     SCDevInfo info; // at 0x6
 } SCBtDeviceInfo;
+
+typedef struct SCBtCmpDevInfo {
+    BD_ADDR addr;      // 0x00
+    u8 name[64];       // 0x06
+    LINK_KEY linkKey;  // 0x30
+} SCBtCmpDevInfo;
 
 typedef struct SCBtDeviceInfoArray {
     u8 numRegist; // at 0x0
@@ -67,6 +73,11 @@ typedef struct SCBtDeviceInfoArray {
     };
 } SCBtDeviceInfoArray;
 
+typedef struct SCBtCmpDevInfoArray {
+    u8 numRegist;                                      // 0x00
+    SCBtCmpDevInfo devices[SC_MAX_DEV_ENTRY_FOR_SMP];  // 0x01
+} SCBtCmpDevInfoArray;
+
 u8 SCGetAspectRatio(void);
 s8 SCGetDisplayOffsetH(void);
 u8 SCGetEuRgb60Mode(void);
@@ -78,6 +89,8 @@ u8 SCGetSoundMode(void);
 u32 SCGetCounterBias(void);
 void SCGetBtDeviceInfoArray(SCBtDeviceInfoArray* info);
 BOOL SCSetBtDeviceInfoArray(const SCBtDeviceInfoArray* info);
+BOOL SCGetBtCmpDevInfoArray(SCBtCmpDevInfoArray* devInfo);
+BOOL SCSetBtCmpDevInfoArray(SCBtCmpDevInfoArray* devInfo);
 u32 SCGetBtDpdSensibility(void);
 u8 SCGetWpadMotorMode(void);
 BOOL SCSetWpadMotorMode(u8 mode);

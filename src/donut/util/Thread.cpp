@@ -12,7 +12,6 @@ Thread::Thread(mem::IAllocator& rAllocator, u32 size, s32 arg3, OSThreadFunc thr
     : mDataBlock(size, 0x20, rAllocator)
 {
     s32 blockData  = (s32)mDataBlock.block().mStartAddress;
-    //Adding blockData and size makes sense in this context because then we can get an address for the area of data we want
     OSCreateThread(&mThread, threadFunc, arg5, (void*)(blockData + size), size, arg3, 0);
     OSResumeThread(&mThread);
 }

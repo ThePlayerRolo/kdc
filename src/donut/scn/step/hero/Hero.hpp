@@ -16,7 +16,8 @@ namespace scn { namespace step { namespace hero {
     class Hero {
     public:
         Param* param() const;
-        Kind kind() const; // code merged
+        // NOTE: Is merged into mcoll::detail::CollidedDetectionInfo::collideTargetIndex() const
+        Kind kind() const;
     };
 }}}
 

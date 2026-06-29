@@ -49,6 +49,7 @@ typedef enum {
 
     // Bluetooth settings
     SC_ITEM_BT_DINF, // Bluetooth device info
+    SC_ITEM_ID_BT_CMPDEV_INFO, // CMPDEV info
     SC_ITEM_BT_SENS, // Remote sensitivity
     SC_ITEM_BT_SPKV, // WPAD speaker volume
     SC_ITEM_BT_MOT,  // WPAD motor mode
@@ -69,7 +70,9 @@ u32 SCCheckStatus(void);
 BOOL SCFindByteArrayItem(void* dst, u32 len, SCItemID id);
 BOOL SCReplaceByteArrayItem(const void* src, u32 len, SCItemID id);
 
+// NOTE: Is merged into SCFindS8Item
 BOOL SCFindU8Item(u8* dst, SCItemID id);
+
 BOOL SCFindS8Item(s8* dst, SCItemID id);
 BOOL SCFindU32Item(u32* dst, SCItemID id);
 

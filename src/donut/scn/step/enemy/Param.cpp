@@ -5,8 +5,6 @@
 using namespace scn::step::enemy;
 using scn::step::enemy::Param;
 
-void Param::exception(u32) { }
-
 #define GET_ENEMY_PARAM_IMPL(enemy_name, offset) \
     enemy_name::Param* Param::enemy_name() const { \
         enemy_name##_.loadCheck(); \
@@ -147,3 +145,5 @@ GET_ENEMY_PARAM_IMPL(zankibblecutter, 0x74)
 GET_ENEMY_PARAM_IMPL(bonkersbomb, 0x60)
 GET_ENEMY_PARAM_IMPL(dubiorspark, 0x4)
 GET_ENEMY_PARAM_IMPL(mbossdead, 0x34)
+
+void Param::exception(u32) { }
