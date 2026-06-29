@@ -531,6 +531,18 @@ config.libs = [
         ],
     },
     {
+        "lib": "dynamics",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/dynamics/Dynamics.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/dynamics/ModelNode.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/dynamics/ModelTree.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/dynamics/Util.cpp", extra_cflags=["-O3,s"]),
+        ],
+    },
+    {
         "lib": "effect",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,

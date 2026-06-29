@@ -472,22 +472,106 @@ donut/app/Reset.cpp:
 
 donut/app/ResidentFile.cpp:
 	.text       start:0x8017B1F8 end:0x8017B548
-	.data       start:0x80453020 end:0x80453068
 	.sdata2     start:0x8055F5E8 end:0x8055F5F0
 
 donut/app/RomFontWrapper.cpp:
 	.text       start:0x8017B548 end:0x8017B63C
-	.data       start:0x80453068 end:0x80453100
-	.sdata      start:0x80556CC0 end:0x80556CD8
 
 donut/app/SaveInfo.cpp:
 	.text       start:0x8017B63C end:0x8017BBDC
+	.data       start:0x80453020 end:0x80453100
+	.sdata      start:0x80556CC0 end:0x80556CD8
 
 donut/app/System.cpp:
 	.text       start:0x8017BBDC end:0x8017BD88
 
+donut/dynamics/Dynamics.cpp:
+	.text       start:0x8017BD88 end:0x8017C2A8
+	.data       start:0x80453100 end:0x80453130
+
+donut/dynamics/ModelNode.cpp:
+	.text       start:0x8017C2A8 end:0x8017D2EC
+	.data       start:0x80453130 end:0x80453168
+	.sdata2     start:0x8055F5F0 end:0x8055F608
+
+donut/dynamics/ModelTree.cpp:
+	.text       start:0x8017D2EC end:0x8017D880
+
+donut/dynamics/Util.cpp:
+	.text       start:0x8017D880 end:0x8017DE08
+	.data       start:0x80453168 end:0x804531A0
+	.sdata2     start:0x8055F608 end:0x8055F630
+
+donut/effect/Group.cpp:
+	.text       start:0x8017DE08 end:0x8017E53C
+	.data       start:0x804531A0 end:0x80453260
+
+donut/effect/Manager.cpp:
+	.text       start:0x8017E53C end:0x8017E670
+	.sbss       start:0x8055D160 end:0x8055D168
+
+donut/effect/Requestor.cpp:
+	.text       start:0x8017E670 end:0x8017EEAC
+	.data       start:0x80453260 end:0x804532F0
+
+donut/effect/StdRequestor.cpp:
+	.text       start:0x8017EEAC end:0x8017F338
+
+donut/effect/detail/CameraInfo.cpp:
+	.text       start:0x8017F338 end:0x8017F38C
+	.sdata2     start:0x8055F630 end:0x8055F638
+
 donut/effect/detail/DrawInfo.cpp:
 	.text       start:0x8017F38C end:0x8017F550
+	.sdata2     start:0x8055F638 end:0x8055F640
+
+donut/effect/detail/Effect.cpp:
+	.text       start:0x8017F550 end:0x80180410
+	.data       start:0x804532F0 end:0x80453350
+
+donut/effect/detail/EffectComponent.cpp:
+	.text       start:0x80180410 end:0x80180420
+
+donut/effect/detail/EffectManager.cpp:
+	.text       start:0x80180420 end:0x80180FF8
+	.data       start:0x80453350 end:0x804533E0
+	.sbss       start:0x8055D168 end:0x8055D170
+
+donut/effect/detail/EffectObjListUtil.cpp:
+	.text       start:0x80180FF8 end:0x801812B0
+
+donut/effect/detail/G3DAutoReqAnimCallback.cpp:
+	.text       start:0x801812B0 end:0x801813D4
+	.data       start:0x804533E0 end:0x804533F0
+
+donut/effect/detail/GenContext.cpp:
+	.text       start:0x801813D4 end:0x8018170C
+	.sdata      start:0x80556CD8 end:0x80556CE0
+
+donut/effect/detail/GenContextTable.cpp:
+	.text       start:0x8018170C end:0x80181BA0
+	.data       start:0x804533F0 end:0x80453408
+
+donut/effect/detail/ManagerContext.cpp:
+	.text       start:0x80181BA0 end:0x80181C08
+
+donut/effect/detail/PolyEffect.cpp:
+	.text       start:0x80181C08 end:0x80182EEC
+	.sdata      start:0x80556CE0 end:0x80556D10
+	.sdata2     start:0x8055F640 end:0x8055F648
+
+donut/effect/detail/PolyEffectAllocator.cpp:
+	.text       start:0x80182EEC end:0x80182F6C
+
+donut/effect/detail/PolyEffectManager.cpp:
+	.text       start:0x80182F6C end:0x801834E0
+
+donut/effect/detail/PolyEffectMemManager.cpp:
+	.text       start:0x801834E0 end:0x80183A10
+	.data       start:0x80453408 end:0x80453420
+
+donut/effect/detail/PolyEffectRes.cpp:
+	.text       start:0x80183A10 end:0x80183CCC
 
 donut/fdg/CallBackObj.cpp:
 	.text       start:0x801870EC end:0x801870EC
