@@ -5,21 +5,23 @@
 
 namespace file {
 
-class FileManager {
+// NOTE that treeRoot being a blr helps prove that this inherits FileTree (Returning this for it generates a blr only)
+class FileManager : FileTree {
 public:
     FileManager();
     ~FileManager();
 
+    void clearFiles();
     void clearFilesIfEnable();
 
     //NOTE: Merged into DefaultSwitchThreadCallback
     FileTree* treeRoot() const;
+
     void disableClearInc();
     void disableClearDec();
 
 private:
-    /* 0x00 */ FileTree mTreeRoot;
-    /* 0x40 */ s32 m_40;
+    /* 0x40 */ s32 mDisableClear;
 };
 
 }

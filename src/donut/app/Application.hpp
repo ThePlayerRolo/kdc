@@ -2,11 +2,12 @@
 #define DONUT_APP_APPLICATION_HPP
 
 #include <hel/common/ExplicitSingleton.hpp>
-#include <donut/app/HIDErrorMenu.hpp>
-#include <donut/msg/Manager.hpp>
-#include <donut/gfx/GameScreen.hpp>
-#include <donut/preload/PreLoadManager.hpp>
-#include <donut/file/FileManager.hpp>
+#include "donut/app/HIDErrorMenu.hpp"
+#include "donut/msg/Manager.hpp"
+#include "donut/gfx/GameScreen.hpp"
+#include "donut/preload/PreLoadManager.hpp"
+#include "donut/file/FileManager.hpp"
+#include "donut/font/FontManager.hpp"
 
 namespace app {
 
@@ -19,6 +20,7 @@ public:
     gfx::GameScreen& gameScreen();
     preload::PreLoadManager& preLoadManager();
     file::FileManager& fileManager();
+    font::FontManager& fontManager();
 };
 
 

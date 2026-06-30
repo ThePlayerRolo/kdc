@@ -5,6 +5,7 @@
 
 #include "mem/HeapCompaction.hpp"
 #include "mem/HeapExp.hpp"
+#include "mem/OperatorNewDelete.hpp"
 
 namespace mem {
 

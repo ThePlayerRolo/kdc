@@ -4,9 +4,9 @@
 
 using mem::DataBlock;
 
-DataBlock::DataBlock(u32 size, s32 arg2, IAllocator& rAllocator)
+DataBlock::DataBlock(u32 size, s32 align, IAllocator& rAllocator)
     : mAllocator(&rAllocator)
-    , mBlock(rAllocator.allocatorAlloc(size, arg2), size)
+    , mBlock(rAllocator.allocatorAlloc(size, align), size)
 {}
 
 DataBlock::~DataBlock() {
