@@ -3,15 +3,18 @@
 
 #include <types.h>
 
+/* clang-format off */
+
 namespace hel {
 namespace common {
 
 template <typename T, size_t S>
 class Array {
 public:
-    T& operator[](size_t index);
-private:
-    /* 0x0 */ T mArray[S];
+    Array() : mData() {};
+    T &operator[](size_t index);
+public:
+    /* 0x0 */ T mData[S];
 };
 
 } // common
