@@ -519,12 +519,23 @@ config.libs = [
         ],
     },
     {
+        "lib": "scn/step/chara",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/scn/step/chara/Invincible.cpp"),
+        ],
+    },
+    {
         "lib": "scn/step/enemy",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
+            Object(NonMatching, "donut/scn/step/enemy/Enemy.cpp"),
             Object(NonMatching, "donut/scn/step/enemy/Param.cpp"),
+            Object(Matching, "donut/scn/step/enemy/SuperStop.cpp"),
         ],
     },
     {
@@ -533,13 +544,28 @@ config.libs = [
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
-            Object(
-                NonMatching,
-                "donut/scn/step/hero/IndiviUtil.cpp",
-                extra_cflags=["-O3"],
-            ),
+            Object(NonMatching, "donut/scn/step/hero/IndiviUtil.cpp", extra_cflags=["-O3"]),
+            Object(NonMatching, "donut/scn/step/hero/Guard.cpp"),
         ],
     },
+    {
+        "lib": "scn/step/spstop",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/scn/step/spstop/Manager.cpp", extra_cflags=["-O3,s"]),
+        ],
+    },
+    {
+        "lib": "seq",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/seq/SequenceLvMapRoot.cpp"),
+        ]
+    }
 ]
 
 
