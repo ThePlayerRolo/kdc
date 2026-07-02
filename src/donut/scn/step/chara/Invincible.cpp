@@ -1,8 +1,6 @@
 #include "scn/step/chara/Invincible.hpp"
-#include "scn/step/enemy/SuperStop.hpp"
 
 using namespace scn::step::chara;
-using namespace scn::step::enemy;
 
 Invincible::Invincible()
 {
@@ -12,7 +10,7 @@ Invincible::Invincible()
     mIsCandyActive = 0;
 }
 
-void Invincible::update(void)
+void Invincible::update()
 {
     u32 nextFlash;
     if (isInvincible())
@@ -27,7 +25,7 @@ void Invincible::update(void)
     }
 }
 
-bool Invincible::isInvincible(void) const
+bool Invincible::isInvincible() const
 {
     bool result = false;
     if ((mUsingIntangibleMove != false) || (mIsCandyActive != false) || (mInvincibleFrames != 0))
@@ -49,10 +47,10 @@ void Invincible::set(u32 frames)
     return;
 }
 
-void Invincible::clear(void)
+void Invincible::clear()
 {
     mInvincibleFrames = 0;
-    // TODO: Investigate scn::step::enemy::onSuperStopStarted(const Manager &);
+    mUsingIntangibleMove = false;
 }
 
 void Invincible::setPerm()
@@ -89,7 +87,7 @@ u32 Invincible::getFlashAlpha() const
     return alpha;
 }
 
-void Invincible::updateFrame(void)
+void Invincible::updateFrame()
 {
     u32 currentFrames = mInvincibleFrames;
     if (currentFrames != 0)

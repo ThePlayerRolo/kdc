@@ -1,7 +1,6 @@
 #ifndef DONUT_SCN_STEP_CHARA_INVINCIBLE_HPP
 #define DONUT_SCN_STEP_CHARA_INVINCIBLE_HPP
 
-#include "scn/step/enemy/SuperStop.hpp"
 #include <types.h>
 
 /* clang-format off */
@@ -33,12 +32,11 @@ public:
     bool isMighty() const;
     u32 getFlashAlpha() const;
     void updateFrame();
-
 private:
-    u32 mInvincibleFrames;
-    u32 mFlashCycle;
-    bool mUsingIntangibleMove;
-    bool mIsCandyActive;
+    /* 0x00 */ u32 mInvincibleFrames;
+    /* 0x04 */ u32 mFlashCycle;
+    /* 0x08 */ bool mUsingIntangibleMove;
+    /* 0x09 */ bool mIsCandyActive;
 };
 
 }}}
