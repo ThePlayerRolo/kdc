@@ -1,17 +1,20 @@
 #ifndef DONUT_SCN_STEP_COMPONENT_HPP
 #define DONUT_SCN_STEP_COMPONENT_HPP
 
-#include <hel/common/ScopedPtr.hpp>
 #include "scn/step/Context.hpp"
 #include "scn/step/core/SphereAccessor.hpp"
-#include "scn/step/debug/ShowGrid.hpp"
-#include "scn/step/debug/ShowPegFrame.hpp"
 #include "scn/step/debug/GeneralDrawer.hpp"
 #include "scn/step/debug/ObjInfoRepos.hpp"
-#include "scn/step/map/DataFile.hpp"
+#include "scn/step/debug/ShowGrid.hpp"
+#include "scn/step/debug/ShowPegFrame.hpp"
 #include "scn/step/hero/Manager.hpp"
+#include "scn/step/map/DataFile.hpp"
+#include "scn/step/spstop/Manager.hpp"
+#include <hel/common/ScopedPtr.hpp>
 
 // todo: move these to their own headers
+
+/* clang-format off */
 
 namespace g3d {
     class ResFileRepository { };
@@ -38,10 +41,6 @@ namespace scn { namespace step {
     }
 
     namespace ostop {
-        class Manager { };
-    }
-
-    namespace spstop {
         class Manager { };
     }
 

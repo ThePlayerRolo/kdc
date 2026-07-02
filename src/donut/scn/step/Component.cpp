@@ -5,19 +5,29 @@
 using namespace scn::step;
 using mem::ExplicitScopedPtrUtil::CheckPointerIsValid;
 
-Component::~Component() { }
+Component::~Component()
+{
+}
 
-core::SphereAccessor* Component::sphereAccessor() {
+core::SphereAccessor *Component::sphereAccessor()
+{
     CheckPointerIsValid(mSphereAccessor.operator->());
     return mSphereAccessor.operator->();
 }
 
-debug::GeneralDrawer* Component::debugGeneralDrawer() {
+debug::GeneralDrawer *Component::debugGeneralDrawer()
+{
     CheckPointerIsValid(mDebugGeneralDrawer.operator->());
     return mDebugGeneralDrawer.operator->();
 }
 
-debug::ObjInfoRepos* Component::debugObjInfoRepos() {
+debug::ObjInfoRepos *Component::debugObjInfoRepos()
+{
     CheckPointerIsValid(mDebugObjInfoRepos.operator->());
     return mDebugObjInfoRepos.operator->();
+}
+
+spstop::Manager *Component::superStopManager()
+{
+    return mSuperStopManager.operator->();
 }
