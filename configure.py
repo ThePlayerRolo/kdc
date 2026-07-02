@@ -535,7 +535,7 @@ config.libs = [
         "objects": [
             Object(NonMatching, "donut/scn/step/enemy/Enemy.cpp"),
             Object(NonMatching, "donut/scn/step/enemy/Param.cpp"),
-            Object(Matching, "donut/scn/step/enemy/SuperStop.cpp"),
+            Object(NonMatching, "donut/scn/step/enemy/SuperStop.cpp"),
         ],
     },
     {
