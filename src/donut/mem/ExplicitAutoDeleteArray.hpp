@@ -18,7 +18,6 @@ public:
 
             T* val = mArray[mSizeMinus1];
 
-
             delete val;
         }
     }
