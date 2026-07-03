@@ -1,5 +1,4 @@
 #pragma peephole off
-#define DONUT_INLINE true
 
 #include <hel/math/Vector3.hpp>
 #include "param/JITParam.hpp"
