@@ -280,59 +280,59 @@ Emitter* Emitter::CreateEmitter(EmitterResource* pResource,
     }
 
 
-        math::VEC3 transSave = pEmitter->mParameter.mTranslate;
+    math::VEC3 transSave = pEmitter->mParameter.mTranslate;
 
-        pEmitter->mParameter.mTranslate.x = 0.0f;
-        pEmitter->mParameter.mTranslate.y = 0.0f;
-        pEmitter->mParameter.mTranslate.z = 0.0f;
-        pEmitter->SetMtxDirty();
+    pEmitter->mParameter.mTranslate.x = 0.0f;
+    pEmitter->mParameter.mTranslate.y = 0.0f;
+    pEmitter->mParameter.mTranslate.z = 0.0f;
+    pEmitter->SetMtxDirty();
 
-        math::MTX34 mtx;
-        math::MTX34 tmp;
+    math::MTX34 mtx;
+    math::MTX34 tmp;
 
-        math::MTX34Identity(&mtx);
-        PSMTX34RotXYZRad(&mtx, pEmitter->mParameter.mRotate.x,
-                             pEmitter->mParameter.mRotate.y,
-                             pEmitter->mParameter.mRotate.z);
-        MTX34ScaleNonZero(&mtx, &mtx, &pEmitter->mParameter.mScale);
+    math::MTX34Identity(&mtx);
+    PSMTX34RotXYZRad(&mtx, pEmitter->mParameter.mRotate.x,
+                            pEmitter->mParameter.mRotate.y,
+                            pEmitter->mParameter.mRotate.z);
+    MTX34ScaleNonZero(&mtx, &mtx, &pEmitter->mParameter.mScale);
 
-        pEmitter->CalcGlobalMtx(&tmp);
-        math::MTX34Inv(&tmp, &tmp);
+    pEmitter->CalcGlobalMtx(&tmp);
+    math::MTX34Inv(&tmp, &tmp);
+    math::MTX34Mult(&mtx, &mtx, &tmp);
+
+    if (pParticle != nullptr) {
+        pParticle->mParticleManager->CalcGlobalMtx(&tmp);
         math::MTX34Mult(&mtx, &mtx, &tmp);
+    }
 
-        if (pParticle != nullptr) {
-            pParticle->mParticleManager->CalcGlobalMtx(&tmp);
-            math::MTX34Mult(&mtx, &mtx, &tmp);
-        }
+    if (pTranslationVec == nullptr) {
+        if (pParticle != nullptr)
+            math::MTX34Trans(&mtx, &mtx, &pParticle->mParameter.mPosition);
+    } else {
+        math::MTX34Trans(&mtx, &mtx, pTranslationVec);
+    }
+    PSMTX34RotXYZRad(&tmp, pEmitter->mParameter.mRotate.x,
+                            pEmitter->mParameter.mRotate.y,
+                            pEmitter->mParameter.mRotate.z);
+    MTX34ScaleNonZero(&tmp, &tmp, &pEmitter->mParameter.mScale);
 
-        if (pTranslationVec == nullptr) {
-            if (pParticle != nullptr)
-                math::MTX34Trans(&mtx, &mtx, &pParticle->mParameter.mPosition);
-        } else {
-            math::MTX34Trans(&mtx, &mtx, pTranslationVec);
-        }
-        PSMTX34RotXYZRad(&tmp, pEmitter->mParameter.mRotate.x,
-                             pEmitter->mParameter.mRotate.y,
-                             pEmitter->mParameter.mRotate.z);
-        MTX34ScaleNonZero(&tmp, &tmp, &pEmitter->mParameter.mScale);
+    math::MTX34Inv(&tmp, &tmp);
+    math::MTX34Mult(&mtx, &mtx, &tmp);
 
-        math::MTX34Inv(&tmp, &tmp);
-        math::MTX34Mult(&mtx, &mtx, &tmp);
+    pEmitter->mParameter.mTranslate.x = transSave.x + mtx._03;
+    pEmitter->mParameter.mTranslate.y = transSave.y + mtx._13;
+    pEmitter->mParameter.mTranslate.z = transSave.z + mtx._23;
+    pEmitter->SetMtxDirty();
 
-        pEmitter->mParameter.mTranslate.x = transSave.x + mtx._03;
-        pEmitter->mParameter.mTranslate.y = transSave.y + mtx._13;
-        pEmitter->mParameter.mTranslate.z = transSave.z + mtx._23;
-        pEmitter->SetMtxDirty();
+    if (pSetting->speed != 0 || pSetting->scale != 0 ||
+        pSetting->alpha != 0 || pSetting->color != 0 ||
+        (pSetting->flag & EmitterInheritSetting::FLAG_INHERIT_ROT)) {
 
-        if (pSetting->speed != 0 || pSetting->scale != 0 ||
-            pSetting->alpha != 0 || pSetting->color != 0 ||
-            (pSetting->flag & EmitterInheritSetting::FLAG_INHERIT_ROT)) {
+        pEmitter->mpReferenceParticle = pParticle;
+        pParticle->Ref();
 
-            pEmitter->mpReferenceParticle = pParticle;
-            pParticle->Ref();
-
-            pEmitter->mInheritSetting = *pSetting;
-        }
+        pEmitter->mInheritSetting = *pSetting;
+    }
 
 
     return pEmitter;
@@ -408,7 +408,7 @@ bool Emitter::CreateEmitterTmp(EmitterResource* pResource,
             math::MTX34Mult(&dirMtx, &dirMtx, &tmpMtx);
             MtxGetRotation(dirMtx, &pEmitter->mParameter.mRotate);
         }
-        }
+    }
 
     math::VEC3 transSave = pEmitter->mParameter.mTranslate;
 
