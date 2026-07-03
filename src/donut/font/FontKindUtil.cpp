@@ -9,15 +9,15 @@ namespace font {
         };
 
         const FontContextEntry T_FONT_CONTEXT_TABLE[KIND_MAX] = {
-        {"jp/", "CommonEB.brfnt" },
-        {"jp/", "CommonEBFixed.brfnt" },
-        {"jp/", "CommonEBOL.brfnt" },
-        {"jp/", "CommonEBOLFixed.brfnt" },
-        {"jp/", "Skip.brfnt" },
-        {"jp/", "SkipOutline.brfnt" },
-        {"jp/", "ExternalChar.brfnt" },
-        {"jp/", "StaffCredits.brfnt" },
-        {"jp/", "Arare.brfnt" },
+            {"jp/", "CommonEB.brfnt" },
+            {"jp/", "CommonEBFixed.brfnt" },
+            {"jp/", "CommonEBOL.brfnt" },
+            {"jp/", "CommonEBOLFixed.brfnt" },
+            {"jp/", "Skip.brfnt" },
+            {"jp/", "SkipOutline.brfnt" },
+            {"jp/", "ExternalChar.brfnt" },
+            {"jp/", "StaffCredits.brfnt" },
+            {"jp/", "Arare.brfnt" },
         };
 
         const FontContextEntry t_context(FontKind kind) {
