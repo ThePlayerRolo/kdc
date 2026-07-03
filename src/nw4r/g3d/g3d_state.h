@@ -192,6 +192,8 @@ const GXRenderModeObj *GetRenderModeObj();
 
 void Invalidate(u32 flag = INVALIDATE_ALL);
 
+void SetGXCullModeInversed(bool inversed);
+
 } // namespace G3DState
 } // namespace g3d
 } // namespace nw4r

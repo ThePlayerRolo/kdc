@@ -27,6 +27,7 @@ struct FogData {
 
 class Fog : public ResCommon<FogData> {
 public:
+    // NOTE: Is merged into nw4r::g3d::Camera::Camera(nw4r::g3d::CameraData*)
     explicit Fog(FogData *pData);
 
     void Init();
