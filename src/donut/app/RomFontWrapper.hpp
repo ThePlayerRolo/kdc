@@ -1,7 +1,7 @@
 #ifndef DONUT_APP_ROMFONTWRAPPER_HPP
 #define DONUT_APP_ROMFONTWRAPPER_HPP
 
-#include <types.h>
+#include "mem/DataBlock.hpp"
 #include <nw4r/ut.h>
 
 namespace app {
@@ -12,7 +12,8 @@ namespace app {
 
         nw4r::ut::RomFont& font();
     private:
-        STRUCT_FILL(0x28);
+        /* 0x0 */ mem::DataBlock mBlock;
+        /* 0xC */ nw4r::ut::RomFont mFont;
     };
 }
 
