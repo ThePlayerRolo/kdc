@@ -1173,6 +1173,15 @@ config.libs = [
         ],
     },
     {
+        "lib": "scn/step/chara",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(Equivalent, "donut/scn/step/chara/Invincible.cpp"),
+        ],
+    },
+    {
         "lib": "scn/step/enemy",
         "mw_version": config.linker_version,
         "cflags": cflags_donut,
@@ -1180,9 +1189,11 @@ config.libs = [
         "objects": [
             Object(NonMatching, "donut/scn/step/enemy/CustomBase.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/scn/step/enemy/Desc.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/scn/step/enemy/Enemy.cpp"),
             Object(Equivalent, "donut/scn/step/enemy/IState.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/scn/step/enemy/Param.cpp", extra_cflags=["-O3,s"]),
             Object(Equivalent, "donut/scn/step/enemy/StateBase.cpp", extra_cflags=["-O3,s"]),
+            Object(NonMatching, "donut/scn/step/enemy/SuperStop.cpp"),
             Object(NonMatching, "donut/scn/step/enemy/damage/StateDeadInWater.cpp", extra_cflags=["-O3,s"]),
 
             Object(Equivalent, "donut/scn/step/enemy/waddledoo/Custom.cpp", extra_cflags=["-O3,s"]),
@@ -1195,11 +1206,17 @@ config.libs = [
         "cflags": cflags_donut,
         "progress_category": "donut",
         "objects": [
-            Object(
-                NonMatching,
-                "donut/scn/step/hero/IndiviUtil.cpp",
-                extra_cflags=["-O3"],
-            ),
+            Object(NonMatching, "donut/scn/step/hero/Guard.cpp"),
+            Object(NonMatching, "donut/scn/step/hero/IndiviUtil.cpp", extra_cflags=["-O3"]),
+        ],
+    },
+    {
+        "lib": "scn/step/spstop",
+        "mw_version": config.linker_version,
+        "cflags": cflags_donut,
+        "progress_category": "donut",
+        "objects": [
+            Object(NonMatching, "donut/scn/step/spstop/Manager.cpp", extra_cflags=["-O3,s"]),
         ],
     },
     {

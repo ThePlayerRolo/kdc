@@ -6,7 +6,7 @@
 #include "hel/common/MutableArray.hpp"
 #include "scn/step/spstop/IEventReceiver.hpp"
 
-/* clang-format off */
+// clang-format off
 namespace scn { namespace step { namespace spstop {
 
 class Manager
@@ -26,6 +26,6 @@ private:
 
 }}}
 
-/* clang-format on */
+// clang-format on
 
 #endif
