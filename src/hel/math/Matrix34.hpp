@@ -10,8 +10,14 @@ namespace hel  { namespace math {
 
     class Matrix34 {
     public:
-        Matrix34();
-        Matrix34(const Mtx);
+        Matrix34() {
+            PSMTXIdentity(mBaseMtx);
+        }
+
+        Matrix34(const Mtx mtx) {
+            PSMTXCopy(mtx, mBaseMtx);
+        }
+
         Matrix34(const Direction3&, const Vector3&);
 
         void CreateTrans(const Vector3& rTrans);
@@ -23,8 +29,9 @@ namespace hel  { namespace math {
         void CreateLookAt(const Vector3& rPosition, const Vector3& rUp, const Vector3& rTarget);
         void mtxInverse(const Mtx arg1, Mtx arg2) const;
         Matrix44 toMatrix44() const;
+        void operator=(const Matrix34& rOther);
 
-        nw4r::math::MTX34 mBaseMtx;
+        /* 0x0 */ nw4r::math::MTX34 mBaseMtx;
     };
 
 } //namespace math

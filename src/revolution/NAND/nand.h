@@ -32,8 +32,8 @@ typedef enum {
     NAND_RESULT_MAXFD,
     NAND_RESULT_MAXBLOCKS,
     NAND_RESULT_INVALID,
-
-    NAND_RESULT_EXISTS = -6,
+    NAND_RESULT_UNUSED_7,
+    NAND_RESULT_EXISTS,
     NAND_RESULT_ECC_CRIT,
     NAND_RESULT_CORRUPT,
     NAND_RESULT_BUSY,
@@ -167,6 +167,7 @@ s32 NANDPrivateDeleteAsync(const char* path, NANDAsyncCallback callback,
 s32 NANDRead(NANDFileInfo* info, void* buf, u32 len);
 s32 NANDReadAsync(NANDFileInfo* info, void* buf, u32 len,
                   NANDAsyncCallback callback, NANDCommandBlock* block);
+s32 NANDReadDir(const char* path, char* nameList, u32* num);
 
 s32 NANDWrite(NANDFileInfo* info, const void* buf, u32 len);
 s32 NANDWriteAsync(NANDFileInfo* info, const void* buf, u32 len,
@@ -184,16 +185,12 @@ s32 NANDPrivateCreateDirAsync(const char* path, u8 perm, u8 attr,
 s32 NANDMove(const char* from, const char* to);
 
 s32 NANDGetLength(NANDFileInfo* info, u32* length);
-s32 NANDGetLengthAsync(NANDFileInfo* info, u32* lengthOut,
-                       NANDAsyncCallback callback, NANDCommandBlock* block);
 
-s32 NANDGetStatus(const char* path, NANDStatus* status);
 s32 NANDPrivateGetStatusAsync(const char* path, NANDStatus* status,
                               NANDAsyncCallback callback,
                               NANDCommandBlock* block);
 
-void NANDSetUserData(NANDCommandBlock* block, void* data);
-void* NANDGetUserData(NANDCommandBlock* block);
+s32 NANDPrivateGetStatus(const char *path, NANDStatus *stat);
 
 #ifdef __cplusplus
 }

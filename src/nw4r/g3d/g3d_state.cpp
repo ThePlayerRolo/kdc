@@ -237,6 +237,8 @@ inline bool IsEqualTlutObj(const GXTlutObj &rLhs, const GXTlutObj &rRhs) {
     return rLhs.dummy[0] == rRhs.dummy[0] && rLhs.dummy[1] == rRhs.dummy[1] && rLhs.dummy[2] == rRhs.dummy[2];
 }
 
+bool sIsGXCullModeInversed;
+
 } // namespace
 
 /******************************************************************************
@@ -272,6 +274,9 @@ void IndTexMtxInfo::FifoSend() const {
     }
 }
 
+void SetGXCullModeInversed(bool inversed) {
+    sIsGXCullModeInversed = inversed;
+}
 void IndTexMtxInfo::SetMtx(GXIndTexMtxID id, const math::MTX34 &rMtx) {
     if (id == GX_ITM_0) {
         offset_mtx[GX_ITM_0 - 1] = rMtx;
@@ -378,8 +383,21 @@ public:
             flag &= ~FLAG_BP_LOADED;
         }
 
-        if (mCullMode != res.GXGetCullMode()) {
-            mCullMode = res.GXGetCullMode();
+        GXCullMode cullMode = res.GXGetCullMode();
+
+        if (G3DState::sIsGXCullModeInversed) {
+            switch (cullMode) {
+                case GX_CULL_FRONT:
+                    cullMode = GX_CULL_BACK;
+                    break;
+                case GX_CULL_BACK:
+                    cullMode = GX_CULL_FRONT;
+                    break;
+            }
+        }
+
+        if (mCullMode != cullMode) {
+            mCullMode = cullMode;
             flag &= ~FLAG_BP_LOADED;
         }
 
@@ -576,22 +594,23 @@ public:
 
     void LoadResTlutObj(const ResTlutObj tlutObj) {
         for (u32 i = 0; i < GX_TLUT8; i++) {
-            if (!tlutObj.IsValidTlut(static_cast<GXTlut>(i))) {
+            GXTlut id = static_cast<GXTlut>(i);
+            if (tlutObj.IsValidTlut(static_cast<GXTlut>(i))) {
+                const GXTlutObj *pGXObj = tlutObj.GetTlut(id);
+
+                u16 mask = 1 << id;
+
+                if (!(mFlag & mask) || !IsEqualTlutObj(*pGXObj, mTlutObj[id])) {
+                    mFlag |= mask;
+                    mTlutObj[id] = *pGXObj;
+
+                    GXLoadTlut(const_cast<GXTlutObj *>(pGXObj), id);
+                    sTex.Invalidate(static_cast<GXTexMapID>(id));
+                }
                 continue;
             }
-
-            GXTlut id = static_cast<GXTlut>(i);
-            const GXTlutObj *pGXObj = tlutObj.GetTlut(id);
-
             u16 mask = 1 << id;
-
-            if (!(mFlag & mask) || !IsEqualTlutObj(*pGXObj, mTlutObj[id])) {
-                mFlag |= mask;
-                mTlutObj[id] = *pGXObj;
-
-                GXLoadTlut(const_cast<GXTlutObj *>(pGXObj), id);
-                sTex.Invalidate(static_cast<GXTexMapID>(id));
-            }
+            mFlag &= ~mask;
         }
     }
 
@@ -1653,11 +1672,11 @@ void LoadResTexSrt(const ResTexSrt srt) {
                     sPostTexMtx.SetIdentity(i);
                     math::MTX34Identity(&identMtx);
 
-                    GXLoadTexMtxImm(identMtx, i * 3 + GX_DUALMTX0, GX_MTX3x4);
+                    GXLoadTexMtxImm(identMtx, i * 3 + GX_DUALMTX0, GX_MTX_3x4);
                 }
             } else {
                 sPostTexMtx.ResetIdentity(i);
-                GXLoadTexMtxImm(mtx, i * 3 + GX_DUALMTX0, GX_MTX3x4);
+                GXLoadTexMtxImm(mtx, i * 3 + GX_DUALMTX0, GX_MTX_3x4);
             }
 
         } else {

@@ -47,7 +47,7 @@ static void __iosCoalesceChunk(IPCHeapChunk* chunk) {
 }
 
 s32 iosCreateHeap(void* base, u32 size) {
-    s32 ret = IPC_RESULT_INVALID_INTERNAL;
+    s32 ret = IPC_RESULT_INVALID;
     BOOL enabled = OSDisableInterrupts();
     IPCHeapDesc* desc;
     s32 i;
@@ -203,7 +203,7 @@ s32 iosFree(s32 handle, void* block) {
     BOOL enabled;
     s32 ret;
 
-    ret = IPC_RESULT_INVALID_INTERNAL;
+    ret = IPC_RESULT_INVALID;
     enabled = OSDisableInterrupts();
 
     if (block == NULL) {
@@ -211,7 +211,7 @@ s32 iosFree(s32 handle, void* block) {
     }
 
     if (handle < 0 || handle >= IPC_HEAP_MAX || __heaps[handle].start == NULL) {
-        ret = IPC_RESULT_INVALID_INTERNAL;
+        ret = IPC_RESULT_INVALID;
         goto _exit;
     }
 

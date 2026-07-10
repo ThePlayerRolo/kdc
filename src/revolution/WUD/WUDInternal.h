@@ -5,7 +5,7 @@
 // Public API
 #include <revolution/WUD/WUD.h>
 
-#include <revolution/BTE.h>
+//#include <revolution/BTE.h>
 #include <revolution/OS.h>
 #include <revolution/SC.h>
 #ifdef __cplusplus

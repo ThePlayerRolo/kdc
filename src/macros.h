@@ -98,4 +98,5 @@
 #define DECL_WEAK __declspec(weak)
 
 #define DONT_INLINE __attribute__((never_inline))
+#define ALWAYS_INLINE __attribute__((always_inline))
 #endif

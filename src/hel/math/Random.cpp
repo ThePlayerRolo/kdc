@@ -89,3 +89,9 @@ f32 Random::randCoreF32() {
     f32 randCore = randCoreU32() & 0xFFFF;
     return randCore / 65536.0f;
 }
+
+//NOTE: All functions below are code merged into others. Refer to the header for more details
+
+int Random::operator()(int arg1) {
+    return randS32(arg1);
+}

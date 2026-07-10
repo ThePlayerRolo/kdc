@@ -1,18 +1,27 @@
 #ifndef DONUT_FILE_FILEMANAGER_HPP
 #define DONUT_FILE_FILEMANAGER_HPP
 
-#include <types.h>
+#include <donut/file/FileTree.hpp>
 
 namespace file {
 
-class FileManager {
+// NOTE that treeRoot being a blr helps prove that this inherits FileTree (Returning this for it generates a blr only)
+class FileManager : FileTree {
 public:
     FileManager();
     ~FileManager();
 
+    void clearFiles();
     void clearFilesIfEnable();
+
+    //NOTE: Merged into DefaultSwitchThreadCallback
+    FileTree* treeRoot() const;
+
+    void disableClearInc();
+    void disableClearDec();
+
 private:
-    STRUCT_FILL(0x44);
+    /* 0x40 */ s32 mDisableClear;
 };
 
 }

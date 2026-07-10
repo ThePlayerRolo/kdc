@@ -2,7 +2,8 @@
 #define RVL_SDK_WUD_H
 #include <types.h>
 
-#include <revolution/BTE.h>
+//If you include all of BTE scratches take FOREVER (and could crash your editor lol)
+#include <revolution/BTE/bta/include/bta_hh_api.h>
 #include <revolution/SC.h>
 #ifdef __cplusplus
 extern "C" {

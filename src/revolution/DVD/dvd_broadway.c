@@ -227,11 +227,11 @@ BOOL DVDLowInit(void) {
     }
 
     switch (DiFD) {
-    case IPC_RESULT_NOEXISTS_INTERNAL:
+    case IPC_RESULT_NOEXISTS:
         OSReport("(DVDLowInit) Error: IOS_Open failed - pathname '/dev/di' "
                  "does not exist\n");
         return FALSE;
-    case IPC_RESULT_ACCESS_INTERNAL:
+    case IPC_RESULT_ACCESS:
         OSReport("(DVDLowInit) Error: IOS_Open failed - calling thread lacks "
                  "permission\n");
         return FALSE;

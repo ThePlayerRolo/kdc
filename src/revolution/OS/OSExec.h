@@ -18,6 +18,7 @@ extern BOOL __OSInReboot;
 
 void __OSGetExecParams(OSExecParams* out);
 void __OSLaunchMenu(void);
+void OSExecl(const char* dolfile, const char* arg0, ...);
 
 #ifdef __cplusplus
 }

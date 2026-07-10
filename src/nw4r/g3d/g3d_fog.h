@@ -27,6 +27,7 @@ struct FogData {
 
 class Fog : public ResCommon<FogData> {
 public:
+    // NOTE: Is merged into nw4r::g3d::Camera::Camera(nw4r::g3d::CameraData*)
     explicit Fog(FogData *pData);
 
     void Init();
@@ -35,7 +36,18 @@ public:
     void SetFogRangeAdjParam(u16 width, u16 center, const math::MTX44 &rProjMtx);
     void SetGP() const;
 
+    //Here since pointer assert doesn't happen here (assert seems to be linked to rescommon)
+    FogData &ref() {
+        return *ptr();
+    }
+
+    const FogData &ref() const {
+        return *ptr();
+    }
+
+    //TODO: Assert Version doesn't inline
     void SetFogType(GXFogType type) {
+        NW4RAssert_Line(65, IsValid());
         if (!IsValid()) {
             return;
         }
@@ -43,7 +55,9 @@ public:
         ref().type = type;
     }
 
-    void SetZ(f32 startZ, f32 endZ) {
+    //TODO: Assert Version doesn't inline
+    inline void SetZ(f32 startZ, f32 endZ) {
+        NW4RAssert_Line(75, IsValid());
         if (!IsValid()) {
             return;
         }
@@ -65,7 +79,9 @@ public:
         r.farz = farZ;
     }
 
+    //TODO: Inlining issues in FogAccessor (Donut)
     void SetFogColor(GXColor color) {
+        NW4RAssert_Line(99, IsValid());
         if (!IsValid()) {
             return;
         }
@@ -77,7 +93,8 @@ public:
         return IsValid() && ref().adjEnable == TRUE;
     }
 
-    void SetFogRangeAdjEnable(bool enable) {
+    void SetFogRangeAdj(bool enable) {
+        NW4RAssert_Line(117, IsValid());
         if (!IsValid()) {
             return;
         }

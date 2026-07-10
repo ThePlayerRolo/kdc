@@ -6,6 +6,8 @@
 
 #include "nw4r/math.h" // IWYU pragma: export
 
+#include "NW4RAssert.hpp"
+
 namespace nw4r {
 namespace g3d {
 
@@ -80,7 +82,7 @@ struct ResNodeData : ResNodeDataTypedef {
 
 class ResNode : public ResCommon<ResNodeData>, public ResNodeDataTypedef {
 public:
-    NW4R_G3D_RESOURCE_FUNC_DEF(ResNode);
+    NW4R_G3D_RESOURCE_FUNC_DEF_ASSERT(ResNode, 0x3, "g3d_resnode_ac.h", 44, 44)
 
     void PatchChrAnmResult(ChrAnmResult *pResult) const;
     void CalcChrAnmResult(ChrAnmResult *pResult) const;
@@ -101,14 +103,12 @@ public:
     }
 
     u32 GetID() const {
-        if (IsValid()) {
-            return ptr()->id;
-        }
-
-        return 0;
+        NW4RAssert_FileLine("g3d_resnode_ac.h", 56, IsValid());
+        return IsValid() ? ptr()->id : 0;
     }
 
     u32 GetMtxID() const {
+        NW4RAssert_FileLine("g3d_resnode_ac.h", 83, IsValid());
         return IsValid() ? ptr()->mtxID : 0;
     }
 
@@ -141,7 +141,11 @@ public:
     }
 
     const math::VEC3 &GetTranslate() const {
-        return ref().translate;
+        return *(const math::VEC3 *)&ref().translate;
+    }
+
+    const math::VEC3 &GetRotate() const {
+        return *(const math::VEC3 *)&ref().rot;
     }
 
     // not in the dwarf

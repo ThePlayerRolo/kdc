@@ -5,6 +5,7 @@
 
 #include "mem/HeapCompaction.hpp"
 #include "mem/HeapExp.hpp"
+#include "mem/OperatorNewDelete.hpp"
 
 namespace mem {
 
@@ -14,9 +15,12 @@ class Memory {
 public:
     DECL_EXPLICIT_SINGLETON(Memory);
 
+    HeapExp& mem1FixHeap();
     HeapExp& mem2FixHeap();
-    IAllocator& sceneHeap();
+    HeapExp& sceneHeap();
     HeapCompaction& /* probably? */ externalHeap();
+
+    static void SetupIfNotSetup();
 };
 
 }

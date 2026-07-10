@@ -169,7 +169,7 @@ IPCResult IUSB_OpenDeviceIds(const char* interface, u16 vid, u16 pid,
     block = NULL;
 
     if (resultOut == NULL) {
-        result = IPC_RESULT_INVALID_INTERNAL;
+        result = IPC_RESULT_INVALID;
         goto end;
     }
 
@@ -353,7 +353,7 @@ static IPCResult __CtrlMsgInt(s32 fd, u8 requestType, u8 request, u16 value,
     USBCommandBlock* block;
 
     if ((buffer == NULL && length != 0) || (u32)buffer % 32 != 0) {
-        result = IPC_RESULT_INVALID_INTERNAL;
+        result = IPC_RESULT_INVALID;
         USB_ERR("ctrlmsg: bad data buffer\n");
         goto end_async;
     }

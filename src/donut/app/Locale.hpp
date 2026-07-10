@@ -5,6 +5,12 @@ namespace app {
 class Locale {
 public:
     static const char* FilePostfix();
+
+    //NOTE: Merged into nw4r::ut::DvdFileStream::CanCancel() const
+    static int GetRegion();
+    //NOTE Merged into nw4r::ut::DvdFileStream::CanCancel() const
+    static int GetLanguage();
+
 };
 }
 

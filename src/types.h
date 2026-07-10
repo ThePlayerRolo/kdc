@@ -15,6 +15,7 @@
 #include <lang.h>
 #include <macros.h>
 
+typedef unsigned char byte_t;
 typedef unsigned long long u64;
 typedef signed long long s64;
 

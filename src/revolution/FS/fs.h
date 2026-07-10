@@ -21,6 +21,31 @@ typedef struct FSFileStats {
     u32 position; // at 0x4
 } FSFileStats ALIGN(32);
 
+enum {
+    ISFS_ERROR_OK = 0,
+
+    ISFS_ERROR_UNKNOWN2 = -100,
+    ISFS_ERROR_INVALID = -101,
+    ISFS_ERROR_ACCESS = -102,
+    ISFS_ERROR_CORRUPT = -103,
+    ISFS_ERROR_NOTREADY = -104,
+    ISFS_ERROR_EXISTS = -105,
+    ISFS_ERROR_NOEXISTS = -106,
+    ISFS_ERROR_MAXFILES = -107,
+    ISFS_ERROR_MAXBLOCKS = -108,
+    ISFS_ERROR_MAXFD = -109,
+    ISFS_ERROR_MAXDEPTH = -110,
+    ISFS_ERROR_OPENFD = -111,
+    ISFS_ERROR_BADBLOCK = -112,
+    ISFS_ERROR_ECC = -113,
+    ISFS_ERROR_ECC_CRIT = -114,
+    ISFS_ERROR_NOTEMPTY = -115,
+    ISFS_ERROR_AUTHENTICATION = -116,
+    ISFS_ERROR_UNKNOWN = -117,
+    ISFS_ERROR_BUSY = -118,
+    ISFS_ERROR_SHUTDOWN = -119
+};
+
 s32 ISFS_OpenLib(void);
 s32 ISFS_CreateDir(const char* path, u32 attr, u32 ownerPerm, u32 groupPerm,
                    u32 otherPerm);
