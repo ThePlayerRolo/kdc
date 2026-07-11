@@ -1,16 +1,19 @@
 #ifndef DONUT_SCN_STEP_COMPONENT_HPP
 #define DONUT_SCN_STEP_COMPONENT_HPP
 
-#include <hel/common/ScopedPtr.hpp>
+#include "g3d/ResFileRepository.hpp"
 #include "scn/step/Context.hpp"
 #include "scn/step/core/SphereAccessor.hpp"
-#include "scn/step/debug/ShowGrid.hpp"
-#include "scn/step/debug/ShowPegFrame.hpp"
 #include "scn/step/debug/GeneralDrawer.hpp"
 #include "scn/step/debug/ObjInfoRepos.hpp"
-#include "scn/step/map/DataFile.hpp"
+#include "scn/step/debug/ShowGrid.hpp"
+#include "scn/step/debug/ShowPegFrame.hpp"
 #include "scn/step/hero/Manager.hpp"
-#include "g3d/ResFileRepository.hpp"
+#include "scn/step/map/DataFile.hpp"
+#include "scn/step/spstop/Manager.hpp"
+#include <hel/common/ScopedPtr.hpp>
+
+// clang-format off
 
 namespace scn { namespace step {
     namespace core {
@@ -33,10 +36,6 @@ namespace scn { namespace step {
     }
 
     namespace ostop {
-        class Manager { };
-    }
-
-    namespace spstop {
         class Manager { };
     }
 
@@ -208,5 +207,7 @@ private:
 };
 
 }}
+
+// clang-format on
 
 #endif
