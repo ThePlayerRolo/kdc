@@ -15,7 +15,7 @@ namespace mintvm {
         }
 
         void halt() {
-            MintSetting::Instance->_18();
+            MintSetting::Instance->m_18();
         }
 
         void messageHandler(MintMsgKind kind, const char* pMsg, const char* param_3) {
