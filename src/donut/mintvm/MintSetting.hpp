@@ -19,10 +19,10 @@ namespace mintvm {
 
         MintSetting();
     public :
-        /* 0x00 */ MintAllocator _0;
-        /* 0x0C */ MintAllocator _C;
-        /* 0x18 */ Unk18Callback _18;
-        /* 0x1C */ s32 _1C;
+        /* 0x00 */ MintAllocator m_0;
+        /* 0x0C */ MintAllocator m_C;
+        /* 0x18 */ Unk18Callback m_18;
+        /* 0x1C */ s32 m_1C;
         /* 0x20 */ MessageCallback mMessageCallback;
     };
 }
