@@ -5,7 +5,7 @@ namespace g3d {
     // https://decomp.me/scratch/y8YZQ
     MaterialAccessor::MaterialAccessor()
     : nw4r::g3d::ScnMdl::CopiedMatAccess(nullptr, nullptr)
-    , _4(false)
+    , m_34(false)
     { }
 
     void MaterialAccessor::matTevColorGXSetTevColor(GXTevRegID id, const GXColor& color) const {
@@ -31,5 +31,10 @@ namespace g3d {
 
     void MaterialAccessor::matMiscEndEdit() const {
         const_cast<MaterialAccessor*>(this)->GetResMatMisc(false).EndEdit();
+    }
+
+    //NOTE: All functions below are code merged into others. Refer to the header for more details
+    nw4r::g3d::ScnMdl::CopiedMatAccess* MaterialAccessor::obj() const {
+        return (nw4r::g3d::ScnMdl::CopiedMatAccess*)this;
     }
 }

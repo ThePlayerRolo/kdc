@@ -17,10 +17,17 @@ public:
     Array() : mArray() { }
 
     ~Array();
-    T& operator[](size_t index) DONT_INLINE {
+
+    T& operator[](size_t index) DONT_INLINE  {
         ArrayUtil::RangeCheck(index, S);
         return mArray[index];
     }
+    // TODO: Could be fabricated
+    const T& operator[](size_t index) const {
+        ArrayUtil::RangeCheck(index, S);
+        return mArray[index];
+    }
+
 private:
     /* 0x0 */ T mArray[S];
 };

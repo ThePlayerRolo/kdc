@@ -27,7 +27,7 @@ public:
         ResMatPix GetResMatPix(bool markDirty);
         ResMatTevColor GetResMatTevColor(bool markDirty);
         ResTev GetResTev(bool markDirty);
-
+        ResTev GetResTevEx();
         ResTexObj GetResTexObjEx();
         ResTexSrt GetResTexSrtEx();
         ResMatChan GetResMatChanEx();

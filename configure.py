@@ -651,7 +651,7 @@ config.libs = [
             Object(NonMatching, "donut/g3d/ColorAnim.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ColorAnimContext.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ColorAnimFlash.cpp", extra_cflags=["-O3,s"]),
-            Object(NonMatching, "donut/g3d/ColorAnimMaterialTarget.cpp", extra_cflags=["-O3,s"]),
+            Object(Matching, "donut/g3d/ColorAnimMaterialTarget.cpp", extra_cflags=["-O3,s"]),
             Object(NonMatching, "donut/g3d/ColorAnimTevManager.cpp", extra_cflags=["-O3,s"]),
             Object(Matching, "donut/g3d/FogAccessor.cpp"),
             Object(NonMatching, "donut/g3d/Group.cpp", extra_cflags=["-O3,s"]),

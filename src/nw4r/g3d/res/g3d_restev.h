@@ -63,7 +63,7 @@ struct ResTevData {
 
 class ResTev : public ResCommon<ResTevData> {
 public:
-    NW4R_G3D_RESOURCE_FUNC_DEF(ResTev);
+    NW4R_G3D_RESOURCE_FUNC_DEF_ASSERT(ResTev, 0x1f, "g3d_restev_ac.h", 37, 37);
 
     ResMdl GetParent();
     const ResMdl GetParent() const;
@@ -74,6 +74,8 @@ public:
     void
     GXSetTevSwapModeTable(GXTevSwapSel swap, GXTevColorChan r, GXTevColorChan g, GXTevColorChan b, GXTevColorChan a);
 
+    void GXSetTevSwapMode(GXTevStageID stage, GXTevSwapSel swap, GXTevSwapSel swap2);
+
     bool GXGetTevOrder(GXTevStageID stage, GXTexCoordID *pCoord, GXTexMapID *pMap, GXChannelID *pChannel) const;
     void GXSetTevOrder(GXTevStageID stage, GXTexCoordID coord, GXTexMapID map, GXChannelID channel);
 
@@ -81,7 +83,21 @@ public:
     void GXSetIndTexOrder(GXIndTexStageID stage, GXTexCoordID coord, GXTexMapID map);
 
     void GXSetTevColorIn(GXTevStageID stage, GXTevColorArg a, GXTevColorArg b, GXTevColorArg c, GXTevColorArg d);
-    void GXSetTevAlphaIn(GXTevStageID stage, GXTevColorArg a, GXTevColorArg b, GXTevColorArg c, GXTevColorArg d);
+    void GXGetTevColorIn(GXTevStageID stage, GXTevColorArg* pA, GXTevColorArg* pB, GXTevColorArg* pC, GXTevColorArg* pD) const;
+
+    void GXSetTevAlphaIn(GXTevStageID stage, GXTevAlphaArg a, GXTevAlphaArg b, GXTevAlphaArg c, GXTevAlphaArg d);
+    void GXGetTevAlphaIn(GXTevStageID stage, GXTevAlphaArg* pA, GXTevAlphaArg* pB, GXTevAlphaArg* pC, GXTevAlphaArg* pD) const;
+
+    void GXSetTevColorOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, u8, GXTevRegID regId);
+    void GXGetTevColorOp(GXTevStageID stage, GXTevOp* pOp, GXTevBias* pBias, GXTevScale* pScale, u8*, GXTevRegID* pRegId) const;
+    void GXSetTevAlphaOp(GXTevStageID stage, GXTevOp op, GXTevBias bias, GXTevScale scale, u8, GXTevRegID regId);
+    void GXGetTevAlphaOp(GXTevStageID stage, GXTevOp* pOp, GXTevBias* pBias, GXTevScale* pScale, u8*, GXTevRegID* pRegId) const;
+
+    void GXSetTevKColorSel(GXTevStageID stage, GXTevKColorSel colorSel);
+    void GXGetTevKColorSel(GXTevStageID stage, GXTevKColorSel* pColorSel) const;
+    void GXSetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel alphaSel);
+    void GXGetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel* pAlphaSel) const;
+    void GXSetTevDirect(GXTevStageID stage);
 
     void CallDisplayList(bool sync) const;
 
@@ -92,6 +108,8 @@ public:
     u8 GetNumTevStages() const {
         return ref().nStages;
     }
+
+    void SetNumTevStages(u8 nStages);
 
     void EndEdit() {
         DCStore(false);

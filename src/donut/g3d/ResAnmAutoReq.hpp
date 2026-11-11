@@ -1,6 +1,8 @@
 #ifndef DONUT_G3D_RES_ANM_AUTO_REQ_HPP
 #define DONUT_G3D_RES_ANM_AUTO_REQ_HPP
 
+#include "xdata/XData.hpp"
+
 namespace g3d {
     class ResAnmAutoReq {
     public:
@@ -13,9 +15,9 @@ namespace g3d {
         bool isValid() const;
 
         //NOTE: Is merged into GKI_getfirst
-        void* data() const;
-    private:
-        /* 0x00 */ const void* mData;
+        const xdata::XData* data() const;
+    public:
+        /* 0x00 */ const xdata::XData* mData;
     };
 }
 

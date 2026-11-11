@@ -15,8 +15,11 @@ namespace g3d {
         void matPixEndEdit() const;
         void matMiscSetLightSetIdx(u32 idx) const;
         void matMiscEndEdit() const;
+
+        // NOTE: Is merged into DefaultSwitchThreadCallback
+        nw4r::g3d::ScnMdl::CopiedMatAccess* obj() const;
     public:
-        /* 0x4 */ bool _4;
+        /* 0x34 */ bool m_34;
     };
 
 }

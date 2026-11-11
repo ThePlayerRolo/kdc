@@ -51,7 +51,7 @@ private:
 
 
     // bool XData::isValidData() {
-    //     return header != nullptr && header->magic == 0x5842494e && header->bom == 0x1234 && header->filesize > sizeof(XDataHeader) - 1;
+    //     return header != nullptr && header->magic == 'XBIN' && header->bom == 0x1234 && header->filesize > sizeof(XDataHeader) - 1;
     // }
 
     // void* XData::labelAddressWithReference(u32 address) {
